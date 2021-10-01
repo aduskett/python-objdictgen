@@ -1,26 +1,27 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+#
+# This file is part of CanFestival, a library implementing CanOpen Stack.
+#
+# Copyright (C): Edouard TISSERANT, Francis DUPIN and Laurent BESSARD
+#
+# See COPYING file for copyrights details.
+#
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 2.1 of the License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-#This file is part of CanFestival, a library implementing CanOpen Stack. 
-#
-#Copyright (C): Edouard TISSERANT, Francis DUPIN and Laurent BESSARD
-#
-#See COPYING file for copyrights details.
-#
-#This library is free software; you can redistribute it and/or
-#modify it under the terms of the GNU Lesser General Public
-#License as published by the Free Software Foundation; either
-#version 2.1 of the License, or (at your option) any later version.
-#
-#This library is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-#Lesser General Public License for more details.
-#
-#You should have received a copy of the GNU Lesser General Public
-#License along with this library; if not, write to the Free Software
-#Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-
+from __future__ import print_function
 import getopt,sys,os
 from types import *
 
@@ -45,7 +46,7 @@ for o, a in opts:
         sys.exit()
 
 fileIn = ""
-fileOut = ""        
+fileOut = ""
 if len(args) == 2:
     fileIn = args[0]
     fileOut = args[1]
@@ -54,7 +55,7 @@ else:
     sys.exit()
 
 if __name__ == '__main__':
-    if fileIn != "" and fileOut != "":
+   if fileIn != "" and fileOut != "":
         manager = NodeManager()
         if os.path.isfile(fileIn):
             print _("Parsing input file")
@@ -73,4 +74,3 @@ if __name__ == '__main__':
             print result
             sys.exit(-1)
         print _("All done")
-    
