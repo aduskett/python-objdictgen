@@ -21,6 +21,8 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+from __future__ import print_function
+
 import wx
 
 from types import *
@@ -30,8 +32,8 @@ __version__ = "$Revision: 1.27 $"
 
 if __name__ == '__main__':
     def usage():
-        print _("\nUsage of networkedit.py :")
-        print "\n   %s [Projectpath]\n"%sys.argv[0]
+        print(_("\nUsage of networkedit.py :"))
+        print("\n   %s [Projectpath]\n"%sys.argv[0])
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "h", ["help"])

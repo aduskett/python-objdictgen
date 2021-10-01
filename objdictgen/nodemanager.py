@@ -31,6 +31,8 @@ import eds_utils, gen_cfile
 from types import *
 import os, re
 
+_ = lambda x: x
+
 UndoBufferLength = 20
 
 type_model = re.compile('([\_A-Z]*)([0-9]*)')
@@ -285,7 +287,7 @@ class NodeManager:
             self.SetCurrentFilePath(filepath)
             return index
         except:
-            return _("Unable to load file \"%s\"!")%filepath
+            return _("Unable to load file \"%s\"!"%filepath)
 
     """
     Save current node in  a file

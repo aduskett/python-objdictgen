@@ -21,6 +21,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+from __future__ import print_function
 
 import node
 from node import nosub, var, array, rec, plurivar, pluriarray, plurirec
@@ -784,5 +785,5 @@ def GenerateNode(filepath, nodeID = 0):
 #-------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    print ParseEDSFile("examples/PEAK MicroMod.eds")
+    print(ParseEDSFile("examples/PEAK MicroMod.eds"))
 

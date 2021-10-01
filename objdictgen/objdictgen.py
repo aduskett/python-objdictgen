@@ -25,13 +25,16 @@ from __future__ import print_function
 import getopt,sys,os
 from types import *
 
+import sys
+print(sys.path)
+
 from nodemanager import *
 
 _ = lambda x: x
 
 def usage():
-    print _("\nUsage of objdictgen.py :")
-    print "\n   %s XMLFilePath CFilePath\n"%sys.argv[0]
+    print(_("\nUsage of objdictgen.py :"))
+    print("\n   %s XMLFilePath CFilePath\n"%sys.argv[0])
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], "h", ["help"])
@@ -55,22 +58,22 @@ else:
     sys.exit()
 
 if __name__ == '__main__':
-   if fileIn != "" and fileOut != "":
+    if fileIn != "" and fileOut != "":
         manager = NodeManager()
         if os.path.isfile(fileIn):
-            print _("Parsing input file")
+            print(_("Parsing input file"))
             result = manager.OpenFileInCurrent(fileIn)
             if not isinstance(result, (StringType, UnicodeType)):
                 Node = result
             else:
-                print result
+                print(result)
                 sys.exit(-1)
         else:
-            print _("%s is not a valid file!")%fileIn
+            print(_("%s is not a valid file!")%fileIn)
             sys.exit(-1)
-        print _("Writing output file")
+        print(_("Writing output file"))
         result = manager.ExportCurrentToCFile(fileOut)
         if isinstance(result, (UnicodeType, StringType)):
-            print result
+            print(result)
             sys.exit(-1)
-        print _("All done")
+        print(_("All done"))

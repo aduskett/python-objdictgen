@@ -311,7 +311,7 @@ class NodeList:
                             validindexes.append((node.GetEntryName(index), index))
                     return validindexes
                 else:
-                    print _("Can't find node")
+                    print(_("Can't find node"))
         return []
 
     def GetCurrentEntryValues(self, index):
@@ -321,7 +321,7 @@ class NodeList:
                 node.SetNodeID(self.CurrentSelected)
                 return self.Manager.GetNodeEntryValues(node, index)
             else:
-                print _("Can't find node")
+                print(_("Can't find node"))
         return [], []
 
     def AddToMasterDCF(self, node_id, index, subindex, size, value):
@@ -342,13 +342,13 @@ if __name__ == "__main__":
 
     result = nodelist.LoadProject("/home/laurent/test_nodelist")
     if result != None:
-        print result
+        print(result)
     else:
-        print "MasterNode :"
+        print("MasterNode :")
         manager.CurrentNode.Print()
-        print
+        print()
         for nodeid, node in nodelist.SlaveNodes.items():
-            print "SlaveNode name=%s id=0x%2.2X :"%(node["Name"], nodeid)
+            print("SlaveNode name=%s id=0x%2.2X :"%(node["Name"], nodeid))
             node["Node"].Print()
-            print
+            print()
 
