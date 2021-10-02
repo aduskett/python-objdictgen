@@ -103,6 +103,7 @@ def remove_class_from_store(classname):
 
 def get_class_from_vapor(classname):
     " Create new class from nothing"
+    print(">> EXEC in get_class_from_vapor() '%s'" %('class %s: pass' % classname))
     exec('class %s: pass' % classname)
     k = locals()[classname]
     return k
@@ -195,6 +196,7 @@ def safe_eval(s):
     if 0:   # Condition for malicious string in eval() block
         raise SecurityError("Malicious string '%s' should not be eval()'d" % s)
     else:
+        print(">> EVAL in safe_eval(): '%s'" %(s))
         return eval(s)
 
 def safe_string(s):
@@ -215,7 +217,8 @@ def unsafe_string(s):
     # for Python escapes, exec the string
     # (niggle w/ literalizing apostrophe)
     s = s.replace("'", r"\047")
-    exec "s='"+s+"'"
+    print(">> EXEC in unsafe_string(): '%s'" %("s='"+s+"'",))
+    exec("s='"+s+"'")
     # XML entities (DOM does it for us)
     return s
 

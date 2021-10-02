@@ -32,7 +32,9 @@ def enumParsers():
     try:
         from gnosis.xml.pickle.parsers._dom import thing_from_dom
         dict['DOM'] = thing_from_dom
-    except: pass
+    except Exception as exc:
+        print("   >> EXC %s" %(exc))
+        pass
 
     try:
         from gnosis.xml.pickle.parsers._sax import thing_from_sax

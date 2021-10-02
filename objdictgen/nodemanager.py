@@ -277,7 +277,7 @@ class NodeManager:
     Open a file and store it in a new buffer
     """
     def OpenFileInCurrent(self, filepath):
-        try:
+        #try:
             # Open and load file
             file = open(filepath, "r")
             node = load(file)
@@ -288,8 +288,8 @@ class NodeManager:
             index = self.AddNodeBuffer(self.CurrentNode.Copy(), True)
             self.SetCurrentFilePath(filepath)
             return index
-        except:
-            return _("Unable to load file \"%s\"!"%filepath)
+        #except:
+        #    return _("Unable to load file \"%s\"!"%filepath)
 
     """
     Save current node in  a file

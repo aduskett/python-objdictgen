@@ -243,5 +243,4 @@ class mutate_bltin_instances(XMLP_Mutator):
             return olddata_to_newdata(obj,mobj.extra,self.paranoia)
 
 # add mutator for instances of builtin classes (int, dict, object, etc.)
-if gnosis.pyconfig.Have_ObjectClass():
-    _mutate.add_mutator(mutate_bltin_instances())
+_mutate.add_mutator(mutate_bltin_instances())

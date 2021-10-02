@@ -23,42 +23,42 @@
 
 from __future__ import print_function
 import getopt,sys,os
-from types import *
+from types import StringType, UnicodeType
 
-from nodemanager import *
+from nodemanager import NodeManager
 
-_ = lambda x: x
 
 def usage():
-    print(_("\nUsage of objdictgen.py :"))
+    print("\nUsage of objdictgen.py :")
     print("\n   %s XMLFilePath CFilePath\n"%sys.argv[0])
 
-try:
-    opts, args = getopt.getopt(sys.argv[1:], "h", ["help"])
-except getopt.GetoptError:
-    # print help information and exit:
-    usage()
-    sys.exit(2)
 
-for o, a in opts:
-    if o in ("-h", "--help"):
+def main():
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "h", ["help"])
+    except getopt.GetoptError:
+        # print help information and exit:
+        usage()
+        sys.exit(2)
+
+    for o, a in opts:
+        if o in ("-h", "--help"):
+            usage()
+            sys.exit()
+
+    fileIn = ""
+    fileOut = ""
+    if len(args) == 2:
+        fileIn = args[0]
+        fileOut = args[1]
+    else:
         usage()
         sys.exit()
 
-fileIn = ""
-fileOut = ""
-if len(args) == 2:
-    fileIn = args[0]
-    fileOut = args[1]
-else:
-    usage()
-    sys.exit()
-
-if __name__ == '__main__':
     if fileIn != "" and fileOut != "":
         manager = NodeManager()
         if os.path.isfile(fileIn):
-            print(_("Parsing input file"))
+            print("Parsing input file")
             result = manager.OpenFileInCurrent(fileIn)
             if not isinstance(result, (StringType, UnicodeType)):
                 Node = result
@@ -66,11 +66,15 @@ if __name__ == '__main__':
                 print(result)
                 sys.exit(-1)
         else:
-            print(_("%s is not a valid file!")%fileIn)
+            print("%s is not a valid file!"%fileIn)
             sys.exit(-1)
-        print(_("Writing output file"))
+        print("Writing output file")
         result = manager.ExportCurrentToCFile(fileOut)
         if isinstance(result, (UnicodeType, StringType)):
             print(result)
             sys.exit(-1)
-        print(_("All done"))
+        print("All done")
+
+
+if __name__ == '__main__':
+    main()

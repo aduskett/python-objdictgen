@@ -20,20 +20,10 @@ except ImportError:
 XMLPicklingError = "gnosis.xml.pickle.XMLPicklingError"
 XMLUnpicklingError = "gnosis.xml.pickle.XMLUnpicklingError"
 
-# Define our own TRUE/FALSE syms, based on Python version.
-if pyconfig.Have_TrueFalse():
-    # Python 2.2 and up have a True/False (even though it's
-    # a completely different value between 2.2 & 2.3)
-    TRUE_VALUE = True
-    FALSE_VALUE = False
-else:
-    # Below 2.2 has no True/False, so define them as they
-    # are in 2.2 (this allows Python < 2.2 to read pickles
-    # with bools created by Python 2.2+. Of course, if those
-    # pickles are then rewritten, they'll lose their true/false
-    # meaning, but hey, there's only so much we can do! :-)
-    TRUE_VALUE = 1
-    FALSE_VALUE = 0
+# Python 2.2 and up have a True/False (even though it's
+# a completely different value between 2.2 & 2.3)
+TRUE_VALUE = True
+FALSE_VALUE = False
 
 # entry point expected by XML_Pickle
 def thing_from_dom(fh, paranoia=1):

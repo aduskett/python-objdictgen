@@ -402,6 +402,7 @@ def StringFormat(text, idx, sub):
     result = name_model.match(text)
     if result:
         format = result.groups()
+        print(">> EVAL in StringFormat(): '%s'" %(format[1],))
         return format[0]%eval(format[1])
     else:
         return text
@@ -937,8 +938,10 @@ class Node:
         if isinstance(value, (StringType, UnicodeType)) and value.upper().find("$NODEID") != -1:
             base = self.GetBaseIndex(index)
             try:
+                print(">> EVAL in CompileValue(): '%s'" %(value,))
                 raw = eval(value)
                 if compute:
+                    print(">> EVAL in CompileValue() #2: '%s'" %(raw.upper().replace("$NODEID","self.ID"),))
                     return eval(raw.upper().replace("$NODEID","self.ID"))
                 return raw
             except:

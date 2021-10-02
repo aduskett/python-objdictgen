@@ -20,8 +20,7 @@ from gnosis.util.combinators import or_, not_, and_, lazy_any
 
 containers = (ListType, TupleType, DictType)
 simpletypes = (IntType, LongType, FloatType, ComplexType, StringType)
-if gnosis.pyconfig.Have_Unicode():
-    simpletypes = simpletypes + (UnicodeType,)
+simpletypes = simpletypes + (UnicodeType,)
 datatypes = simpletypes+containers
 immutabletypes = simpletypes+(TupleType,)
 
@@ -37,23 +36,16 @@ isSimpleType = lambda o: isinstance_any(o, simpletypes)
 isInstance	 = lambda o: type(o) is InstanceType
 isImmutable	 = lambda o: isinstance_any(o, immutabletypes)
 
-if gnosis.pyconfig.Have_ObjectClass():
-    isNewStyleInstance = lambda o: issubclass(o.__class__,object) and \
-                                not type(o) in datatypes
-else:
-    isNewStyleInstance = lambda o: 0
+isNewStyleInstance = lambda o: issubclass(o.__class__,object) and \
+                            not type(o) in datatypes
 isOldStyleInstance = lambda o: isinstance(o, ClassType)
 isClass			= or_(isOldStyleInstance, isNewStyleInstance)
 
-if gnosis.pyconfig.Have_ObjectClass():
-    def isNewStyleClass(o):
-        try:
-            # would give a NameError on Python <= 2.1
-            return issubclass(o,object)
-        except TypeError:
-            return 0
-else:
-    def isNewStyleClass(o):
+def isNewStyleClass(o):
+    try:
+        # would give a NameError on Python <= 2.1
+        return issubclass(o,object)
+    except TypeError:
         return 0
 
 hasSlots	 = lambda o: hasattr(o,'__slots__')
@@ -167,9 +159,3 @@ def instance_noinit(C):
         return C.__new__(C)
     else:
         raise TypeError("You must specify a class to create instance of.")
-
-if __name__ == '__main__':
-    "We could use some could self-tests (see test/ subdir though)"
-else:
-    docstrings()
-

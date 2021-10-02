@@ -389,12 +389,6 @@ def _family_type(family,typename,mtype,mextra):
     else:
         return 'family="%s" type="%s"' % (family,typename)
 
-# sanity in case Python changes ...
-if gnosis.pyconfig.Have_BoolClass() and gnosis.pyconfig.IsLegal_BaseClass('bool'):
-    raise XMLPicklingError("Assumption broken - can now use bool as baseclass!")
-
-Have_BoolClass = gnosis.pyconfig.Have_BoolClass()
-
 def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
     tag_body = []
 
@@ -406,7 +400,7 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
         close_tag = ''
     # bool cannot be used as a base class (see sanity check above) so if thing
     # is a bool it will always be BooleanType, and either True or False
-    elif Have_BoolClass and type(thing) is BooleanType:
+    elif type(thing) is BooleanType:
         if thing is True:
             typestr = 'True'
         else: # must be False

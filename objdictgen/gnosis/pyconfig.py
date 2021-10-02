@@ -105,25 +105,32 @@ def compile_code( codestr ):
     if codestr and codestr[-1] != '\n':
         codestr = codestr + '\n'
 
+    print(">> COMPILE in compile_code: '%s'" %(codestr,))
+
     return __builtin__.compile(codestr, 'dummyname', 'exec')
 
-def can_run_code( codestr ):
+def can_run_code( name, codestr ):
     try:
+        if SHOW_DEBUG_INFO:
+            print("   >> EVAL: %s" %(codestr,))
         eval( compile_code(codestr) )
+        if SHOW_DEBUG_INFO:
+            print("   >> = YES")
+        print("-- TEST:  YES  %s" %(name, ))
         return 1
     except Exception as exc:
         if SHOW_DEBUG_INFO:
-            print("RUN EXC %s" %(exc,))
-
+            print("   >> RUN EXC %s" %(exc,))
+        print("-- TEST:  NO   %s" %(name, ))
         return 0
 
 def Have_Module( module_name ):
     "Check for the existance of the named module."
-    return can_run_code("import %s\ndel %s\n" % (module_name,module_name))
+    return can_run_code("Have_Module", "import %s\ndel %s\n" % (module_name,module_name))
 
 def Have_TrueFalse():
     "Does this Python support True/False builtins?"
-    return can_run_code('a = __builtin__.True')
+    return can_run_code("Have_TrueFalse", 'a = __builtin__.True')
 
 def Have_ObjectClass():
     """
@@ -131,7 +138,7 @@ def Have_ObjectClass():
     (This also means that you have newstyle classes, as
     well as builtin classes 'dict', 'list', 'int', etc.)
     """
-    return can_run_code('class foo(object):\n\tpass')
+    return can_run_code("Have_ObjectClass", 'class foo(object):\n\tpass')
 
 slots_testcode = """
 class foo(object):
@@ -147,7 +154,7 @@ except AttributeError:
 
 def Have_Slots():
     """Does this Python recognize object __slots__?"""
-    return can_run_code(slots_testcode)
+    return can_run_code("Have_Slots", slots_testcode)
 
 def Have_BoolClass():
     """
@@ -156,11 +163,11 @@ def Have_BoolClass():
     # A little different than above: Since bool can't be a
     # base class, and there is also a bool function in 2.2,
     # you have to be careful to not grab the wrong thing.
-    return can_run_code('issubclass(bool, object)')
+    return can_run_code("Have_BoolClass", 'issubclass(bool, object)')
 
 def IsLegal_BaseClass( classname ):
     "Is it legal to subclass the given classname?"
-    return can_run_code('class f(%s): pass' % classname)
+    return can_run_code("IsLegal_BaseClass", 'class f(%s): pass' % classname)
 
 # formatting is a little easier if the code fragments are
 # sitting outside the functions that use them
@@ -175,11 +182,11 @@ for n in iter_test():
 
 def Have_Iterators():
     "Does this Python support iterators?"
-    return can_run_code(iter_test_code)
+    return can_run_code("Have_Iterators", iter_test_code)
 
 def Have_Future():
     "Does this Python support 'from __future__ ...'?"
-    return can_run_code('import __future__')
+    return can_run_code("Have_Future", 'import __future__')
 
 generator_test_code = """
 def test_generate(N): yield N
@@ -199,7 +206,7 @@ def Have_Generators():
 
     s = s + generator_test_code
 
-    return can_run_code(s)
+    return can_run_code("Have_Generators", s)
 
 def Have_TrueDivision():
     "Does this Python support true division (i.e. 1/2 == 0.5)?"
@@ -212,7 +219,7 @@ def Have_TrueDivision():
 
     s = s + "if (1/2) == 0: raise Exception('True division does not work')"
 
-    return can_run_code(s)
+    return can_run_code("Have_TrueDivision", s)
 
 nested_scope_testcode = """
 def fff():
@@ -233,15 +240,15 @@ def Have_NestedScopes():
         s = s + "from __future__ import nested_scopes\n"
 
     s = s + nested_scope_testcode
-    return can_run_code(s)
+    return can_run_code("Have_NestedScope", s)
 
 def Have_Unicode():
     "Does this Python support Unicode strings?"
-    return can_run_code("s = u'hello world'")
+    return can_run_code("Have_Unicode", "s = u'hello world'")
 
 def Have_StringMethods():
     "Does this Python support string methods? (e.g. ''.lower())"
-    return can_run_code("s = ''.lower()")
+    return can_run_code("Have_StringMethods", "s = ''.lower()")
 
 augassign_test_code = """
 i = 1
@@ -250,16 +257,16 @@ i += 2
 
 def Have_AugmentedAssignment():
     "Does this Python support augmented assignment ('+=')?"
-    return can_run_code(augassign_test_code)
+    return can_run_code("Have_AugmentedAssignment", augassign_test_code)
 
 def Have_ListComprehensions():
     "Does this Python support list comprehensions?"
-    return can_run_code("l = [x*2 for x in range(1)]")
+    return can_run_code("Have_ListComprehensions", "l = [x*2 for x in range(1)]")
 
 def Have_ImportAs():
     "Does this Python support 'import module AS name'?"
     # pick a small, Python-only module that exists everywhere
-    return can_run_code("import statvfs as abcdefg")
+    return can_run_code("Have_ImportAs", "import statvfs as abcdefg")
 
 richcomp_test_code = """
 class foo:
@@ -272,7 +279,7 @@ if (foo() < 1) < 10:
 
 def Have_RichComparison():
     "Does this Python support rich comparison methods? (__lt__, etc.)"
-    return can_run_code(richcomp_test_code)
+    return can_run_code("Have_RichComparison", richcomp_test_code)
 
 funcattr_test_code = """
 def f(): pass
@@ -281,39 +288,39 @@ f.test = 1
 
 def Have_FunctionAttributes():
     "Does this Python support function attributes?"
-    return can_run_code(funcattr_test_code)
+    return can_run_code("Have_FunctionAttributes", funcattr_test_code)
 
 def Have_UnifiedLongInts():
     "Does this Python auto-promote ints to longs?"
-    return can_run_code("a = 2**64 # becomes a long in Python 2.2+")
+    return can_run_code("Have_UnifiedLongInts", "a = 2**64 # becomes a long in Python 2.2+")
 
 def Have_Enumerate():
     "Does this Python support 'enumerate()'?"
-    return can_run_code("a = enumerate([1,2,3])")
+    return can_run_code("Have_Enumerate", "a = enumerate([1,2,3])")
 
 def Have_ReverseIteration():
     "Does this Python support 'reversed()'?"
-    return can_run_code("a = reversed([1,2,3])")
+    return can_run_code("Have_ReverseIteration", "a = reversed([1,2,3])")
 
 def Have_Basestring():
     "Does this Python support the basestring type?"
-    return can_run_code("a = basestring")
+    return can_run_code("Have_Basestring", "a = basestring")
 
 def Have_LongRanges():
     "Does this Python support longs (>sys.maxint) in ranges?"
-    return can_run_code("range(2**64,2**65,2**64)")
+    return can_run_code("Have_LongRanges", "range(2**64,2**65,2**64)")
 
 def Have_DictKWArgs():
     "Does this Python support dict() keywords? (i.e. dict(a=1) ==> {'a':1}"
-    return can_run_code("dict(a=1,b=2)")
+    return can_run_code("Have_DictKWArgs", "dict(a=1,b=2)")
 
 def Have_BuiltinSets():
     "Does this Python have builtin set objects?"
-    return can_run_code("set('abcde')")
+    return can_run_code("Have_BuiltinSets", "set('abcde')")
 
 def Have_GeneratorExpressions():
     "Does this Python support generator expressions?"
-    return can_run_code("(x for x in range(1))")
+    return can_run_code("Have_GeneratorExpressions", "(x for x in range(1))")
 
 decorator_test_code = """
 def foo(f): return f
@@ -323,7 +330,7 @@ def g(): pass
 
 def Have_Decorators():
     "Does this Python support function/method decorators?"
-    return can_run_code(decorator_test_code)
+    return can_run_code("Have_Decorators", decorator_test_code)
 
 multiline_imp_test_code = """
 # use same small module as in ImportAs test
@@ -334,11 +341,11 @@ from statvfs import (F_BSIZE,
 
 def Have_MultilineImports():
     "Does this Python support parenthesised multiline imports?"
-    return can_run_code(multiline_imp_test_code)
+    return can_run_code("Have_MultilineImports", multiline_imp_test_code)
 
 def Have_StringDollarSubst():
     "Does this Python support $-substitution in strings?"
-    return can_run_code('from string import Template')
+    return can_run_code("Have_StringDollarSubst", 'from string import Template')
 
 assigndoc_test = """
 def f(): pass
@@ -347,89 +354,4 @@ f.__doc__ = 'aaa'
 
 def Can_AssignDoc():
     "Old Pythons (pre 1.5?) can't assign to __doc__."
-    return can_run_code(assigndoc_test)
-
-#================================================================
-#
-# Demo showing how to run all the tests.
-#
-#================================================================
-
-# ugh, Python 1.5 doesn't like '*args' syntax, so do args the ugly way ...
-
-def runtest(msg, test):
-    r = test()
-    print("%-40s %s" % (msg,['no','yes'][r]))
-
-def runtest_1arg(msg, test, arg):
-    r = test(arg)
-    print("%-40s %s" % (msg,['no','yes'][r]))
-
-if __name__ == '__main__':
-
-    import sys,os
-
-    # show banner w/version
-    try:
-        v = sys.version_info
-        print("Python %d.%d.%d-%s [%s, %s]" % (v[0],v[1],v[2],str(v[3]),
-                                               os.name,sys.platform))
-    except:
-        # Python 1.5 lacks sys.version_info
-        print("Python %s [%s, %s]" % (string.split(sys.version)[0],
-                                      os.name,sys.platform))
-
-    # Python 1.5
-    print("			** Python 1.5 features **")
-    runtest("Can assign to __doc__?", Can_AssignDoc)
-
-    # Python 1.6
-    print("			** Python 1.6 features **")
-    runtest("Have Unicode?", Have_Unicode)
-    runtest("Have string methods?", Have_StringMethods)
-
-    # Python 2.0
-    print("			** Python 2.0 features **")
-    runtest("Have augmented assignment?", Have_AugmentedAssignment)
-    runtest("Have list comprehensions?", Have_ListComprehensions)
-    runtest("Have 'import module AS ...'?", Have_ImportAs)
-
-    # Python 2.1
-    print("			** Python 2.1 features **")
-    runtest("Have __future__?", Have_Future)
-    runtest("Have rich comparison?", Have_RichComparison)
-    runtest("Have function attributes?", Have_FunctionAttributes)
-    runtest("Have nested scopes?", Have_NestedScopes)
-
-    # Python 2.2
-    print("			** Python 2.2 features **")
-    runtest("Have True/False?", Have_TrueFalse)
-    runtest("Have 'object' type?", Have_ObjectClass)
-    runtest("Have __slots__?", Have_Slots)
-    # note: can use this to test for existance of any arbitrary module,
-    #		I just picked 'compiler' since it showed up in 2.2
-    runtest_1arg("Have 'compiler' module?", Have_Module, 'compiler')
-    runtest("Have iterators?", Have_Iterators)
-    runtest("Have generators?", Have_Generators)
-    runtest("Have true division?", Have_TrueDivision)
-    runtest("Unified longs/ints?", Have_UnifiedLongInts)
-
-    # Python 2.3
-    print("		   ** Python 2.3 features **")
-    runtest("Have enumerate()?", Have_Enumerate)
-    runtest("Have basestring?", Have_Basestring)
-    runtest("Longs > maxint in range()?", Have_LongRanges)
-    runtest("dict() accepts keywords?", Have_DictKWArgs)
-    runtest("Have 'bool' class?", Have_BoolClass)
-    if Have_BoolClass():
-        runtest_1arg("bool is a baseclass [expect 'no']?", IsLegal_BaseClass, 'bool')
-
-    # Python 2.4
-    print("		   ** Python 2.4 features **")
-    runtest("Have builtin sets?", Have_BuiltinSets)
-    runtest("Have function/method decorators?", Have_Decorators)
-    runtest("Have multiline imports?", Have_MultilineImports)
-    runtest("Have generator expressions?", Have_GeneratorExpressions)
-    runtest("Have reverse iteration?", Have_ReverseIteration)
-
-    runtest("Have string $-substitution?", Have_StringDollarSubst)
+    return can_run_code("Can_AssignDoc", assigndoc_test)

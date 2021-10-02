@@ -23,12 +23,6 @@ def __disable_extensions():
 
 _has_coredata_cache = {}
 
-# sanity in case Python changes ...
-if gnosis.pyconfig.Have_BoolClass() and gnosis.pyconfig.IsLegal_BaseClass('bool'):
-    raise XMLPicklingError("Assumption broken - can now use bool as baseclass!")
-
-Have_BoolClass = gnosis.pyconfig.Have_BoolClass()
-
 def get_mutator(obj):
     # note we can't cache the search results since mutators can decide
     # dynamically (based on content) whether to accept objects
@@ -47,7 +41,7 @@ def get_mutator(obj):
     # class, yet cannot serve as a base class (they can only be True or
     # False). Therefore, there will never be a need for a mutator, and
     # they can be completely handled in the main "if" block in _pickle.py.
-    if Have_BoolClass and type(obj) is BooleanType:
+    if type(obj) is BooleanType:
          return None
 
     if not hasattr(obj,'__class__'):
