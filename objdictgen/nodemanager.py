@@ -24,8 +24,6 @@
 import sys, traceback
 
 from gnosis.xml.pickle import *
-from gnosis.xml.pickle.util import setParanoia
-setParanoia(0)
 
 from node import *
 import eds_utils, gen_cfile

@@ -1,4 +1,3 @@
-from _flags import *
 from _util import \
      _klass, _module, _EmptyClass, subnodes, \
      safe_eval, safe_string, unsafe_string, safe_content, unsafe_content, \

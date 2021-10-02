@@ -8,8 +8,7 @@ from gnosis.xml.pickle.util import \
      safe_string, safe_content,\
      get_class_from_stack, get_class_full_search, \
      get_class_from_store, get_class_from_vapor, \
-     getParanoia, getDeepCopy,	get_function_info, \
-     getParser, getInBody, setInBody, getVerbose, enumParsers
+     get_function_info
 
 from gnosis.xml.pickle.ext import can_mutate, mutate, \
      can_unmutate, unmutate, get_unmutator, try_mutate
@@ -35,6 +34,12 @@ except:
     from StringIO import StringIO
 
 # default settings
+TYPE_IN_BODY = {}
+def setInBody(typename,val):
+    global TYPE_IN_BODY
+    TYPE_IN_BODY[typename] = val
+def getInBody(typename): return TYPE_IN_BODY.get(typename) or 0
+
 setInBody(IntType,0)
 setInBody(FloatType,0)
 setInBody(LongType,0)
@@ -137,25 +142,26 @@ class XML_Pickler:
 
     def load(self, fh, paranoia=None):
         "Load pickled object from file fh."
-        # If paranoia is None, getParanoia() is used.
         global visited
-        if paranoia is None: paranoia=getParanoia()
+        if paranoia is None: paranoia=0
 
         # read from a file,compressed file,string,or compressed string
         fh = StreamReader(fh)
 
         visited = {}
 
-        parser = enumParsers().get(getParser())
+        # Import parser directly
+        from gnosis.xml.pickle.parsers._dom import thing_from_dom
+
+        parser = thing_from_dom
         if parser:
             return parser(fh, paranoia=paranoia)
         else:
-            raise XMLUnpicklingError("Unknown parser %s" % getParser())
+            raise XMLUnpicklingError("Unknown parser")
 
     def dumps(self, obj=None, binary=0, deepcopy=None, iohandle=None):
         "Create the XML representation as a string."
-        # If obj==None, pickle self. If deepcopy==None, getDeepCopy().
-        if deepcopy is None: deepcopy = getDeepCopy()
+        if deepcopy is None: deepcopy = 0
 
         # write to a file or string, either compressed or not
         list = StreamWriter(iohandle,binary)
@@ -370,12 +376,15 @@ def _tag_compound(start_tag, family_type, thing, deepcopy, extra=''):
 #			still accepted by the parsers for compatibility.]
 #
 
+# Temp hack
+VERBOSE_XML = 0
+
 def _family_type(family,typename,mtype,mextra):
     """Create a type= string for an object, including family= if necessary.
     typename is the builtin type, mtype is the mutated type (or None for
     non-mutants). mextra is mutant-specific data, or None."""
 
-    if getVerbose() == 0 and mtype is None:
+    if VERBOSE_XML == 0 and mtype is None:
         # family tags are technically only necessary for mutated types.
         # we can intuit family for builtin types.
         return 'type="%s"' % typename

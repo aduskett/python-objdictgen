@@ -8,8 +8,6 @@ from gnosis.xml.pickle._pickle import \
      dump, dumps, load, loads
 
 from gnosis.xml.pickle.util import \
-     setParanoia, getParanoia, setDeepCopy, getDeepCopy,\
-     get_class_from_store, add_class_to_store, remove_class_from_store,\
-     setParser, setVerbose, enumParsers
+     get_class_from_store, add_class_to_store, remove_class_from_store
 
 from gnosis.xml.pickle.ext import *

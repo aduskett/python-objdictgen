@@ -1,3 +1,4 @@
+from __future__ import print_function
 import gnosis.xml.pickle
 from types import *
 import sys
@@ -11,8 +12,7 @@ class _EmptyClass: pass
 dynamic_module = _EmptyClass().__class__.__module__
 
 def dbg(s):
-    #print(s)
-    pass
+    print(">> %s"% (s,))
 
 # adapted from pickle.py, whichmodule()
 def get_function_info( func ):
@@ -275,4 +275,3 @@ def _mini_currentframe():
     except:
         return sys.exc_traceback.tb_frame.f_back
 # --- End of "mini" inspect module ---
-
