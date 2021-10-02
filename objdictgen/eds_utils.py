@@ -175,7 +175,7 @@ def ParseCPJFile(filepath):
                             try:
                                 computed_value = int(value, 16)
                             except:
-                                raise SyntaxError, _("\"%s\" is not a valid value for attribute \"%s\" of section \"[%s]\"")%(value, keyname, section_name)
+                                raise SyntaxError(_("\"%s\" is not a valid value for attribute \"%s\" of section \"[%s]\"")%(value, keyname, section_name))
                         elif value.isdigit() or value.startswith("-") and value[1:].isdigit():
                             # Second case, value is a number and starts with "0" or "-0", then it's an octal value
                             if value.startswith("0") or value.startswith("-0"):
@@ -194,59 +194,59 @@ def ParseCPJFile(filepath):
 
                         if keyname.upper() == "NETNAME":
                             if not is_string(computed_value):
-                                raise SyntaxError, _("Invalid value \"%s\" for keyname \"%s\" of section \"[%s]\"")%(value, keyname, section_name)
+                                raise SyntaxError(_("Invalid value \"%s\" for keyname \"%s\" of section \"[%s]\"")%(value, keyname, section_name))
                             topology["Name"] = computed_value
                         elif keyname.upper() == "NODES":
                             if not is_integer(computed_value):
-                                raise SyntaxError, _("Invalid value \"%s\" for keyname \"%s\" of section \"[%s]\"")%(value, keyname, section_name)
+                                raise SyntaxError(_("Invalid value \"%s\" for keyname \"%s\" of section \"[%s]\"")%(value, keyname, section_name))
                             topology["Number"] = computed_value
                         elif keyname.upper() == "EDSBASENAME":
                             if not is_string(computed_value):
-                                raise SyntaxError, _("Invalid value \"%s\" for keyname \"%s\" of section \"[%s]\"")%(value, keyname, section_name)
+                                raise SyntaxError(_("Invalid value \"%s\" for keyname \"%s\" of section \"[%s]\"")%(value, keyname, section_name))
                             topology["Path"] = computed_value
                         elif nodepresent_result:
                             if not is_boolean(computed_value):
-                                raise SyntaxError, _("Invalid value \"%s\" for keyname \"%s\" of section \"[%s]\"")%(value, keyname, section_name)
+                                raise SyntaxError(_("Invalid value \"%s\" for keyname \"%s\" of section \"[%s]\"")%(value, keyname, section_name))
                             nodeid = int(nodepresent_result.groups()[0])
                             if nodeid not in topology["Nodes"].keys():
                                 topology["Nodes"][nodeid] = {}
                             topology["Nodes"][nodeid]["Present"] = computed_value
                         elif nodename_result:
                             if not is_string(value):
-                                raise SyntaxError, _("Invalid value \"%s\" for keyname \"%s\" of section \"[%s]\"")%(value, keyname, section_name)
+                                raise SyntaxError(_("Invalid value \"%s\" for keyname \"%s\" of section \"[%s]\"")%(value, keyname, section_name))
                             nodeid = int(nodename_result.groups()[0])
                             if nodeid not in topology["Nodes"].keys():
                                 topology["Nodes"][nodeid] = {}
                             topology["Nodes"][nodeid]["Name"] = computed_value
                         elif nodedcfname_result:
                             if not is_string(computed_value):
-                                raise SyntaxError, _("Invalid value \"%s\" for keyname \"%s\" of section \"[%s]\"")%(value, keyname, section_name)
+                                raise SyntaxError(_("Invalid value \"%s\" for keyname \"%s\" of section \"[%s]\"")%(value, keyname, section_name))
                             nodeid = int(nodedcfname_result.groups()[0])
                             if nodeid not in topology["Nodes"].keys():
                                 topology["Nodes"][nodeid] = {}
                             topology["Nodes"][nodeid]["DCFName"] = computed_value
                         else:
-                            raise SyntaxError, _("Keyname \"%s\" not recognised for section \"[%s]\"")%(keyname, section_name)
+                            raise SyntaxError(_("Keyname \"%s\" not recognised for section \"[%s]\"")%(keyname, section_name))
 
                 # All lines that are not empty and are neither a comment neither not a valid assignment
                 elif assignment.strip() != "":
-                    raise SyntaxError, _("\"%s\" is not a valid CPJ line")%assignment.strip()
+                    raise SyntaxError(_("\"%s\" is not a valid CPJ line")%assignment.strip())
 
             if "Number" not in topology.keys():
-                raise SyntaxError, _("\"Nodes\" keyname in \"[%s]\" section is missing")%section_name
+                raise SyntaxError(_("\"Nodes\" keyname in \"[%s]\" section is missing")%section_name)
 
             if topology["Number"] != len(topology["Nodes"]):
-                raise SyntaxError, _("\"Nodes\" value not corresponding to number of nodes defined")
+                raise SyntaxError(_("\"Nodes\" value not corresponding to number of nodes defined"))
 
             for nodeid, node in topology["Nodes"].items():
                 if "Present" not in node.keys():
-                    raise SyntaxError, _("\"Node%dPresent\" keyname in \"[%s]\" section is missing")%(nodeid, section_name)
+                    raise SyntaxError(_("\"Node%dPresent\" keyname in \"[%s]\" section is missing")%(nodeid, section_name))
 
             networks.append(topology)
 
         # In other case, there is a syntax problem into CPJ file
         else:
-            raise SyntaxError, _("Section \"[%s]\" is unrecognized")%section_name
+            raise SyntaxError(_("Section \"[%s]\" is unrecognized")%section_name)
 
     return networks
 
@@ -276,7 +276,7 @@ def ParseEDSFile(filepath):
             if section_name.upper() not in eds_dict:
                 eds_dict[section_name.upper()] = values
             else:
-                raise SyntaxError, _("\"[%s]\" section is defined two times")%section_name
+                raise SyntaxError(_("\"[%s]\" section is defined two times")%section_name)
         # Second case, section name is an index name
         elif index_result:
             # Extract index number
@@ -289,7 +289,7 @@ def ParseEDSFile(filepath):
                 values["subindexes"] = eds_dict[index]["subindexes"]
                 eds_dict[index] = values
             else:
-                raise SyntaxError, _("\"[%s]\" section is defined two times")%section_name
+                raise SyntaxError(_("\"[%s]\" section is defined two times")%section_name)
             is_entry = True
         # Third case, section name is a subindex name
         elif subindex_result:
@@ -302,14 +302,14 @@ def ParseEDSFile(filepath):
             if subindex not in eds_dict[index]["subindexes"]:
                 eds_dict[index]["subindexes"][subindex] = values
             else:
-                raise SyntaxError, _("\"[%s]\" section is defined two times")%section_name
+                raise SyntaxError(_("\"[%s]\" section is defined two times")%section_name)
             is_entry = True
         # Third case, section name is a subindex name
         elif index_objectlinks_result:
             pass
         # In any other case, there is a syntax problem into EDS file
         else:
-            raise SyntaxError, _("Section \"[%s]\" is unrecognized")%section_name
+            raise SyntaxError(_("Section \"[%s]\" is unrecognized")%section_name)
 
         for assignment in assignments:
             # Escape any comment
@@ -331,13 +331,13 @@ def ParseEDSFile(filepath):
                             test = int(value.upper().replace("$NODEID+", ""), 16)
                             computed_value = "\"%s\""%value
                         except:
-                            raise SyntaxError, _("\"%s\" is not a valid formula for attribute \"%s\" of section \"[%s]\"")%(value, keyname, section_name)
+                            raise SyntaxError(_("\"%s\" is not a valid formula for attribute \"%s\" of section \"[%s]\"")%(value, keyname, section_name))
                     # Second case, value starts with "0x", then it's an hexadecimal value
                     elif value.startswith("0x") or value.startswith("-0x"):
                         try:
                             computed_value = int(value, 16)
                         except:
-                            raise SyntaxError, _("\"%s\" is not a valid value for attribute \"%s\" of section \"[%s]\"")%(value, keyname, section_name)
+                            raise SyntaxError(_("\"%s\" is not a valid value for attribute \"%s\" of section \"[%s]\"")%(value, keyname, section_name))
                     elif value.isdigit() or value.startswith("-") and value[1:].isdigit():
                         # Third case, value is a number and starts with "0", then it's an octal value
                         if value.startswith("0") or value.startswith("-0"):
@@ -355,17 +355,17 @@ def ParseEDSFile(filepath):
                         if is_entry:
                             # Verify that keyname is a possible attribute
                             if keyname.upper() not in ENTRY_ATTRIBUTES:
-                                raise SyntaxError, _("Keyname \"%s\" not recognised for section \"[%s]\"")%(keyname, section_name)
+                                raise SyntaxError(_("Keyname \"%s\" not recognised for section \"[%s]\"")%(keyname, section_name))
                             # Verify that value is valid
                             elif not ENTRY_ATTRIBUTES[keyname.upper()](computed_value):
-                                raise SyntaxError, _("Invalid value \"%s\" for keyname \"%s\" of section \"[%s]\"")%(value, keyname, section_name)
+                                raise SyntaxError(_("Invalid value \"%s\" for keyname \"%s\" of section \"[%s]\"")%(value, keyname, section_name))
                             else:
                                 values[keyname.upper()] = computed_value
                         else:
                             values[keyname.upper()] = computed_value
             # All lines that are not empty and are neither a comment neither not a valid assignment
             elif assignment.strip() != "":
-                raise SyntaxError, _("\"%s\" is not a valid EDS line")%assignment.strip()
+                raise SyntaxError(_("\"%s\" is not a valid EDS line")%assignment.strip())
 
         # If entry is an index or a subindex
         if is_entry:
@@ -385,7 +385,7 @@ def ParseEDSFile(filepath):
                     attributes = _("Attributes %s are")%_(", ").join(["\"%s\""%attribute for attribute in missing])
                 else:
                     attributes = _("Attribute \"%s\" is")%missing.pop()
-                raise SyntaxError, _("Error on section \"[%s]\":\n%s required for a %s entry")%(section_name, attributes, ENTRY_TYPES[values["OBJECTTYPE"]]["name"])
+                raise SyntaxError(_("Error on section \"[%s]\":\n%s required for a %s entry")%(section_name, attributes, ENTRY_TYPES[values["OBJECTTYPE"]]["name"]))
             # Verify that parameters defined are all in the possible parameters
             if not keys.issubset(possible):
                 unsupported = keys.difference(possible)
@@ -393,7 +393,7 @@ def ParseEDSFile(filepath):
                     attributes = _("Attributes %s are")%_(", ").join(["\"%s\""%attribute for attribute in unsupported])
                 else:
                     attributes = _("Attribute \"%s\" is")%unsupported.pop()
-                raise SyntaxError, _("Error on section \"[%s]\":\n%s unsupported for a %s entry")%(section_name, attributes, ENTRY_TYPES[values["OBJECTTYPE"]]["name"])
+                raise SyntaxError(_("Error on section \"[%s]\":\n%s unsupported for a %s entry")%(section_name, attributes, ENTRY_TYPES[values["OBJECTTYPE"]]["name"]))
 
             VerifyValue(values, section_name, "ParameterValue")
             VerifyValue(values, section_name, "DefaultValue")
@@ -413,7 +413,7 @@ def VerifyValue(values, section_name, param):
                 if not isinstance(values[param.upper()], (IntType, LongType)) and values[param.upper()].upper().find("$NODEID") == -1:
                     raise
         except:
-            raise SyntaxError, _("Error on section \"[%s]\":\n%s incompatible with DataType")%(section_name, param)
+            raise SyntaxError(_("Error on section \"[%s]\":\n%s incompatible with DataType")%(section_name, param))
 
 
 # Function that write an EDS file after generate it's content
@@ -637,7 +637,7 @@ def GenerateEDSFile(filepath, node):
         # Write file
         WriteFile(filepath, content)
         return None
-    except ValueError, message:
+    except ValueError as message:
         return _("Unable to generate EDS file\n%s")%message
 
 # Function that generate the CPJ file content for the nodelist
@@ -697,7 +697,7 @@ def GenerateNode(filepath, nodeID = 0):
                         if values["OBJECTTYPE"] == 2:
                             values["DATATYPE"] = values.get("DATATYPE", 0xF)
                             if values["DATATYPE"] != 0xF:
-                                raise SyntaxError, _("Domain entry 0x%4.4X DataType must be 0xF(DOMAIN) if defined")%entry
+                                raise SyntaxError(_("Domain entry 0x%4.4X DataType must be 0xF(DOMAIN) if defined")%entry)
                         # Add mapping for entry
                         Node.AddMappingEntry(entry, name = values["PARAMETERNAME"], struct = 1)
                         # Add mapping for first subindex
@@ -728,7 +728,7 @@ def GenerateNode(filepath, nodeID = 0):
 ##                    elif values["OBJECTTYPE"] == 9:
 ##                        # Verify that the first subindex is defined
 ##                        if 0 not in values["subindexes"]:
-##                            raise SyntaxError, "Error on entry 0x%4.4X:\nSubindex 0 must be defined for a RECORD entry"%entry
+##                            raise SyntaxError("Error on entry 0x%4.4X:\nSubindex 0 must be defined for a RECORD entry"%entry)
 ##                        # Add mapping for entry
 ##                        Node.AddMappingEntry(entry, name = values["PARAMETERNAME"], struct = 7)
 ##                        # Add mapping for first subindex
@@ -741,7 +741,7 @@ def GenerateNode(filepath, nodeID = 0):
 ##                                                                     "pdo" : values["subindexes"][1].get("PDOMAPPING", 0) == 1,
 ##                                                                     "nbmax" : 0xFE})
 ##                        else:
-##                            raise SyntaxError, "Error on entry 0x%4.4X:\nA RECORD entry must have at least 2 subindexes"%entry
+##                            raise SyntaxError("Error on entry 0x%4.4X:\nA RECORD entry must have at least 2 subindexes"%entry)
 
                 # Define entry for the new node
 
@@ -775,9 +775,9 @@ def GenerateNode(filepath, nodeID = 0):
                                 value = GetDefaultValue(Node, entry, subindex)
                             Node.AddEntry(entry, subindex, value)
                     else:
-                        raise SyntaxError, _("Array or Record entry 0x%4.4X must have a \"SubNumber\" attribute")%entry
+                        raise SyntaxError(_("Array or Record entry 0x%4.4X must have a \"SubNumber\" attribute")%entry)
         return Node
-    except SyntaxError, message:
+    except SyntaxError as message:
         return _("Unable to import EDS file\n%s")%message
 
 #-------------------------------------------------------------------------------

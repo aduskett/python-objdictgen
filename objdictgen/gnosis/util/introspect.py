@@ -37,7 +37,7 @@ isSimpleType = lambda o: isinstance_any(o, simpletypes)
 isInstance	 = lambda o: type(o) is InstanceType
 isImmutable	 = lambda o: isinstance_any(o, immutabletypes)
 
-if gnosis.pyconfig.Have_ObjectClass():	
+if gnosis.pyconfig.Have_ObjectClass():
     isNewStyleInstance = lambda o: issubclass(o.__class__,object) and \
                                 not type(o) in datatypes
 else:
@@ -53,7 +53,7 @@ if gnosis.pyconfig.Have_ObjectClass():
         except TypeError:
             return 0
 else:
-    def isNewStyleClass(o):	
+    def isNewStyleClass(o):
         return 0
 
 hasSlots	 = lambda o: hasattr(o,'__slots__')
@@ -95,7 +95,7 @@ def attr_dict(o, fillslots=0):
                 dct[attr] = getattr(o,attr)
         return dct
     else:
-        raise TypeError, "Object has neither __dict__ nor __slots__"
+        raise TypeError("Object has neither __dict__ nor __slots__")
 
 attr_keys = lambda o: attr_dict(o).keys()
 attr_vals = lambda o: attr_dict(o).values()
@@ -141,7 +141,7 @@ def getCoreData(o):
     if hasCoreData(o):
         return isinstance_any(o, datatypes)(o)
     else:
-        raise TypeError, "Unhandled type in getCoreData for: ", o
+        raise TypeError("Unhandled type in getCoreData for: ", o)
 
 def instance_noinit(C):
     """Create an instance of class C without calling __init__
@@ -166,7 +166,7 @@ def instance_noinit(C):
     elif isNewStyleInstance(C):
         return C.__new__(C)
     else:
-        raise TypeError, "You must specify a class to create instance of."
+        raise TypeError("You must specify a class to create instance of.")
 
 if __name__ == '__main__':
     "We could use some could self-tests (see test/ subdir though)"

@@ -3,13 +3,15 @@ from types import *
 import sys
 CLASS_STORE = {}
 
+class SecurityError(Exception): pass
+
 class _EmptyClass: pass
 
 # get my modulename (on-the-fly classes live here)
 dynamic_module = _EmptyClass().__class__.__module__
 
 def dbg(s):
-    #print s
+    #print(s)
     pass
 
 # adapted from pickle.py, whichmodule()
@@ -158,8 +160,7 @@ def get_class_from_name(classname, modname=None, paranoia=1):
     dbg("**ERROR - couldn't get class - paranoia = %s" % str(paranoia))
 
     # *should* only be for paranoia == 2, but a good failsafe anyways ...
-    raise XMLUnpicklingError, \
-          "Cannot create class under current PARANOIA setting!"
+    raise XMLUnpicklingError("Cannot create class under current PARANOIA setting!")
 
 def obj_from_name(classname, modname=None, paranoia=1):
     """Given a classname, optional module name, return an object
@@ -192,14 +193,13 @@ def _module(thing):
 
 def safe_eval(s):
     if 0:   # Condition for malicious string in eval() block
-        raise "SecurityError", \
-              "Malicious string '%s' should not be eval()'d" % s
+        raise SecurityError("Malicious string '%s' should not be eval()'d" % s)
     else:
         return eval(s)
 
 def safe_string(s):
     if isinstance(s, UnicodeType):
-        raise TypeError, "Unicode strings may not be stored in XML attributes"
+        raise TypeError("Unicode strings may not be stored in XML attributes")
 
     # markup XML entities
     s = s.replace('&', '&amp;')

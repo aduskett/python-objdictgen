@@ -43,7 +43,7 @@ def thing_from_dom(fh, paranoia=1):
 
 def _save_obj_with_id(node, obj):
     id = node.getAttribute('id')
-        
+
     if len(id):		# might be None, or empty - shouldn't use as key
         visited[id] = obj
 
@@ -92,9 +92,8 @@ def unpickle_instance(node, paranoia):
             # does violate the pickle protocol, or because PARANOIA was
             # set too high, and we couldn't create the real class, so
             # __setstate__ is missing (and __stateinfo__ isn't a dict)
-            raise XMLUnpicklingError, \
-                  "Non-DictType without setstate violates pickle protocol."+\
-                  "(PARANOIA setting may be too high)"
+            raise XMLUnpicklingError("Non-DictType without setstate violates pickle protocol."
+                  "(PARANOIA setting may be too high)")
 
     return pyobj
 
@@ -138,7 +137,7 @@ def _fix_family(family,typename):
     If family is None or empty, guess family based on typename.
     (We can only guess for builtins, of course.)
     """
-    
+
     if family and len(family):
         return family  # sometimes it's None, sometimes it's empty ...
 
@@ -165,8 +164,7 @@ def _fix_family(family,typename):
     elif typename == 'False':
         return 'uniq'
     else:
-        raise XMLUnpicklingError, \
-              "family= must be given for unknown type %s" % typename
+        raise XMLUnpicklingError("family= must be given for unknown type %s" % typename)
 
 def _thing_from_dom(dom_node, container=None, paranoia=1):
     "Converts an [xml_pickle] DOM tree to a 'native' Python object"
@@ -195,7 +193,7 @@ def _thing_from_dom(dom_node, container=None, paranoia=1):
 
             # check refid first (if present, type is type of referenced object)
             ref_id = node.getAttribute('refid')
-                
+
             if len(ref_id):	 # might be empty or None
                 if node.nodeName == 'attr':
                     setattr(container, node_name, visited[ref_id])
@@ -248,7 +246,7 @@ def _thing_from_dom(dom_node, container=None, paranoia=1):
                                                    node.getAttribute('module'),
                                                    paranoia)
                 else:
-                    raise XMLUnpicklingError, "Unknown lang type %s" % node_type					
+                    raise XMLUnpicklingError("Unknown lang type %s" % node_type)
             elif node_family == 'uniq':
                 # uniq is another special type that is handled here instead
                 # of below.
@@ -268,16 +266,16 @@ def _thing_from_dom(dom_node, container=None, paranoia=1):
                 elif node_type == 'False':
                     node_val = FALSE_VALUE
                 else:
-                    raise XMLUnpicklingError, "Unknown uniq type %s" % node_type
+                    raise XMLUnpicklingError("Unknown uniq type %s" % node_type)
             else:
-                raise XMLUnpicklingError, "UNKNOWN family %s,%s,%s" % (node_family,node_type,node_name)
+                raise XMLUnpicklingError("UNKNOWN family %s,%s,%s" % (node_family,node_type,node_name))
 
             # step 2 - take basic thing and make exact thing
             # Note there are several NOPs here since node_val has been decided
             # above for certain types. However, I left them in since I think it's
             # clearer to show all cases being handled (easier to see the pattern
             # when doing later maintenance).
-            
+
             if node_type == 'None':
                 node_val = None
             elif node_type == 'numeric':
@@ -313,7 +311,7 @@ def _thing_from_dom(dom_node, container=None, paranoia=1):
             #elif ext.can_handle_xml(node_type,node_valuetext):
             #	node_val = ext.xml_to_obj(node_type, node_valuetext, paranoia)
             else:
-                raise XMLUnpicklingError, "Unknown type %s,%s" % (node,node_type)
+                raise XMLUnpicklingError("Unknown type %s,%s" % (node,node_type))
 
             if node.nodeName == 'attr':
                 setattr(container,node_name,node_val)
@@ -329,8 +327,6 @@ def _thing_from_dom(dom_node, container=None, paranoia=1):
             # <entry> has no id for refchecking
 
         else:
-            raise XMLUnpicklingError, \
-                  "element %s is not in PyObjects.dtd" % node.nodeName
+            raise XMLUnpicklingError("element %s is not in PyObjects.dtd" % node.nodeName)
 
     return container
-

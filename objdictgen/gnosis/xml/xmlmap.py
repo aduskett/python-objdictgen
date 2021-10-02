@@ -57,7 +57,7 @@ def usplit( uval ):
     #	  # this Python was compiled to store \U as single chars,
     #	  # so 'for c in uval' works directly; there is no need to split it.
     #	  return uval
-    
+
     clist = []
     i = 0
     while i < len(uval):
@@ -67,7 +67,7 @@ def usplit( uval ):
         if len(uval[i:]) > 1 and \
                uval[i] >= unichr(0xD800) and uval[i] <= unichr(0xDBFF) and \
                uval[i+1] >= unichr(0xDC00) and uval[i+1] <= unichr(0xDFFF):
-               
+
             # it's a two character encoding
             clist.append( uval[i:i+2] )
             i += 2
@@ -80,7 +80,7 @@ def usplit( uval ):
 
 # I put this in a function so the text would be a docstring
 def make_illegal_xml_regex():
-    """	
+    """
     I want to define a regexp to match *illegal* characters.
     That way, I can do "re.search()" to find a single character,
     instead of "re.match()" to match the entire string. [Based on
@@ -88,7 +88,7 @@ def make_illegal_xml_regex():
 
     Here is a verbose map of the XML character space (as defined
     in section 2.2 of the XML specification):
-    
+
          u0000 - u0008		   = Illegal
          u0009 - u000A		   = Legal
          u000B - u000C		   = Illegal
@@ -99,13 +99,13 @@ def make_illegal_xml_regex():
          uE000 - uFFFD		   = Legal
          uFFFE - uFFFF		   = Illegal
          U00010000 - U0010FFFF = Legal (See note!)
-    
+
     Note:
-    
+
        The range U00010000 - U0010FFFF is coded as 2-character sequences
        using the codes (D800-DBFF),(DC00-DFFF), which are both illegal
        when used as single chars, from above.
-    
+
        Python won't let you define \U character ranges, so you can't
        just say '\U00010000-\U0010FFFF'. However, you can take advantage
        of the fact that (D800-DBFF) and (DC00-DFFF) are illegal, unless
@@ -149,10 +149,10 @@ def is_legal_xml_char( uchar ):
     USAGE NOTE:
        If you want to use this in a 'for' loop,
        make sure use usplit(), e.g.:
-          
+
        for c in usplit( uval ):
           if is_legal_xml_char(c):
-                 ... 
+                 ...
 
        Otherwise, the first char of a legal 2-character
        sequence will be incorrectly tagged as illegal, on
@@ -184,7 +184,7 @@ def is_legal_xml_char( uchar ):
         # usplit(), \U00010000 is STILL len() of 2, usplit() just
         # made it a single listitem
         return True
-    
+
     else:
         raise Exception("Must pass a single character to is_legal_xml_char")
-    
+

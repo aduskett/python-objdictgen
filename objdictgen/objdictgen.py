@@ -25,9 +25,6 @@ from __future__ import print_function
 import getopt,sys,os
 from types import *
 
-import sys
-print(sys.path)
-
 from nodemanager import *
 
 _ = lambda x: x

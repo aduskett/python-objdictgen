@@ -25,8 +25,7 @@ _has_coredata_cache = {}
 
 # sanity in case Python changes ...
 if gnosis.pyconfig.Have_BoolClass() and gnosis.pyconfig.IsLegal_BaseClass('bool'):
-    raise XMLPicklingError, \
-        "Assumption broken - can now use bool as baseclass!"
+    raise XMLPicklingError("Assumption broken - can now use bool as baseclass!")
 
 Have_BoolClass = gnosis.pyconfig.Have_BoolClass()
 
@@ -49,8 +48,8 @@ def get_mutator(obj):
     # False). Therefore, there will never be a need for a mutator, and
     # they can be completely handled in the main "if" block in _pickle.py.
     if Have_BoolClass and type(obj) is BooleanType:
-         return None		
-    
+         return None
+
     if not hasattr(obj,'__class__'):
         return None
 
@@ -62,7 +61,7 @@ def get_mutator(obj):
         return get_unmutator('__compound__',None)
     else:
         _has_coredata_cache[obj.__class__] = None
-    
+
     return None
 
 def can_mutate(obj):
@@ -76,9 +75,8 @@ def mutate(obj):
     tobj = mutator.mutate(obj)
 
     if not isinstance(tobj,XMLP_Mutated):
-        raise XMLPicklingError, \
-              "Bad type returned from mutator %s" % mutator
-    
+        raise XMLPicklingError("Bad type returned from mutator %s" % mutator)
+
     return (mutator.tag,tobj.obj,mutator.in_body,tobj.extra)
 
 # one-step replacement for:
@@ -87,7 +85,7 @@ def mutate(obj):
 # (one get_mutator() call vs. two)
 
 def try_mutate(obj,alt_tag,alt_in_body,alt_extra):
-    
+
     mutator = get_mutator(obj)
 
     if mutator is None:
@@ -96,9 +94,8 @@ def try_mutate(obj,alt_tag,alt_in_body,alt_extra):
     tobj = mutator.mutate(obj)
 
     if not isinstance(tobj,XMLP_Mutated):
-        raise XMLPicklingError, \
-              "Bad type returned from mutator %s" % mutator
-    
+        raise XMLPicklingError("Bad type returned from mutator %s" % mutator)
+
     return (mutator.tag,tobj.obj,mutator.in_body,tobj.extra)
 
 def get_unmutator(tag, obj):
@@ -153,7 +150,7 @@ class XMLP_Mutated:
     def __init__(self,obj,extra=None):
         self.obj = obj
         self.extra = extra
-        
+
 class XMLP_Mutator:
     "Parent class for XMLP Mutators"
     # by default, only disable mutators when PARANOIA = 2
@@ -194,10 +191,10 @@ class XMLP_Mutator:
         assoc,seq,or PyObject)"""
 
         # this member is required
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def unmutate(self,mobj):
         "take an XMLP_Mutated obj and recreate the original object"
 
         # this member is required
-        raise NotImplementedError
+        raise NotImplementedError()

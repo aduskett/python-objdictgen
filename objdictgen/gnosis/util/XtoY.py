@@ -51,8 +51,7 @@ def aton(s):
         r, i = s.split(':')
         return complex(float(r), float(i))
 
-    raise SecurityError, \
-          "Malicious string '%s' passed to to_number()'d" % s
+    raise SecurityError("Malicious string '%s' passed to to_number()'d" % s)
 
 # we use ntoa() instead of repr() to ensure we have a known output format
 def ntoa(n):
@@ -71,8 +70,7 @@ def ntoa(n):
         # matter if the '.' shows up
         s = "%.17g:%.17g" % (n.real,n.imag)
     else:
-        raise ValueError, \
-              "Unknown numeric type: %s" % repr(n)
+        raise ValueError("Unknown numeric type: %s" % repr(n))
     return s
 
 def to_number(s):

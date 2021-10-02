@@ -219,7 +219,7 @@ class NodeList:
                             if result != None:
                                 return result
                 self.Changed = False
-            except SyntaxError, message:
+            except SyntaxError as message:
                 return _("Unable to load CPJ file\n%s")%message
         return None
 
