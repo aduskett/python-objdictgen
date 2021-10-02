@@ -23,12 +23,12 @@
 
 import sys, traceback
 
-from gnosis.xml.pickle import *
+from gnosis.xml.pickle import load, dump
 
-from node import *
+from node import Node, OD_MultipleSubindexes, OD_IdenticalSubindexes, OD_IdenticalIndexes, OD_Subindex, AccessType, BoolType, OptionType, CustomisableTypes, MappingDictionary, LE_to_BE, BE_to_LE, FindEntryName, FindEntryInfos, FindSubentryInfos, FindTypeIndex, FindTypeName, FindTypeDefaultValue, FindMandatoryIndexes
 import eds_utils, gen_cfile
 
-from types import *
+from types import ListType
 import os, re
 
 _ = lambda x: x

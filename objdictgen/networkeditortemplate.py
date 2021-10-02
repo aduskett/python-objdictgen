@@ -1,8 +1,10 @@
 import wx
 
 from nodeeditortemplate import NodeEditorTemplate
-from subindextable import *
-from commondialogs import *
+from subindextable import EditingPanel
+from commondialogs import AddSlaveDialog
+
+_ = lambda x: x
 
 [ID_NETWORKEDITNETWORKNODES,
 ] = [wx.NewId() for _init_ctrls in range(1)]

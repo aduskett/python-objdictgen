@@ -25,8 +25,10 @@ from __future__ import print_function
 
 import wx
 
-from types import *
+from types import IntType, LongType, StringType, UnicodeType
 import os, re, platform, sys, time, traceback, getopt
+
+_ = lambda x: x
 
 __version__ = "$Revision: 1.48 $"
 
@@ -75,11 +77,11 @@ loc.AddCatalog(domain)
 if __name__ == '__main__':
     __builtin__.__dict__['_'] = wx.GetTranslation
 
-from nodemanager import *
+from nodemanager import NodeManager
 from nodeeditortemplate import NodeEditorTemplate
-from subindextable import *
-from commondialogs import *
-from doc_index.DS301_index import *
+from subindextable import EditingPanel
+from commondialogs import CreateNodeDialog
+from doc_index.DS301_index import OpenPDFDocIndex, get_acroversion
 
 try:
     import wx.html

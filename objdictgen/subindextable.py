@@ -24,10 +24,11 @@
 import wx
 import wx.grid
 
-from types import *
-from commondialogs import *
+from commondialogs import DCFEntryValuesDialog, UserTypeDialog
 
 from node import OD_Subindex, OD_MultipleSubindexes, OD_IdenticalSubindexes, OD_IdenticalIndexes
+
+_ = lambda x: x
 
 ColSizes = [75, 250, 150, 125, 100, 60, 250, 60]
 ColAlignements = [wx.ALIGN_CENTER, wx.ALIGN_LEFT, wx.ALIGN_CENTER, wx.ALIGN_RIGHT, wx.ALIGN_CENTER, wx.ALIGN_CENTER, wx.ALIGN_LEFT, wx.ALIGN_LEFT]

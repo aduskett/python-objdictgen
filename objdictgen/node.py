@@ -24,8 +24,10 @@
 from __future__ import print_function
 
 import cPickle
-from types import *
+from types import ListType, StringType, UnicodeType, IntType
 import re
+
+_ = lambda x: x
 
 """
 Dictionary of translation between access symbol and their signification

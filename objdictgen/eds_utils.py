@@ -29,9 +29,11 @@ try:
     set
 except NameError:
     from sets import Set as set
-from types import *
-from time import *
+from types import IntType, LongType, StringType, UnicodeType, ListType
+from time import localtime, strftime
 import os,re
+
+_ = lambda x: x
 
 # Regular expression for finding index section names
 index_model = re.compile('([0-9A-F]{1,4}$)')
@@ -785,5 +787,5 @@ def GenerateNode(filepath, nodeID = 0):
 #-------------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    print(ParseEDSFile("examples/PEAK MicroMod.eds"))
+    print(ParseEDSFile("examples/example_objdict.eds"))
 

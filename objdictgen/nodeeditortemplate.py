@@ -1,9 +1,11 @@
-from types import *
 
 import wx
 
+from types import StringType, UnicodeType
 from node import OD_Subindex, OD_MultipleSubindexes, OD_IdenticalSubindexes, OD_IdenticalIndexes
-from commondialogs import *
+from commondialogs import NodeInfosDialog, CommunicationDialog, MapVariableDialog, UserTypeDialog
+
+_ = lambda x : x
 
 class NodeEditorTemplate:
 

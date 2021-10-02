@@ -28,6 +28,8 @@ import os
 
 from node import BE_to_LE, LE_to_BE
 
+_ = lambda x: x
+
 ScriptDirectory = os.path.split(__file__)[0]
 
 #-------------------------------------------------------------------------------

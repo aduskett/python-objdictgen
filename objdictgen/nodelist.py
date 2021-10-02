@@ -21,9 +21,11 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-from node import *
+from node import Node
 import eds_utils
 import os, shutil, types
+
+_ = lambda x: x
 
 #-------------------------------------------------------------------------------
 #                          Definition of NodeList Object
@@ -333,7 +335,7 @@ class NodeList:
         self.Manager.AddToDCF(node_id, index, subindex, size, value)
 
 if __name__ == "__main__":
-    from nodemanager import *
+    from nodemanager import NodeManager
     import os, sys, shutil
 
     manager = NodeManager(sys.path[0])
