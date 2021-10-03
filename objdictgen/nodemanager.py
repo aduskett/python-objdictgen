@@ -21,9 +21,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-import sys, traceback
-
-from gnosis.xml.pickle import load, dump
+from nosis.xml.pickle import load, dump
 
 from node import Node, OD_MultipleSubindexes, OD_IdenticalSubindexes, OD_IdenticalIndexes, OD_Subindex, AccessType, BoolType, OptionType, CustomisableTypes, MappingDictionary, LE_to_BE, BE_to_LE, FindEntryName, FindEntryInfos, FindSubentryInfos, FindTypeIndex, FindTypeName, FindTypeDefaultValue, FindMandatoryIndexes
 import eds_utils, gen_cfile

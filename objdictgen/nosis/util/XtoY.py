@@ -1,3 +1,4 @@
+print("L: nosis.util.XtoY")
 import re, sys
 class SecurityError(Exception): pass
 from types import *

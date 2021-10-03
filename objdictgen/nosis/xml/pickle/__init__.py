@@ -1,13 +1,14 @@
+print("L: nosis.xml.pickle.__init__")
 """Store Python objects to (pickle-like) XML Documents
 
 Please see the information at gnosis.xml.pickle.doc for
 explanation of usage, design, license, and other details
 """
-from gnosis.xml.pickle._pickle import \
+from _pickle import \
      XML_Pickler, XMLPicklingError, XMLUnpicklingError, \
      dump, dumps, load, loads
 
-from gnosis.xml.pickle.util import \
+from util import \
      get_class_from_store, add_class_to_store, remove_class_from_store
 
-from gnosis.xml.pickle.ext import *
+from ext import *

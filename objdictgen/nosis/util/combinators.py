@@ -1,3 +1,4 @@
+print("L: nosis.utils.combinators")
 from operator import mul, add, truth
 
 apply_each = lambda fns, args=[]: map(apply, fns, [args]*len(fns))

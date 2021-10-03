@@ -1,12 +1,12 @@
-from gnosis.xml.pickle.util import subnodes, _EmptyClass, unsafe_string, \
+print("L: nosis.xml.pickle.parsers._dom")
+from types import *
+from xml.dom import minidom
+from nosis.xml.pickle.util import subnodes, _EmptyClass, unsafe_string, \
      unsafe_content, safe_eval, obj_from_name, unpickle_function, \
      get_class_from_name
-from gnosis.util.introspect import attr_update
-from types import *
-import gnosis.xml.pickle.ext as mutate
-from xml.dom import minidom
-from gnosis.util.XtoY import to_number
-import gnosis.pyconfig as pyconfig
+from nosis.util.introspect import attr_update
+import nosis.xml.pickle.ext as mutate
+from nosis.util.XtoY import to_number
 
 # Get appropriate array type.
 try:
@@ -17,8 +17,8 @@ except ImportError:
     array_type = 'array'
 
 # Define exceptions and flags
-XMLPicklingError = "gnosis.xml.pickle.XMLPicklingError"
-XMLUnpicklingError = "gnosis.xml.pickle.XMLUnpicklingError"
+XMLPicklingError = "nosis.xml.pickle.XMLPicklingError"
+XMLUnpicklingError = "nosis.xml.pickle.XMLUnpicklingError"
 
 # Python 2.2 and up have a True/False (even though it's
 # a completely different value between 2.2 & 2.3)

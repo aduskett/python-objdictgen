@@ -1,10 +1,10 @@
+print("L: nosis.xml.pickle.ext._mutate")
 
 from types import *
-from gnosis.util.introspect import isInstanceLike, hasCoreData
-import gnosis.pyconfig
+from nosis.util.introspect import isInstanceLike, hasCoreData
 
-XMLPicklingError = "gnosis.xml.pickle.XMLPicklingError"
-XMLUnpicklingError = "gnosis.xml.pickle.XMLUnpicklingError"
+XMLPicklingError = "nosis.xml.pickle.XMLPicklingError"
+XMLUnpicklingError = "nosis.xml.pickle.XMLUnpicklingError"
 
 # hooks for adding mutators
 # each dict entry is a list of chained mutators

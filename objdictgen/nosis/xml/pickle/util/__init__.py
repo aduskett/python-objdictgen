@@ -1,3 +1,4 @@
+print("L: nosis.xml.pickle.util.__init__")
 from _util import \
      _klass, _module, _EmptyClass, subnodes, \
      safe_eval, safe_string, unsafe_string, safe_content, unsafe_content, \

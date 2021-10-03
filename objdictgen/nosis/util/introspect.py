@@ -1,9 +1,7 @@
+print("L: nosis.util.introspect")
 """Introspective functions for Python objects"""
 
-import gnosis.pyconfig
-
 def docstrings():
-    if not gnosis.pyconfig.Can_AssignDoc(): return
     """
     containers.__doc__   = "A tuple of built-in types that contain parts"
     simpletypes.__doc__  = "A tuple of built-in types that have no parts"
@@ -16,7 +14,7 @@ import sys, string
 
 from types import *
 from operator import add
-from gnosis.util.combinators import or_, not_, and_, lazy_any
+from combinators import or_, not_, and_, lazy_any
 
 containers = (ListType, TupleType, DictType)
 simpletypes = (IntType, LongType, FloatType, ComplexType, StringType)

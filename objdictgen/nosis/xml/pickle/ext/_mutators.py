@@ -1,12 +1,12 @@
+print("L: nosis.xml.pickle.ext._mutators")
 from _mutate import XMLP_Mutator, XMLP_Mutated
 import _mutate
 import sys, string
 from types import *
-from gnosis.util.introspect import isInstanceLike, attr_update, \
+from nosis.util.introspect import isInstanceLike, attr_update, \
      data2attr, attr2data, getCoreData, setCoreData, isinstance_any
-from gnosis.xml.pickle.util import _klass, _module, obj_from_name
-from gnosis.util.XtoY import aton
-import gnosis.pyconfig
+from nosis.xml.pickle.util import _klass, _module, obj_from_name
+from nosis.util.XtoY import aton
 
 class _EmptyClass: pass
 

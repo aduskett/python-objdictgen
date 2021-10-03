@@ -1,30 +1,29 @@
+print("L: nosis.xml.pickle._pickle")
 """Store Python objects to (pickle-like) XML Documents
 
 Please see the information at gnosis.xml.pickle.doc for
 explanation of usage, design, license, and other details
 """
-from gnosis.xml.pickle.util import \
+from nosis.xml.pickle.util import \
      _klass, _module, _EmptyClass, \
      safe_string, safe_content,\
      get_class_from_stack, get_class_full_search, \
      get_class_from_store, get_class_from_vapor, \
      get_function_info
 
-from gnosis.xml.pickle.ext import can_mutate, mutate, \
+from nosis.xml.pickle.ext import can_mutate, mutate, \
      can_unmutate, unmutate, get_unmutator, try_mutate
 
-from gnosis.util.introspect import isinstance_any, attr_dict, isInstanceLike, \
+from nosis.util.introspect import isinstance_any, attr_dict, isInstanceLike, \
      hasCoreData, isNewStyleClass
 
-from gnosis.util.XtoY import ntoa
+from nosis.util.XtoY import ntoa
 
 # add "standard" extension types
-import gnosis.xml.pickle.ext._mutators
+import nosis.xml.pickle.ext._mutators
 
 # XML legality checking
-from gnosis.xml.xmlmap import is_legal_xml
-
-import gnosis.pyconfig
+from nosis.xml.xmlmap import is_legal_xml
 
 from types import *
 
@@ -50,8 +49,8 @@ setInBody(StringType,0)
 setInBody(UnicodeType,1)
 
 # Define exceptions and flags
-XMLPicklingError = "gnosis.xml.pickle.XMLPicklingError"
-XMLUnpicklingError = "gnosis.xml.pickle.XMLUnpicklingError"
+XMLPicklingError = "nosis.xml.pickle.XMLPicklingError"
+XMLUnpicklingError = "nosis.xml.pickle.XMLUnpicklingError"
 
 # Maintain list of object identities for multiple and cyclical references
 # (also to keep temporary objects alive)
@@ -150,8 +149,9 @@ class XML_Pickler:
 
         visited = {}
 
+        print(">>-------")
         # Import parser directly
-        from gnosis.xml.pickle.parsers._dom import thing_from_dom
+        from nosis.xml.pickle.parsers._dom import thing_from_dom
 
         parser = thing_from_dom
         if parser:

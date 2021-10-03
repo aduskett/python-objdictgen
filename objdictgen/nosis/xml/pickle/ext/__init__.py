@@ -1,3 +1,4 @@
+print("L: nosis.xml.pickle.ext.__init__")
 """The gnosis.xml.pickle type extension system.
 
 Please see [..]/gnosis/xml/pickle/doc/HOWTO.extensions for details

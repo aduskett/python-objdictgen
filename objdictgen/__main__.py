@@ -1,4 +1,4 @@
-# Need this unless won't gnosis load od with the right object
+# Need this unless won't nosis load od with the right object
 import node
 from objdictgen import main
 
