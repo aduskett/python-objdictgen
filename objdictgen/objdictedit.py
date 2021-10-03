@@ -33,24 +33,9 @@ _ = lambda x: x
 
 __version__ = "$Revision: 1.48 $"
 
-if __name__ == '__main__':
-    def usage():
-        print(("\nUsage of objdictedit.py :"))
-        print("\n   %s [Filepath, ...]\n"%sys.argv[0])
-
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "h", ["help"])
-    except getopt.GetoptError:
-        # print help information and exit:
-        usage()
-        sys.exit(2)
-
-    for o, a in opts:
-        if o in ("-h", "--help"):
-            usage()
-            sys.exit()
-
-    app = wx.PySimpleApp()
+def usage():
+    print("\nUsage of objdictedit :")
+    print("\n   %s [Filepath, ...]\n"%sys.argv[0])
 
 ScriptDirectory = os.path.split(os.path.realpath(__file__))[0]
 
@@ -817,7 +802,22 @@ def AddExceptHook(path, app_version='[No version]'):#, ignored_exceptions=[]):
     #sys.excepthook = lambda *args: wx.CallAfter(handle_exception, *args)
     sys.excepthook = handle_exception
 
-if __name__ == '__main__':
+
+def main():
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "h", ["help"])
+    except getopt.GetoptError:
+        # print help information and exit:
+        usage()
+        sys.exit(2)
+
+    for o, a in opts:
+        if o in ("-h", "--help"):
+            usage()
+            sys.exit()
+
+    app = wx.PySimpleApp()
+
     wx.InitAllImageHandlers()
 
     # Install a exception handle for bug reports
@@ -827,3 +827,7 @@ if __name__ == '__main__':
 
     frame.Show()
     app.MainLoop()
+
+
+if __name__ == '__main__':
+    main()

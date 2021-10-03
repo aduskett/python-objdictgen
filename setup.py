@@ -179,6 +179,7 @@ setup(
     entry_points={  # Optional
         'console_scripts': [
             'objdictgen=objdictgen.__main__:objdictgen_main',
+            'objdictedit=objdictgen.__main__:objdictedit_main',
         ],
     },
 

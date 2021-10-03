@@ -788,6 +788,6 @@ def GenerateNode(filepath, nodeID = 0):
 #                             Main Function
 #-------------------------------------------------------------------------------
 
-#if __name__ == '__main__':
-#    print(ParseEDSFile("examples/example_objdict.eds"))
+if __name__ == '__main__':
+    print(ParseEDSFile("examples/example_objdict.eds"))
 

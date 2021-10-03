@@ -33,7 +33,7 @@ from .nodemanager import NodeManager
 
 
 def usage():
-    print("\nUsage of objdictgen.py :")
+    print("\nUsage of objdictgen :")
     print("\n   %s XMLFilePath CFilePath\n"%sys.argv[0])
 
 
