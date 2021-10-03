@@ -1,12 +1,12 @@
-print("L: nosis.xml.pickle.ext._mutators")
-from _mutate import XMLP_Mutator, XMLP_Mutated
-import _mutate
+from __future__ import absolute_import
+from ._mutate import XMLP_Mutator, XMLP_Mutated
+from . import _mutate
 import sys, string
 from types import *
-from nosis.util.introspect import isInstanceLike, attr_update, \
+from ....util.introspect import isInstanceLike, attr_update, \
      data2attr, attr2data, getCoreData, setCoreData, isinstance_any
-from nosis.xml.pickle.util import _klass, _module, obj_from_name
-from nosis.util.XtoY import aton
+from ..util import _klass, _module, obj_from_name
+from ....util.XtoY import aton
 
 class _EmptyClass: pass
 
@@ -156,7 +156,7 @@ class mutate_mxdatetime(XMLP_Mutator):
         #return apply(mx.DateTime.DateTime,map(float,m.groups()))
 
         args = map(int,m.groups()[:5]) + [float(m.group(6))]
-        return apply(mx.DateTime.DateTime,args)
+        return mx.DateTime.DateTime(*args)
 
 if mxDateTime_type is not None:
     _mutate.add_mutator(mutate_mxdatetime())

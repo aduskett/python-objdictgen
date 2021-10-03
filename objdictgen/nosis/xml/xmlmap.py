@@ -1,5 +1,3 @@
-print("L: nosis.xml.xmlmap")
-
 # Unicode->XML legality testing & helper functions.
 #
 # frankm@hiwaay.net

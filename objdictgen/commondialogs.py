@@ -21,12 +21,15 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+from __future__ import absolute_import
+from builtins import range
+
 import wx
 import wx.grid
 
 import os
 
-from node import BE_to_LE, LE_to_BE
+from .node import BE_to_LE, LE_to_BE
 
 _ = lambda x: x
 
@@ -175,7 +178,7 @@ class CommunicationDialog(wx.Dialog):
         self.PossibleIndexes.Clear()
         self.CurrentIndexes.Clear()
         self.AllList = []
-        for index in self.IndexDictionary.iterkeys():
+        for index in self.IndexDictionary:
             if index not in self.CurrentList:
                 self.AllList.append(index)
         self.AllList.sort()
@@ -1568,7 +1571,7 @@ class DCFEntryValuesDialog(wx.Dialog):
         if values != "":
             data = values[4:]
             current = 0
-            for i in xrange(BE_to_LE(values[:4])):
+            for i in range(BE_to_LE(values[:4])):
                 value = {}
                 value["Index"] = BE_to_LE(data[current:current+2])
                 value["Subindex"] = BE_to_LE(data[current+2:current+3])

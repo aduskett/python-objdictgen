@@ -1,4 +1,4 @@
-print("L: nosis.util.introspect")
+from __future__ import absolute_import
 """Introspective functions for Python objects"""
 
 def docstrings():
@@ -14,7 +14,7 @@ import sys, string
 
 from types import *
 from operator import add
-from combinators import or_, not_, and_, lazy_any
+from .combinators import or_, not_, and_, lazy_any
 
 containers = (ListType, TupleType, DictType)
 simpletypes = (IntType, LongType, FloatType, ComplexType, StringType)

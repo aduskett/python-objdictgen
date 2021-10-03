@@ -21,9 +21,12 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
+from __future__ import absolute_import
+from builtins import range
+
 from types import ListType
 
-from node import OD_IdenticalSubindexes, OD_MultipleSubindexes
+from .node import OD_IdenticalSubindexes, OD_MultipleSubindexes
 
 import re, os
 
@@ -64,9 +67,9 @@ def GetValidTypeInfos(typename, items=[]):
         result = type_model.match(typename)
         if result:
             values = result.groups()
-            if values[0] == "UNSIGNED" and int(values[1]) in [i * 8 for i in xrange(1, 9)]:
+            if values[0] == "UNSIGNED" and int(values[1]) in [i * 8 for i in range(1, 9)]:
                 typeinfos = ("UNS%s"%values[1], None, "uint%s"%values[1], True)
-            elif values[0] == "INTEGER" and int(values[1]) in [i * 8 for i in xrange(1, 9)]:
+            elif values[0] == "INTEGER" and int(values[1]) in [i * 8 for i in range(1, 9)]:
                 typeinfos = ("INTEGER%s"%values[1], None, "int%s"%values[1], False)
             elif values[0] == "REAL" and int(values[1]) in (32, 64):
                 typeinfos = ("%s%s"%(values[0], values[1]), None, "real%s"%values[1], False)
@@ -306,7 +309,7 @@ def GenerateFileContent(Node, headerfilepath, pointers_dict = {}):
         # Generating Dictionary C++ entry
         strIndex += "                    subindex %(NodeName)s_Index%(index)04X[] = \n                     {\n"%texts
         generateSubIndexArrayComment = True
-        for subIndex in xrange(len(values)):
+        for subIndex in range(len(values)):
             subentry_infos = Node.GetSubentryInfos(index, subIndex)
             params_infos = Node.GetParamsEntry(index,subIndex)
             if subIndex < len(values) - 1:

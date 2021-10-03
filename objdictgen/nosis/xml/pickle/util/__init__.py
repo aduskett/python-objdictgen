@@ -1,5 +1,6 @@
-print("L: nosis.xml.pickle.util.__init__")
-from _util import \
+from __future__ import absolute_import
+
+from ._util import \
      _klass, _module, _EmptyClass, subnodes, \
      safe_eval, safe_string, unsafe_string, safe_content, unsafe_content, \
      _mini_getstack, _mini_currentframe, \
@@ -7,4 +8,3 @@ from _util import \
      get_class_from_store, add_class_to_store, remove_class_from_store, \
      get_class_from_name, obj_from_name, get_function_info, \
      unpickle_function, obj_from_classtype
-

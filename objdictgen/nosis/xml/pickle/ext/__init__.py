@@ -1,14 +1,6 @@
-print("L: nosis.xml.pickle.ext.__init__")
-"""The gnosis.xml.pickle type extension system.
+from __future__ import absolute_import
 
-Please see [..]/gnosis/xml/pickle/doc/HOWTO.extensions for details
-"""
-__author__ = ["Frank McIngvale (frankm@hiwaay.net)",
-              "David Mertz (mertz@gnosis.cx)",
-             ]
-
-from _mutate import \
+from ._mutate import \
      can_mutate,mutate,can_unmutate,unmutate,\
      add_mutator,remove_mutator,XMLP_Mutator, XMLP_Mutated, \
      get_unmutator, try_mutate
-

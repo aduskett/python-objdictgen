@@ -1,12 +1,12 @@
-print("L: nosis.xml.pickle.parsers._dom")
+from __future__ import absolute_import
 from types import *
 from xml.dom import minidom
-from nosis.xml.pickle.util import subnodes, _EmptyClass, unsafe_string, \
+from ..util import subnodes, _EmptyClass, unsafe_string, \
      unsafe_content, safe_eval, obj_from_name, unpickle_function, \
      get_class_from_name
-from nosis.util.introspect import attr_update
-import nosis.xml.pickle.ext as mutate
-from nosis.util.XtoY import to_number
+from ....util.introspect import attr_update
+from ..ext import can_unmutate, unmutate
+from ....util.XtoY import to_number
 
 # Get appropriate array type.
 try:
@@ -54,7 +54,7 @@ def unpickle_instance(node, paranoia):
     try:
         args = raw.__getinitargs__
         delattr(raw,'__getinitargs__') # don't want this in pyobj (below)
-        apply(pyobj.__init__,args)
+        pyobj.__init__(*args)
     except:
         pass
 
@@ -109,7 +109,7 @@ def get_node_valuetext(node):
     # a value= attribute. ie. pickler can place it in either
     # place (based on user preference) and unpickler doesn't care
 
-    if node._attrs.has_key('value'):
+    if 'value' in node._attrs:
         # text in tag
         ttext = node.getAttribute('value')
         return unsafe_string(ttext)
@@ -166,9 +166,9 @@ def _thing_from_dom(dom_node, container=None, paranoia=1):
             if node.getAttribute('type'):
                 # get unmutator by type=
                 klass = node.getAttribute('type')
-                if mutate.can_unmutate(klass,container):
+                if can_unmutate(klass,container):
                     # note -- 'extra' isn't handled (yet) at the toplevel
-                    container = mutate.unmutate(klass,container,paranoia,None)
+                    container = unmutate(klass,container,paranoia,None)
 
             try:
                 id = node.getAttribute('id')
@@ -292,9 +292,9 @@ def _thing_from_dom(dom_node, container=None, paranoia=1):
                 node_val = node_val
             elif node_type == 'False':
                 node_val = node_val
-            elif mutate.can_unmutate(node_type,node_val):
+            elif can_unmutate(node_type,node_val):
                 mextra = node.getAttribute('extra')
-                node_val = mutate.unmutate(node_type,node_val,paranoia,
+                node_val = unmutate(node_type,node_val,paranoia,
                                            mextra)
             elif node_type == 'PyObject':
                 node_val = node_val

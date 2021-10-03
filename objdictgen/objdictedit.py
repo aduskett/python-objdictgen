@@ -22,6 +22,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 from __future__ import print_function
+from __future__ import absolute_import
 
 import wx
 
@@ -53,11 +54,11 @@ if __name__ == '__main__':
 
 ScriptDirectory = os.path.split(os.path.realpath(__file__))[0]
 
-from nodemanager import NodeManager
-from nodeeditortemplate import NodeEditorTemplate
-from subindextable import EditingPanel
-from commondialogs import CreateNodeDialog
-from doc_index.DS301_index import OpenPDFDocIndex, get_acroversion
+from .nodemanager import NodeManager
+from .nodeeditortemplate import NodeEditorTemplate
+from .subindextable import EditingPanel
+from .commondialogs import CreateNodeDialog
+from .doc_index.DS301_index import OpenPDFDocIndex, get_acroversion
 
 try:
     import wx.html
@@ -428,7 +429,7 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
             answer = dialog.ShowModal()
             dialog.Destroy()
             if answer == wx.ID_YES:
-                for i in xrange(self.Manager.GetBufferNumber()):
+                for i in range(self.Manager.GetBufferNumber()):
                     if self.Manager.CurrentIsSaved():
                         self.Manager.CloseCurrent()
                     else:

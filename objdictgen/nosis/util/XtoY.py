@@ -1,7 +1,7 @@
-print("L: nosis.util.XtoY")
 import re, sys
-class SecurityError(Exception): pass
 from types import *
+
+class SecurityError(Exception): pass
 
 pat_fl = r'[-+]?(((((\d+)?[.]\d+|\d+[.])|\d+)[eE][+-]?\d+)|((\d+)?[.]\d+|\d+[.]))'
 re_float = re.compile(pat_fl+'$')
@@ -35,14 +35,14 @@ def aton(s):
     m = re.match(re_hex, s)
     if m:
         n = long(m.group(3),16)
-        if n < sys.maxint: n = int(n)
+        if n < sys.maxsize: n = int(n)
         if m.group(1)=='-': n = n * (-1)
         return n
 
     m = re.match(re_oct, s)
     if m:
         n = long(m.group(3),8)
-        if n < sys.maxint: n = int(n)
+        if n < sys.maxsize: n = int(n)
         if m.group(1)=='-': n = n * (-1)
         return n
 

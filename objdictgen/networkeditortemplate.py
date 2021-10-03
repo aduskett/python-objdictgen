@@ -1,8 +1,9 @@
+from __future__ import absolute_import
 import wx
 
-from nodeeditortemplate import NodeEditorTemplate
-from subindextable import EditingPanel
-from commondialogs import AddSlaveDialog
+from .nodeeditortemplate import NodeEditorTemplate
+from .subindextable import EditingPanel
+from .commondialogs import AddSlaveDialog
 
 _ = lambda x: x
 

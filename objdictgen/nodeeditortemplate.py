@@ -1,9 +1,11 @@
+from __future__ import absolute_import
+from builtins import range
 
 import wx
 
 from types import StringType, UnicodeType
-from node import OD_Subindex, OD_MultipleSubindexes, OD_IdenticalSubindexes, OD_IdenticalIndexes
-from commondialogs import NodeInfosDialog, CommunicationDialog, MapVariableDialog, UserTypeDialog
+from .node import OD_Subindex, OD_MultipleSubindexes, OD_IdenticalSubindexes, OD_IdenticalIndexes
+from .commondialogs import NodeInfosDialog, CommunicationDialog, MapVariableDialog, UserTypeDialog
 
 _ = lambda x : x
 
@@ -85,10 +87,10 @@ class NodeEditorTemplate:
                 text = _("%s: %s entry of struct %s%s.")%(name,category,struct,number)
                 self.Frame.HelpBar.SetStatusText(text, 2)
             else:
-                for i in xrange(3):
+                for i in range(3):
                     self.Frame.HelpBar.SetStatusText("", i)
         else:
-            for i in xrange(3):
+            for i in range(3):
                 self.Frame.HelpBar.SetStatusText("", i)
 
     def RefreshProfileMenu(self):
@@ -97,7 +99,7 @@ class NodeEditorTemplate:
             edititem = self.Frame.EditMenu.FindItemById(self.EDITMENU_ID)
             if edititem:
                 length = self.Frame.AddMenu.GetMenuItemCount()
-                for i in xrange(length-6):
+                for i in range(length-6):
                     additem = self.Frame.AddMenu.FindItemByPosition(6)
                     self.Frame.AddMenu.Delete(additem.GetId())
                 if profile not in ("None", "DS-301"):

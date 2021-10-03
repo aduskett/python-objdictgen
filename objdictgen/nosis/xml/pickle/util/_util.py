@@ -1,6 +1,6 @@
 from __future__ import print_function
-print("L: nosis.xml.pickle.util._util")
-import nosis.xml.pickle
+from __future__ import absolute_import
+from ...pickle import __dict__ as pickle
 from types import *
 import sys
 CLASS_STORE = {}
@@ -88,7 +88,7 @@ def get_class_full_search(modname, classname):
 def get_class_from_store(classname):
     "Get the class from the store, if possible"
     return CLASS_STORE.get(classname, None) or \
-           nosis.xml.pickle.__dict__.get(classname,None)
+           pickle.get(classname,None)
 
 def add_class_to_store(classname='', klass=None):
     "Put the class in the store (as 'classname'), return CLASS_STORE"
@@ -111,7 +111,7 @@ def get_class_from_vapor(classname):
 
 # -- functions for dynamic object creation --
 
-from nosis.util.introspect import instance_noinit
+from ....util.introspect import instance_noinit
 
 def obj_from_classtype(klass):
     """Create an object of ClassType klass. We aren't
@@ -190,7 +190,7 @@ def _module(thing):
     klass = thing.__class__
     if klass.__module__ == dynamic_module: return None
     if klass in CLASS_STORE.values(): return None
-    if klass in nosis.xml.pickle.__dict__.values(): return None
+    if klass in pickle.values(): return None
     return thing.__class__.__module__
 
 def safe_eval(s):
@@ -218,7 +218,7 @@ def unsafe_string(s):
     # for Python escapes, exec the string
     # (niggle w/ literalizing apostrophe)
     s = s.replace("'", r"\047")
-    print(">> EXEC in unsafe_string(): '%s'" %("s='"+s+"'",))
+    #print(">> EXEC in unsafe_string(): '%s'" %("s='"+s+"'",))
     exec("s='"+s+"'")
     # XML entities (DOM does it for us)
     return s
@@ -252,7 +252,7 @@ def subnodes(node):
     # for PyXML > 0.8, childNodes includes both <DOM Elements> and
     # DocumentType objects, so we have to separate them.
     return filter(lambda n: hasattr(n,'_attrs') and \
-                  n.nodeName<>'#text', node.childNodes)
+                  n.nodeName!='#text', node.childNodes)
 
 #-------------------------------------------------------------------
 # Python 2.0 doesn't have the inspect module, so we provide

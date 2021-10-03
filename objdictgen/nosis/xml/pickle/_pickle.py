@@ -1,36 +1,30 @@
-print("L: nosis.xml.pickle._pickle")
+from __future__ import print_function
+from __future__ import absolute_import
 """Store Python objects to (pickle-like) XML Documents
 
 Please see the information at gnosis.xml.pickle.doc for
 explanation of usage, design, license, and other details
 """
-from nosis.xml.pickle.util import \
+from .util import \
      _klass, _module, _EmptyClass, \
      safe_string, safe_content,\
      get_class_from_stack, get_class_full_search, \
      get_class_from_store, get_class_from_vapor, \
      get_function_info
 
-from nosis.xml.pickle.ext import can_mutate, mutate, \
+from .ext import can_mutate, mutate, \
      can_unmutate, unmutate, get_unmutator, try_mutate
 
-from nosis.util.introspect import isinstance_any, attr_dict, isInstanceLike, \
+from ...util.introspect import isinstance_any, attr_dict, isInstanceLike, \
      hasCoreData, isNewStyleClass
 
-from nosis.util.XtoY import ntoa
-
-# add "standard" extension types
-import nosis.xml.pickle.ext._mutators
+from ...util.XtoY import ntoa
 
 # XML legality checking
-from nosis.xml.xmlmap import is_legal_xml
+from ..xmlmap import is_legal_xml
 
 from types import *
-
-try:		# Get a usable StringIO
-    from cStringIO import StringIO
-except:
-    from StringIO import StringIO
+from io import StringIO
 
 # default settings
 TYPE_IN_BODY = {}
@@ -150,8 +144,9 @@ class XML_Pickler:
         visited = {}
 
         print(">>-------")
+
         # Import parser directly
-        from nosis.xml.pickle.parsers._dom import thing_from_dom
+        from .parsers._dom import thing_from_dom
 
         parser = thing_from_dom
         if parser:
