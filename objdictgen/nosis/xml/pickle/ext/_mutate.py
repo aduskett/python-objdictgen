@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from builtins import object
 from types import *
 from ....util.introspect import isInstanceLike, hasCoreData
 
@@ -14,7 +15,7 @@ _unmutators_by_tag = {}
 def __disable_extensions():
     global _mutators_by_classtype
     _mutators_by_classtype = {}
-    for tag in _unmutators_by_tag.keys():
+    for tag in list(_unmutators_by_tag.keys()):
         # rawpickle is always on -- we have to fallback on
         # it when everything else fails
         if tag != "rawpickle":
@@ -92,8 +93,8 @@ def try_mutate(obj,alt_tag,alt_in_body,alt_extra):
     return (mutator.tag,tobj.obj,mutator.in_body,tobj.extra)
 
 def get_unmutator(tag, obj):
-    list = _unmutators_by_tag.get(tag) or []
-    for unmutator in list:
+    list_ = _unmutators_by_tag.get(tag) or []
+    for unmutator in list_:
         if unmutator.wants_mutated(obj):
             return unmutator
 
@@ -129,12 +130,12 @@ def add_mutator(xmlp_mutator):
 
 def remove_mutator(xmlp_mutator):
     "De-register an XMLP_Mutator object"
-    list = _unmutators_by_tag[xmlp_mutator.tag]
-    list.remove(xmlp_mutator)
-    list = _mutators_by_classtype[xmlp_mutator.class_type]
-    list.remove(xmlp_mutator)
+    list_ = _unmutators_by_tag[xmlp_mutator.tag]
+    list_.remove(xmlp_mutator)
+    list_ = _mutators_by_classtype[xmlp_mutator.class_type]
+    list_.remove(xmlp_mutator)
 
-class XMLP_Mutated:
+class XMLP_Mutated(object):
     """This is the type that XMLP_Mutator.mutate() returns.
     Having this as a distinct type will make it easy to add flags,
     etc., in the future without breaking existing mutators.
@@ -144,7 +145,7 @@ class XMLP_Mutated:
         self.obj = obj
         self.extra = extra
 
-class XMLP_Mutator:
+class XMLP_Mutator(object):
     "Parent class for XMLP Mutators"
     # by default, only disable mutators when PARANOIA = 2
     def __init__(self, class_type, tag, paranoia=1, in_body=0):

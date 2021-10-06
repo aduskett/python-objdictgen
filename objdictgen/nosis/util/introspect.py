@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from builtins import object
 """Introspective functions for Python objects"""
 
 def docstrings():
@@ -22,7 +23,7 @@ simpletypes = simpletypes + (UnicodeType,)
 datatypes = simpletypes+containers
 immutabletypes = simpletypes+(TupleType,)
 
-class undef: pass
+class undef(object): pass
 
 def isinstance_any(o, types):
     "A varargs form of isinstance()"
@@ -34,7 +35,7 @@ isSimpleType = lambda o: isinstance_any(o, simpletypes)
 isInstance	 = lambda o: type(o) is InstanceType
 isImmutable	 = lambda o: isinstance_any(o, immutabletypes)
 
-isNewStyleInstance = lambda o: issubclass(o.__class__,object) and \
+isNewStyleInstance = lambda o: issubclass(o.__class__,__builtins__['object']) and \
                             not type(o) in datatypes
 isOldStyleInstance = lambda o: isinstance(o, ClassType)
 isClass			= or_(isOldStyleInstance, isNewStyleInstance)
@@ -87,8 +88,8 @@ def attr_dict(o, fillslots=0):
     else:
         raise TypeError("Object has neither __dict__ nor __slots__")
 
-attr_keys = lambda o: attr_dict(o).keys()
-attr_vals = lambda o: attr_dict(o).values()
+attr_keys = lambda o: list(attr_dict(o).keys())
+attr_vals = lambda o: list(attr_dict(o).values())
 
 def attr_update(o,new):
     for k,v in new.items():

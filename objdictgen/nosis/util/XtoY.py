@@ -28,20 +28,20 @@ def aton(s):
 
     if re.match(re_float, s): return float(s)
 
-    if re.match(re_long, s): return long(s)
+    if re.match(re_long, s): return int(s.rstrip('lL'))
 
     if re.match(re_int, s): return int(s)
 
     m = re.match(re_hex, s)
     if m:
-        n = long(m.group(3),16)
+        n = int(m.group(3),16)
         if n < sys.maxsize: n = int(n)
         if m.group(1)=='-': n = n * (-1)
         return n
 
     m = re.match(re_oct, s)
     if m:
-        n = long(m.group(3),8)
+        n = int(m.group(3),8)
         if n < sys.maxsize: n = int(n)
         if m.group(1)=='-': n = n * (-1)
         return n

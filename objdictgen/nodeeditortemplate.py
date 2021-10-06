@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from builtins import object
 from builtins import range
 
 import wx
@@ -9,7 +10,7 @@ from .commondialogs import NodeInfosDialog, CommunicationDialog, MapVariableDial
 
 _ = lambda x : x
 
-class NodeEditorTemplate:
+class NodeEditorTemplate(object):
 
     EDITMENU_ID = None
 

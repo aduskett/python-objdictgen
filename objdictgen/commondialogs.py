@@ -22,6 +22,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 from __future__ import absolute_import
+from builtins import str
 from builtins import range
 
 import wx
@@ -166,9 +167,9 @@ class CommunicationDialog(wx.Dialog):
     def SetIndexDictionary(self, dictionary):
         self.IndexDictionary = dictionary
 
-    def SetCurrentList(self, list):
+    def SetCurrentList(self, list_):
         self.CurrentList = []
-        self.CurrentList.extend(list)
+        self.CurrentList.extend(list_)
         self.CurrentList.sort()
 
     def GetCurrentList(self):
@@ -584,12 +585,12 @@ class UserTypeDialog(wx.Dialog):
 
     def SetTypeList(self, typedic, type = None):
         self.Type.Clear()
-        list = []
-        for index, (name, valuetype) in typedic.iteritems():
+        list_ = []
+        for index, (name, valuetype) in typedic.items():
             self.TypeDictionary[name] = (index, valuetype)
-            list.append((index, name))
-        list.sort()
-        for index, name in list:
+            list_.append((index, name))
+        list_.sort()
+        for index, name in list_:
             self.Type.Append(name)
         if type != None:
             self.Type.SetStringSelection(typedic[type][0])
@@ -1268,7 +1269,7 @@ class AddSlaveDialog(wx.Dialog):
     def RefreshEDSFile(self):
         selection = self.EDSFile.GetStringSelection()
         self.EDSFile.Clear()
-        for option in self.NodeList.EDSNodes.keys():
+        for option in list(self.NodeList.EDSNodes.keys()):
             self.EDSFile.Append(option)
         if self.EDSFile.FindString(selection) != wx.NOT_FOUND:
             self.EDSFile.SetStringSelection(selection)

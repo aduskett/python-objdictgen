@@ -1,4 +1,9 @@
 from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import map
+from builtins import object
 from ._mutate import XMLP_Mutator, XMLP_Mutated
 from . import _mutate
 import sys, string
@@ -8,7 +13,7 @@ from ....util.introspect import isInstanceLike, attr_update, \
 from ..util import _klass, _module, obj_from_name
 from ....util.XtoY import aton
 
-class _EmptyClass: pass
+class _EmptyClass(object): pass
 
 class mutate_builtin_wrapper(XMLP_Mutator):
 
@@ -40,10 +45,10 @@ class mutate_array(XMLP_Mutator):
         XMLP_Mutator.__init__(self,array.ArrayType,'array',0)
 
     def mutate(self,obj):
-        list = []
+        list_ = []
         for item in obj:
-            list.append(item)
-        return XMLP_Mutated(list)
+            list_.append(item)
+        return XMLP_Mutated(list_)
 
     def unmutate(self,mobj):
         obj = mobj.obj
@@ -57,31 +62,6 @@ class mutate_array(XMLP_Mutator):
             return array.array('d',obj) # double precision
 
 _mutate.add_mutator(mutate_array())
-
-#-- Numeric.array --
-try:
-    import Numeric
-    HAS_NUMERIC = 1
-except:
-    HAS_NUMERIC = 0
-
-class mutate_numpy(XMLP_Mutator):
-
-    def __init__(self):
-        # note, Numeric.ArrayType != array.ArrayType, which is good :-)
-        XMLP_Mutator.__init__(self,Numeric.ArrayType,'NumPy_array',0)
-
-    def mutate(self,obj):
-        list = []
-        for item in obj:
-            list.append(item)
-        return XMLP_Mutated(list)
-
-    def unmutate(self,mobj):
-        return Numeric.array(mobj.obj)
-
-if HAS_NUMERIC:
-    _mutate.add_mutator(mutate_numpy())
 
 #-- SREs --
 
@@ -108,8 +88,7 @@ _mutate.add_mutator(mutate_sre())
 
 # save the pickle in the element body
 
-try:	import cPickle as pickle
-except: import pickle
+import pickle
 
 class mutate_rawpickle(XMLP_Mutator):
 
@@ -155,7 +134,7 @@ class mutate_mxdatetime(XMLP_Mutator):
         # float where an int was expected
         #return apply(mx.DateTime.DateTime,map(float,m.groups()))
 
-        args = map(int,m.groups()[:5]) + [float(m.group(6))]
+        args = list(map(int,m.groups()[:5])) + [float(m.group(6))]
         return mx.DateTime.DateTime(*args)
 
 if mxDateTime_type is not None:

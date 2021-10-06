@@ -9,12 +9,8 @@ from ..ext import can_unmutate, unmutate
 from ....util.XtoY import to_number
 
 # Get appropriate array type.
-try:
-    from Numeric import *
-    array_type = 'NumPy_array'
-except ImportError:
-    from array import *
-    array_type = 'array'
+from array import *
+array_type = 'array'
 
 # Define exceptions and flags
 XMLPicklingError = "nosis.xml.pickle.XMLPicklingError"

@@ -1,5 +1,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from builtins import chr
+from builtins import str
+from builtins import object
 from ...pickle import __dict__ as pickle
 from types import *
 import sys
@@ -7,7 +10,7 @@ CLASS_STORE = {}
 
 class SecurityError(Exception): pass
 
-class _EmptyClass: pass
+class _EmptyClass(object): pass
 
 # get my modulename (on-the-fly classes live here)
 dynamic_module = _EmptyClass().__class__.__module__
@@ -241,7 +244,7 @@ def unsafe_content(s):
     # don't have to "unescape" XML entities (parser does it for us)
 
     # unwrap python strings from unicode wrapper
-    if s[:2]==unichr(187)*2 and s[-2:]==unichr(171)*2:
+    if s[:2]==chr(187)*2 and s[-2:]==chr(171)*2:
         s = s[2:-2].encode('us-ascii')
 
     return s
@@ -251,8 +254,8 @@ def subnodes(node):
     # just remove the #text nodes.
     # for PyXML > 0.8, childNodes includes both <DOM Elements> and
     # DocumentType objects, so we have to separate them.
-    return filter(lambda n: hasattr(n,'_attrs') and \
-                  n.nodeName!='#text', node.childNodes)
+    return [n for n in node.childNodes if hasattr(n,'_attrs') and \
+                  n.nodeName!='#text']
 
 #-------------------------------------------------------------------
 # Python 2.0 doesn't have the inspect module, so we provide
@@ -272,7 +275,7 @@ def _mini_getstack():
 
 def _mini_currentframe():
     try:
-        raise 'catch me'
+        raise Exception()
     except:
         return sys.exc_traceback.tb_frame.f_back
 # --- End of "mini" inspect module ---

@@ -22,6 +22,9 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 from __future__ import absolute_import
+from builtins import str
+from builtins import map
+from builtins import range
 import wx
 import wx.grid
 
@@ -55,8 +58,8 @@ def GetOptionList():
 OptionList = ",".join(map(_, GetOptionList()))
 OPTION_LIST_DICT = dict([(_(option), option) for option in GetOptionList()])
 
-[USER_TYPE, SDO_SERVER, SDO_CLIENT,
- PDO_TRANSMIT, PDO_RECEIVE, MAP_VARIABLE] = range(6)
+(USER_TYPE, SDO_SERVER, SDO_CLIENT,
+ PDO_TRANSMIT, PDO_RECEIVE, MAP_VARIABLE) = range(6)
 
 INDEXCHOICE_OPTIONS = {
     USER_TYPE: (_("User Type"), 0, "AddUserType"),
@@ -67,7 +70,7 @@ INDEXCHOICE_OPTIONS = {
     MAP_VARIABLE: (_("Map Variable"), 0, "AddMapVariable")
 }
 
-INDEXCHOICE_OPTIONS_DICT = dict([(translation, option) for option, (translation, object, function) in INDEXCHOICE_OPTIONS.iteritems()])
+INDEXCHOICE_OPTIONS_DICT = dict([(translation, option) for option, (translation, object, function) in list(INDEXCHOICE_OPTIONS.items())])
 
 INDEXCHOICE_SECTIONS = {
     0 : [USER_TYPE],
@@ -167,7 +170,7 @@ class SubindexTable(wx.grid.PyGridTableBase):
     def GetValue(self, row, col, translate=True):
         if row < self.GetNumberRows():
             colname = self.GetColLabelValue(col, False)
-            value = unicode(self.data[row].get(colname, ""))
+            value = str(self.data[row].get(colname, ""))
             if translate and (colname == "access" or
                               self.editors[row][colname] in ["bool", "option"] or
                               self.editors[row][colname] == "map" and value == "None"):

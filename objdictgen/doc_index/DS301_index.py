@@ -1,22 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
 import os,wx
 
 DS301_PDF_INDEX = {0x1000: 86, 0x1001: 87, 0x1002: 87, 0x1003: 88, 0x1005: 89, 0x1006: 90, 0x1007: 90, 0x1008: 91, 0x1009: 91, 0x100A: 91, 0x100C: 92, 0x100D: 92, 0x1010: 92, 0x1011: 94, 0x1012: 97, 0x1013: 98, 0x1014: 98, 0x1015: 99, 0x1016: 100, 0x1017: 101, 0x1018: 101, 0x1020: 117, 0x1200: 103, 0x1201: 103, 0x1280: 105, 0x1400: 106, 0x1600: 109, 0x1800: 111, 0x1A00: 112}
 
 def get_acroversion():
     " Return version of Adobe Acrobat executable or None"
-    import _winreg
-    adobesoft = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, r'Software\Adobe')
-    for index in range(_winreg.QueryInfoKey(adobesoft)[0]):
-        key = _winreg.EnumKey(adobesoft, index)
+    import winreg
+    adobesoft = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r'Software\Adobe')
+    for index in range(winreg.QueryInfoKey(adobesoft)[0]):
+        key = winreg.EnumKey(adobesoft, index)
         if "acrobat" in key.lower():
-            acrokey = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE, 'Software\\Adobe\\%s' % key)
-            for index in range(_winreg.QueryInfoKey(acrokey)[0]):
-                numver = _winreg.EnumKey(acrokey, index)
+            acrokey = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, 'Software\\Adobe\\%s' % key)
+            for index in range(winreg.QueryInfoKey(acrokey)[0]):
+                numver = winreg.EnumKey(acrokey, index)
                 try:
-                    res = _winreg.QueryValue(_winreg.HKEY_LOCAL_MACHINE, 'Software\\Adobe\\%s\\%s\\InstallPath' % (key, numver))
+                    res = winreg.QueryValue(winreg.HKEY_LOCAL_MACHINE, 'Software\\Adobe\\%s\\%s\\InstallPath' % (key, numver))
                     return res
                 except:
                     pass

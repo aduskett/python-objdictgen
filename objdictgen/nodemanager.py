@@ -22,6 +22,9 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 from __future__ import absolute_import
+from past.builtins import execfile
+from builtins import str
+from builtins import object
 from builtins import range
 
 from .nosis.xml.pickle import load, dump
@@ -52,7 +55,7 @@ def GetNewId():
 Class implementing a buffer of changes made on the current editing Object Dictionary
 """
 
-class UndoBuffer:
+class UndoBuffer(object):
 
     """
     Constructor initialising buffer
@@ -148,7 +151,7 @@ class UndoBuffer:
 Class which control the operations made on the node and answer to view requests
 """
 
-class NodeManager:
+class NodeManager(object):
 
     """
     Constructor
@@ -236,7 +239,7 @@ class NodeManager:
                 for comm, mapping in [(0x1400, 0x1600),(0x1800, 0x1A00)]:
                     firstparamindex = self.GetLineFromIndex(comm)
                     firstmappingindex = self.GetLineFromIndex(mapping)
-                    AddIndexList.extend(range(firstparamindex, firstparamindex + 4))
+                    AddIndexList.extend(list(range(firstparamindex, firstparamindex + 4)))
                     for idx in range(firstmappingindex, firstmappingindex + 4):
                         AddIndexList.append(idx)
                         AddSubIndexList.append((idx, 8))
@@ -581,14 +584,14 @@ class NodeManager:
             self.CurrentNode.RemoveLine(index + 0x200, 0x1BFF)
         else:
             found = False
-            for menu,list in self.CurrentNode.GetSpecificMenu():
-                for i in list:
+            for menu,list_ in self.CurrentNode.GetSpecificMenu():
+                for i in list_:
                     iinfos = self.GetEntryInfos(i)
                     indexes = [i + incr * iinfos["incr"] for incr in range(iinfos["nbmax"])]
                     if index in indexes:
                         found = True
                         diff = index - i
-                        for j in list:
+                        for j in list_:
                             jinfos = self.GetEntryInfos(j)
                             self.CurrentNode.RemoveLine(j + diff, j + jinfos["incr"]*jinfos["nbmax"], jinfos["incr"])
             self.CurrentNode.RemoveMapVariable(index, subIndex)
@@ -744,7 +747,7 @@ class NodeManager:
                     node.UpdateMapVariable(index, subIndex, size)
                 elif editor in ["access","raccess"]:
                     dic = {}
-                    for abbrev,access in AccessType.iteritems():
+                    for abbrev,access in AccessType.items():
                         dic[access] = abbrev
                     value = dic[value]
                     if editor == "raccess" and not node.IsMappingEntry(index):
@@ -811,7 +814,7 @@ class NodeManager:
         return len(self.UndoBuffers)
 
     def GetBufferIndexes(self):
-        return self.UndoBuffers.keys()
+        return list(self.UndoBuffers.keys())
 
     def LoadCurrentPrevious(self):
         self.CurrentNode = self.UndoBuffers[self.NodeIndex].Previous().Copy()
@@ -843,7 +846,7 @@ class NodeManager:
         return self.GetFilename(self.NodeIndex)
 
     def GetAllFilenames(self):
-        indexes = self.UndoBuffers.keys()
+        indexes = list(self.UndoBuffers.keys())
         indexes.sort()
         return [self.GetFilename(idx) for idx in indexes]
 
@@ -877,11 +880,11 @@ class NodeManager:
 #-------------------------------------------------------------------------------
 
     def GetCurrentCommunicationLists(self):
-        list = []
+        list_ = []
         for index in MappingDictionary:
             if 0x1000 <= index < 0x1200:
-                list.append(index)
-        return self.GetProfileLists(MappingDictionary, list)
+                list_.append(index)
+        return self.GetProfileLists(MappingDictionary, list_)
 
     def GetCurrentDS302Lists(self):
         return self.GetSpecificProfileLists(self.CurrentNode.GetDS302Profile())
@@ -892,8 +895,8 @@ class NodeManager:
     def GetSpecificProfileLists(self, mappingdictionary):
         validlist = []
         exclusionlist = []
-        for name, list in self.CurrentNode.GetSpecificMenu():
-            exclusionlist.extend(list)
+        for name, list_ in self.CurrentNode.GetSpecificMenu():
+            exclusionlist.extend(list_)
         for index in mappingdictionary:
             if index not in exclusionlist:
                 validlist.append(index)
@@ -1008,12 +1011,12 @@ class NodeManager:
                 good &= min <= index <= max
             if good:
                 validchoices.append((menu, None))
-        list = [index for index in MappingDictionary.keys() if index >= 0x1000]
+        list_ = [index for index in MappingDictionary.keys() if index >= 0x1000]
         profiles = self.CurrentNode.GetMappings(False)
         for profile in profiles:
-            list.extend(profile.keys())
-        list.sort()
-        for index in list:
+            list_.extend(list_(profile.keys()))
+        list_.sort()
+        for index in list_:
             if min <= index <= max and not self.CurrentNode.IsEntry(index) and index not in exclusionlist:
                 validchoices.append((self.GetEntryName(index), index))
         return validchoices

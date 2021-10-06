@@ -23,6 +23,8 @@
 
 from __future__ import print_function
 from __future__ import absolute_import
+from past.builtins import execfile
+from builtins import str
 from builtins import range
 
 from . import node
@@ -289,7 +291,7 @@ def ParseEDSFile(filepath):
             if index not in eds_dict:
                 eds_dict[index] = values
                 eds_dict[index]["subindexes"] = {}
-            elif eds_dict[index].keys() == ["subindexes"]:
+            elif list(eds_dict[index].keys()) == ["subindexes"]:
                 values["subindexes"] = eds_dict[index]["subindexes"]
                 eds_dict[index] = values
             else:
@@ -646,7 +648,7 @@ def GenerateEDSFile(filepath, node):
 
 # Function that generate the CPJ file content for the nodelist
 def GenerateCPJContent(nodelist):
-    nodes = nodelist.SlaveNodes.keys()
+    nodes = list(nodelist.SlaveNodes.keys())
     nodes.sort()
 
     fileContent = "[TOPOLOGY]\n"
@@ -686,7 +688,7 @@ def GenerateNode(filepath, nodeID = 0):
                 except:
                     pass
         # Read all entries in the EDS dictionary
-        for entry, values in eds_dict.iteritems():
+        for entry, values in list(eds_dict.items()):
             # All sections with a name in keynames are escaped
             if entry in SECTION_KEYNAMES:
                 pass

@@ -22,6 +22,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 from __future__ import absolute_import
+from builtins import str
 from builtins import range
 
 from types import ListType
@@ -529,7 +530,7 @@ $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 */
 """%texts
-    contentlist = indexContents.keys()
+    contentlist = list(indexContents.keys())
     contentlist.sort()
     for index in contentlist:
         fileContent += indexContents[index]

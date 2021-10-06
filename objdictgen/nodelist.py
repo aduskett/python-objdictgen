@@ -23,6 +23,7 @@
 
 from __future__ import print_function
 from __future__ import absolute_import
+from builtins import object
 from .node import Node
 from . import eds_utils
 import os, shutil, types
@@ -37,7 +38,7 @@ _ = lambda x: x
 Class recording a node list for a CANOpen network.
 """
 
-class NodeList:
+class NodeList(object):
 
     def __init__(self, manager, netname = ""):
         self.Root = ""
@@ -88,12 +89,12 @@ class NodeList:
         return self.SlaveNodes[idx]["Name"]
 
     def GetSlaveNames(self):
-        nodes = self.SlaveNodes.keys()
+        nodes = list(self.SlaveNodes.keys())
         nodes.sort()
         return ["0x%2.2X %s"%(idx, self.SlaveNodes[idx]["Name"]) for idx in nodes]
 
     def GetSlaveIDs(self):
-        nodes = self.SlaveNodes.keys()
+        nodes = list(self.SlaveNodes.keys())
         nodes.sort()
         return nodes
 
@@ -217,7 +218,7 @@ class NodeList:
                     network = networks[0]
                     self.NetworkName = network["Name"]
                 if network:
-                    for nodeid, node in network["Nodes"].items():
+                    for nodeid, node in list(network["Nodes"].items()):
                         if node["Present"] == 1:
                             result = self.AddSlaveNode(node["Name"], nodeid, node["DCFName"])
                             if result != None:
@@ -256,13 +257,13 @@ class NodeList:
         self.Manager.SetCurrentEntry(index, subindex, value)
 
     def GetOrderNumber(self, nodeid):
-        nodeindexes = self.SlaveNodes.keys()
+        nodeindexes = list(self.SlaveNodes.keys())
         nodeindexes.sort()
         return nodeindexes.index(nodeid) + 1
 
     def GetNodeByOrder(self, order):
         if order > 0:
-            nodeindexes = self.SlaveNodes.keys()
+            nodeindexes = list(self.SlaveNodes.keys())
             nodeindexes.sort()
             if order <= len(nodeindexes):
                 return self.SlaveNodes[nodeindexes[order - 1]]["Node"]

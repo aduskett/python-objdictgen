@@ -1,5 +1,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
+from builtins import str
+from builtins import object
 """Store Python objects to (pickle-like) XML Documents
 
 Please see the information at gnosis.xml.pickle.doc for
@@ -59,7 +61,7 @@ visited = {}
 # (it's not based on UserList so that (a) we don't have to pull in UserList,
 # and (b) it will break if someone accesses StreamWriter in an unexpected way
 # rather than failing silently for some cases)
-class StreamWriter:
+class StreamWriter(object):
     """A multipurpose stream object. Four styles:
 
     - write an uncompressed file
@@ -114,7 +116,7 @@ def StreamReader( stream ):
 
     return stream
 
-class XML_Pickler:
+class XML_Pickler(object):
     """Framework for 'pickle to XML'.
 
     XML_Pickler offers a lot of flexibility in how you do your pickling.
@@ -159,15 +161,15 @@ class XML_Pickler:
         if deepcopy is None: deepcopy = 0
 
         # write to a file or string, either compressed or not
-        list = StreamWriter(iohandle,binary)
+        list_ = StreamWriter(iohandle,binary)
 
         # here are our three forms:
         if obj is not None:				# XML_Pickler().dumps(obj)
-            return _pickle_toplevel_obj(list,obj, deepcopy)
+            return _pickle_toplevel_obj(list_,obj, deepcopy)
         elif hasattr(self,'to_pickle'): # XML_Pickler(obj).dumps()
-            return _pickle_toplevel_obj(list,self.to_pickle, deepcopy)
+            return _pickle_toplevel_obj(list_,self.to_pickle, deepcopy)
         else:							# myXML_Pickler().dumps()
-            return _pickle_toplevel_obj(list,self, deepcopy)
+            return _pickle_toplevel_obj(list_,self, deepcopy)
 
     def loads(self, xml_str, paranoia=None):
         "Load a pickled object from the given XML string."
@@ -249,7 +251,7 @@ def _pickle_toplevel_obj(xml_list, py_obj, deepcopy):
     # know that (or not care)
     return xml_list.getvalue()
 
-def pickle_instance(obj, list, level=0, deepcopy=0):
+def pickle_instance(obj, list_, level=0, deepcopy=0):
     """Pickle the given object into a <PyObject>
 
     Add XML tags to list. Level is indentation (for aesthetic reasons)
@@ -291,7 +293,7 @@ def pickle_instance(obj, list, level=0, deepcopy=0):
     # save initargs, if we have them
     if args is not None:
         # put them in an <attr name="__getinitargs__" ...> container
-        list.append(_attr_tag('__getinitargs__', args, level, deepcopy))
+        list_.append(_attr_tag('__getinitargs__', args, level, deepcopy))
 
     # decide how to save the "stuff", depending on whether we need
     # to later grab it back as a single object
@@ -299,13 +301,13 @@ def pickle_instance(obj, list, level=0, deepcopy=0):
         if type(stuff) is DictType:
             # don't need it as a single object - save keys/vals as
             # first-level attributes
-            for key,val in stuff.items():
-                list.append(_attr_tag(key, val, level, deepcopy))
+            for key,val in list_(stuff.items()):
+                list_.append(_attr_tag(key, val, level, deepcopy))
         else:
             raise XMLPicklingError("__getstate__ must return a DictType here")
     else:
         # else, encapsulate the "stuff" in an <attr name="__getstate__" ...>
-        list.append(_attr_tag('__getstate__', stuff, level, deepcopy))
+        list_.append(_attr_tag('__getstate__', stuff, level, deepcopy))
 
 #--- Functions to create XML output tags ---
 def _attr_tag(name, thing, level=0, deepcopy=0):
@@ -492,7 +494,7 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
             try:
                 # safe_content assumes it can always convert the string
                 # to unicode, which isn't true (eg. pickle a UTF-8 value)
-                u = unicode(thing)
+                u = str(thing)
             except:
                 raise Exception("Unpickleable string value (%s). To be fixed in next major Gnosis release." % repr(thing))
 

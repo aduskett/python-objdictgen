@@ -22,11 +22,16 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import chr
+from builtins import object
 from builtins import range
 
 from .nosis.xml.pickle.util import add_class_to_store
 
-import cPickle
+import pickle
 from types import ListType, StringType, UnicodeType, IntType
 import re
 
@@ -245,7 +250,7 @@ Return the index of the typename given by searching in mappingdictionary
 """
 def FindTypeIndex(typename, mappingdictionary):
     testdic = {}
-    for index, values in mappingdictionary.iteritems():
+    for index, values in mappingdictionary.items():
         if index < 0x1000:
             testdic[values["name"]] = index
     if typename in testdic:
@@ -272,11 +277,11 @@ def FindTypeDefaultValue(typeindex, mappingdictionary):
 Return the list of types defined in mappingdictionary
 """
 def FindTypeList(mappingdictionary):
-    list = []
+    list_ = []
     for index in mappingdictionary.keys():
         if index < 0x1000:
-            list.append(mappingdictionary[index]["name"])
-    return list
+            list_.append(mappingdictionary[index]["name"])
+    return list_
 
 """
 Return the name of an entry by searching in mappingdictionary
@@ -346,7 +351,7 @@ def FindSubentryInfos(index, subIndex, mappingdictionary, compute=True):
 Return the list of variables that can be mapped defined in mappingdictionary
 """
 def FindMapVariableList(mappingdictionary, Node, compute=True):
-    list = []
+    list_ = []
     for index in mappingdictionary:
         if Node.IsEntry(index):
             for subIndex, values in enumerate(mappingdictionary[index]["values"]):
@@ -359,23 +364,23 @@ def FindMapVariableList(mappingdictionary, Node, compute=True):
                             computed_name = name
                             if compute:
                                 computed_name = StringFormat(computed_name, 1, i + 1)
-                            list.append((index, i + 1, infos["size"], computed_name))
+                            list_.append((index, i + 1, infos["size"], computed_name))
                     else:
                         computed_name = name
                         if compute:
                             computed_name = StringFormat(computed_name, 1, subIndex)
-                        list.append((index, subIndex, infos["size"], computed_name))
-    return list
+                        list_.append((index, subIndex, infos["size"], computed_name))
+    return list_
 
 """
 Return the list of mandatory indexes defined in mappingdictionary
 """
 def FindMandatoryIndexes(mappingdictionary):
-    list = []
+    list_ = []
     for index in mappingdictionary:
         if index >= 0x1000 and mappingdictionary[index]["need"]:
-            list.append(index)
-    return list
+            list_.append(index)
+    return list_
 
 """
 Return the index of the informations in the Object Dictionary in case of identical
@@ -421,7 +426,7 @@ Class recording the Object Dictionary entries. It checks at each modification
 that the structure of the Object Dictionary stay coherent
 """
 
-class Node:
+class Node(object):
 
     DefaultStringSize = 10
 
@@ -888,13 +893,13 @@ class Node:
     Return a copy of the node
     """
     def Copy(self):
-        return cPickle.loads(cPickle.dumps(self))
+        return pickle.loads(pickle.dumps(self))
 
     """
     Return a sorted list of indexes in Object Dictionary
     """
     def GetIndexes(self):
-        listindex = self.Dictionary.keys()
+        listindex = list(self.Dictionary.keys())
         listindex.sort()
         return listindex
 
@@ -906,7 +911,7 @@ class Node:
 
     def PrintString(self):
         result = ""
-        listindex = self.Dictionary.keys()
+        listindex = list(self.Dictionary.keys())
         listindex.sort()
         for index in listindex:
             name = self.GetEntryName(index)
@@ -1050,17 +1055,17 @@ class Node:
         return result
 
     def GetMapVariableList(self, compute=True):
-        list = FindMapVariableList(MappingDictionary, self, compute)
+        list_ = FindMapVariableList(MappingDictionary, self, compute)
         for mapping in self.GetMappings():
-            list.extend(FindMapVariableList(mapping, self, compute))
-        list.sort()
-        return list
+            list_.extend(FindMapVariableList(mapping, self, compute))
+        list_.sort()
+        return list_
 
     def GetMandatoryIndexes(self, node = None):
-        list = FindMandatoryIndexes(MappingDictionary)
+        list_ = FindMandatoryIndexes(MappingDictionary)
         for mapping in self.GetMappings():
-            list.extend(FindMandatoryIndexes(mapping))
-        return list
+            list_.extend(FindMandatoryIndexes(mapping))
+        return list_
 
     def GetCustomisableTypes(self):
         dic = {}
@@ -1096,11 +1101,11 @@ class Node:
 #-------------------------------------------------------------------------------
 
     def GetTypeList(self):
-        list = FindTypeList(MappingDictionary)
+        list_ = FindTypeList(MappingDictionary)
         for mapping in self.GetMappings():
-            list.extend(FindTypeList(mapping))
-        list.sort()
-        return ",".join(list)
+            list_.extend(FindTypeList(mapping))
+        list_.sort()
+        return ",".join(list_)
 
     def GenerateMapName(self, name, index, subindex):
         return "%s (0x%4.4X)" % (name, index)
@@ -1112,8 +1117,8 @@ class Node:
         self.MapList = "None"
         self.NameTranslation = {"None" : "00000000"}
         self.MapTranslation = {"00000000" : "None"}
-        list = self.GetMapVariableList()
-        for index, subIndex, size, name in list:
+        list_ = self.GetMapVariableList()
+        for index, subIndex, size, name in list_:
             self.MapList += ",%s"%name
             map = "%04X%02X%02X"%(index,subIndex,size)
             mapname = self.GenerateMapName(name, index, subIndex)
@@ -1124,8 +1129,8 @@ class Node:
         if mapname == "None":
             return 0
         else:
-            list = self.GetMapVariableList()
-            for index, subIndex, size, name in list:
+            list_ = self.GetMapVariableList()
+            for index, subIndex, size, name in list_:
                 if mapname == self.GenerateMapName(name, index, subIndex):
                     if self.UserMapping[index]["struct"] == 7: # array type, only look at subindex 1 in UserMapping
                         if self.IsStringType(self.UserMapping[index]["values"][1]["type"]):
@@ -1161,8 +1166,8 @@ class Node:
     Return the list of variables that can be mapped for the current node
     """
     def GetMapList(self):
-        list = [_("None")] + [self.GenerateMapName(name, index, subIndex) for index, subIndex, size, name in self.GetMapVariableList()]
-        return ",".join(list)
+        list_ = [_("None")] + [self.GenerateMapName(name, index, subIndex) for index, subIndex, size, name in self.GetMapVariableList()]
+        return ",".join(list_)
 
 def BE_to_LE(value):
     """

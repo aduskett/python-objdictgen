@@ -21,6 +21,7 @@
 #	 might be a little slower.
 #
 
+from builtins import chr
 __all__ = ['usplit','is_legal_xml','is_legal_xml_char']
 
 import re
@@ -64,8 +65,8 @@ def usplit( uval ):
         # the second character is in range (0xdc00 - 0xdfff), then
         # it is a 2-character encoding
         if len(uval[i:]) > 1 and \
-               uval[i] >= unichr(0xD800) and uval[i] <= unichr(0xDBFF) and \
-               uval[i+1] >= unichr(0xDC00) and uval[i+1] <= unichr(0xDFFF):
+               uval[i] >= chr(0xD800) and uval[i] <= chr(0xDBFF) and \
+               uval[i+1] >= chr(0xDC00) and uval[i+1] <= chr(0xDFFF):
 
             # it's a two character encoding
             clist.append( uval[i:i+2] )
@@ -123,9 +124,9 @@ def make_illegal_xml_regex():
 
     # I've defined this oddly due to the bug mentioned at the top of this file
     re_xml_illegal += u'([%s-%s][^%s-%s])|([^%s-%s][%s-%s])|([%s-%s]$)|(^[%s-%s])' % \
-                      (unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff),
-                       unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff),
-                       unichr(0xd800),unichr(0xdbff),unichr(0xdc00),unichr(0xdfff))
+                      (chr(0xd800),chr(0xdbff),chr(0xdc00),chr(0xdfff),
+                       chr(0xd800),chr(0xdbff),chr(0xdc00),chr(0xdfff),
+                       chr(0xd800),chr(0xdbff),chr(0xdc00),chr(0xdfff))
 
     return re.compile( re_xml_illegal )
 
@@ -174,7 +175,7 @@ def is_legal_xml_char( uchar ):
                (uchar >= u'\u000b' and uchar <= u'\u000c') or \
                (uchar >= u'\u000e' and uchar <= u'\u0019') or \
                # always illegal as single chars
-               (uchar >= unichr(0xd800) and uchar <= unichr(0xdfff)) or \
+               (uchar >= chr(0xd800) and uchar <= chr(0xdfff)) or \
                (uchar >= u'\ufffe' and uchar <= u'\uffff')
                )
     elif len(uchar) == 2:
