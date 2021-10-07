@@ -4,13 +4,13 @@ standard_library.install_aliases()
 from builtins import str
 from builtins import map
 from builtins import object
-from ._mutate import XMLP_Mutator, XMLP_Mutated
-from . import _mutate
 
-from ....util.introspect import isInstanceLike, attr_update, \
+from .mutate import XMLP_Mutator, XMLP_Mutated
+from . import mutate
+from .introspect import isInstanceLike, attr_update, \
      data2attr, attr2data, getCoreData, setCoreData, isinstance_any
-from ..util import _klass, _module, obj_from_name
-from ....util.XtoY import aton
+from .util import _klass, _module, obj_from_name
+from .XtoY import aton
 
 import sys
 if sys.version_info[0] >= 3:
@@ -31,7 +31,7 @@ class mutate_builtin_wrapper(XMLP_Mutator):
     def unmutate(self,mobj):
         return mobj.obj.__toplevel__
 
-_mutate.add_mutator(mutate_builtin_wrapper())
+mutate.add_mutator(mutate_builtin_wrapper())
 
 # We pickle array.array() as type "array" and Numeric.array as
 # type "Numpy_array" (this is really what earlier xml_pickles did,
@@ -64,7 +64,7 @@ class mutate_array(XMLP_Mutator):
         else:
             return array.array('d',obj) # double precision
 
-_mutate.add_mutator(mutate_array())
+mutate.add_mutator(mutate_array())
 
 #-- SREs --
 
@@ -85,7 +85,7 @@ class mutate_sre(XMLP_Mutator):
     def unmutate(self,mobj):
         return re.compile(mobj.obj)
 
-_mutate.add_mutator(mutate_sre())
+mutate.add_mutator(mutate_sre())
 
 #-- rawpickles --
 
@@ -101,7 +101,7 @@ class mutate_rawpickle(XMLP_Mutator):
     def mutate(self,obj): return XMLP_Mutated(pickle.dumps(obj))
     def unmutate(self,mobj): return pickle.loads(str(mobj.obj))
 
-_mutate.add_mutator(mutate_rawpickle())
+mutate.add_mutator(mutate_rawpickle())
 
 #-- mx.DateTime --
 
@@ -141,7 +141,7 @@ class mutate_mxdatetime(XMLP_Mutator):
         return mx.DateTime.DateTime(*args)
 
 if mxDateTime_type is not None:
-    _mutate.add_mutator(mutate_mxdatetime())
+    mutate.add_mutator(mutate_mxdatetime())
 
 #-- mutator + support functions for handling objects subclassed
 #-- from builtin types (Python >= 2.2)
@@ -217,4 +217,4 @@ class mutate_bltin_instances(XMLP_Mutator):
             return olddata_to_newdata(obj,mobj.extra,self.paranoia)
 
 # add mutator for instances of builtin classes (int, dict, object, etc.)
-_mutate.add_mutator(mutate_bltin_instances())
+mutate.add_mutator(mutate_bltin_instances())

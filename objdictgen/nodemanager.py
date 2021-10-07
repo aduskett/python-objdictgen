@@ -27,7 +27,7 @@ from past.builtins import execfile
 from builtins import object
 from builtins import range
 
-from .nosis.xml.pickle import load, dump
+from .nosis.pickle import load, dump
 
 from .node import (
     Node,

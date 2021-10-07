@@ -29,7 +29,7 @@ from builtins import chr
 from builtins import object
 from builtins import range
 
-from .nosis.xml.pickle.util import add_class_to_store
+from .nosis.util import add_class_to_store
 
 import pickle
 import re

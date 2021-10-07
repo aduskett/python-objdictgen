@@ -3,9 +3,12 @@ from __future__ import absolute_import
 from builtins import chr
 from builtins import str
 from builtins import object
-from ...pickle import __dict__ as pickle
+
 from types import ModuleType
 import sys
+
+from .pickle import __dict__ as pickle
+
 CLASS_STORE = {}
 
 class SecurityError(Exception): pass
@@ -115,7 +118,7 @@ def get_class_from_vapor(classname):
 
 # -- functions for dynamic object creation --
 
-from ....util.introspect import instance_noinit
+from .introspect import instance_noinit
 
 def obj_from_classtype(klass):
     """Create an object of ClassType klass. We aren't

@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 from builtins import object
-from ....util.introspect import isInstanceLike, hasCoreData
+
+from .introspect import isInstanceLike, hasCoreData
 
 XMLPicklingError = "nosis.xml.pickle.XMLPicklingError"
 XMLUnpicklingError = "nosis.xml.pickle.XMLUnpicklingError"

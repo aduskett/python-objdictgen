@@ -1,11 +1,13 @@
 from __future__ import absolute_import
+
 from xml.dom import minidom
-from ..util import subnodes, _EmptyClass, unsafe_string, \
+
+from .util import subnodes, _EmptyClass, unsafe_string, \
      unsafe_content, safe_eval, obj_from_name, unpickle_function, \
      get_class_from_name
-from ....util.introspect import attr_update
-from ..ext import can_unmutate, unmutate
-from ....util.XtoY import to_number
+from .introspect import attr_update
+from .mutate import can_unmutate, unmutate
+from .XtoY import to_number
 
 # Get appropriate array type.
 from array import *

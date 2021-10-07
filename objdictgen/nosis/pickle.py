@@ -13,17 +13,11 @@ from .util import \
      get_class_from_stack, get_class_full_search, \
      get_class_from_store, get_class_from_vapor, \
      get_function_info
-
-from .ext import can_mutate, mutate, \
+from .mutate import can_mutate, mutate, \
      can_unmutate, unmutate, get_unmutator, try_mutate
-
-from ...util.introspect import isinstance_any, attr_dict, isInstanceLike, \
+from .introspect import isinstance_any, attr_dict, isInstanceLike, \
      hasCoreData, isNewStyleClass
-
-from ...util.XtoY import ntoa
-
-# XML legality checking
-from ..xmlmap import is_legal_xml
+from .XtoY import ntoa
 
 from types import FunctionType, BuiltinFunctionType
 from io import StringIO
@@ -148,7 +142,7 @@ class XML_Pickler(object):
         visited = {}
 
         # Import parser directly
-        from .parsers._dom import thing_from_dom
+        from .dom import thing_from_dom
 
         parser = thing_from_dom
         if parser:
@@ -478,15 +472,7 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
         # for now
         #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
         if isinstance(thing,unicode):
-            # can't pickle unicode containing the special "escape" sequence
-            # we use for putting strings in the XML body (they'll be unpickled
-            # as strings, not unicode, if we do!)
-            if thing[0:2] == u'\xbb\xbb' and thing[-2:] == u'\xab\xab':
-                raise Exception("Unpickleable Unicode value. To be fixed in next major Gnosis release.")
-
-            # see if it contains any XML-illegal values
-            if not is_legal_xml(thing):
-                raise Exception("Unpickleable Unicode value. To be fixed in next major Gnosis release.")
+            raise Exception("Unpickleable Unicode value.")
 
         if isinstance(thing,str) and getInBody(str):
             # technically, this will crash safe_content(), but I prefer to
