@@ -1,12 +1,11 @@
 from __future__ import absolute_import
 from builtins import range
+
 import wx
 
 from .nodeeditortemplate import NodeEditorTemplate
 from .subindextable import EditingPanel
 from .commondialogs import AddSlaveDialog
-
-_ = lambda x: x
 
 [ID_NETWORKEDITNETWORKNODES,
 ] = [wx.NewId() for _init_ctrls in range(1)]
@@ -104,7 +103,7 @@ class NetworkEditorTemplate(NodeEditorTemplate):
     def OnRemoveSlaveMenu(self, event):
         slavenames = self.NodeList.GetSlaveNames()
         slaveids = self.NodeList.GetSlaveIDs()
-        dialog = wx.SingleChoiceDialog(self.Frame, _("Choose a slave to remove"), _("Remove slave"), slavenames)
+        dialog = wx.SingleChoiceDialog(self.Frame, "Choose a slave to remove", "Remove slave", slavenames)
         if dialog.ShowModal() == wx.ID_OK:
             choice = dialog.GetSelection()
             result = self.NodeList.RemoveSlaveNode(slaveids[choice])

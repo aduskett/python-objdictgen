@@ -39,8 +39,6 @@ import sys
 if sys.version_info[0] >= 3:
     unicode = str
 
-_ = lambda x: x
-
 def dbg(s):
     pass
     #print(">> %s"% (s,))
@@ -1174,7 +1172,7 @@ class Node(object):
     Return the list of variables that can be mapped for the current node
     """
     def GetMapList(self):
-        list_ = [_("None")] + [self.GenerateMapName(name, index, subIndex) for index, subIndex, size, name in self.GetMapVariableList()]
+        list_ = ["None"] + [self.GenerateMapName(name, index, subIndex) for index, subIndex, size, name in self.GetMapVariableList()]
         return ",".join(list_)
 
 def BE_to_LE(value):

@@ -23,23 +23,20 @@
 
 from __future__ import print_function
 from __future__ import absolute_import
-
 #from builtins import str
 from builtins import range
-import wx
 
-import os, re, platform, sys, time, traceback, getopt
+import wx
+import os, platform, sys, time, traceback, getopt
 
 if sys.version_info[0] >= 3:
     unicode = str
-
-_ = lambda x: x
 
 __version__ = "$Revision: 1.27 $"
 
 if __name__ == '__main__':
     def usage():
-        print(_("\nUsage of networkedit.py :"))
+        print("\nUsage of networkedit.py :")
         print("\n   %s [Projectpath]\n"%sys.argv[0])
 
     try:
@@ -134,7 +131,7 @@ try:
             try:
                 import webbrowser
             except ImportError:
-                wx.MessageBox(_('Please point your browser at: %s') % url)
+                wx.MessageBox('Please point your browser at: %s' % url)
             else:
                 webbrowser.open(url)
 
@@ -164,25 +161,25 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
 
     def _init_coll_MenuBar_Menus(self, parent):
         if self.ModeSolo:
-            parent.Append(menu=self.FileMenu, title=_('File'))
-        parent.Append(menu=self.NetworkMenu, title=_('Network'))
-        parent.Append(menu=self.EditMenu, title=_('Edit'))
-        parent.Append(menu=self.AddMenu, title=_('Add'))
-        parent.Append(menu=self.HelpMenu, title=_('Help'))
+            parent.Append(menu=self.FileMenu, title='File')
+        parent.Append(menu=self.NetworkMenu, title='Network')
+        parent.Append(menu=self.EditMenu, title='Edit')
+        parent.Append(menu=self.AddMenu, title='Add')
+        parent.Append(menu=self.HelpMenu, title='Help')
 
     def _init_coll_FileMenu_Items(self, parent):
         parent.Append(help='', id=wx.ID_NEW,
-              kind=wx.ITEM_NORMAL, text=_('New\tCTRL+N'))
+              kind=wx.ITEM_NORMAL, text='New\tCTRL+N')
         parent.Append(help='', id=wx.ID_OPEN,
-              kind=wx.ITEM_NORMAL, text=_('Open\tCTRL+O'))
+              kind=wx.ITEM_NORMAL, text='Open\tCTRL+O')
         parent.Append(help='', id=wx.ID_CLOSE,
-              kind=wx.ITEM_NORMAL, text=_('Close\tCTRL+W'))
+              kind=wx.ITEM_NORMAL, text='Close\tCTRL+W')
         parent.AppendSeparator()
         parent.Append(help='', id=wx.ID_SAVE,
-              kind=wx.ITEM_NORMAL, text=_('Save\tCTRL+S'))
+              kind=wx.ITEM_NORMAL, text='Save\tCTRL+S')
         parent.AppendSeparator()
         parent.Append(help='', id=wx.ID_EXIT,
-              kind=wx.ITEM_NORMAL, text=_('Exit'))
+              kind=wx.ITEM_NORMAL, text='Exit')
         self.Bind(wx.EVT_MENU, self.OnNewProjectMenu, id=wx.ID_NEW)
         self.Bind(wx.EVT_MENU, self.OnOpenProjectMenu, id=wx.ID_OPEN)
         self.Bind(wx.EVT_MENU, self.OnCloseProjectMenu, id=wx.ID_CLOSE)
@@ -191,12 +188,12 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
 
     def _init_coll_NetworkMenu_Items(self, parent):
         parent.Append(help='', id=wx.ID_ADD,
-              kind=wx.ITEM_NORMAL, text=_('Add Slave Node'))
+              kind=wx.ITEM_NORMAL, text='Add Slave Node')
         parent.Append(help='', id=wx.ID_DELETE,
-              kind=wx.ITEM_NORMAL, text=_('Remove Slave Node'))
+              kind=wx.ITEM_NORMAL, text='Remove Slave Node')
         parent.AppendSeparator()
         parent.Append(help='', id=ID_NETWORKEDITNETWORKMENUBUILDMASTER,
-              kind=wx.ITEM_NORMAL, text=_('Build Master Dictionary'))
+              kind=wx.ITEM_NORMAL, text='Build Master Dictionary')
         self.Bind(wx.EVT_MENU, self.OnAddSlaveMenu, id=wx.ID_ADD)
         self.Bind(wx.EVT_MENU, self.OnRemoveSlaveMenu, id=wx.ID_DELETE)
 ##        self.Bind(wx.EVT_MENU, self.OnBuildMasterMenu,
@@ -204,21 +201,21 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
 
     def _init_coll_EditMenu_Items(self, parent):
         parent.Append(help='', id=wx.ID_REFRESH,
-              kind=wx.ITEM_NORMAL, text=_('Refresh\tCTRL+R'))
+              kind=wx.ITEM_NORMAL, text='Refresh\tCTRL+R')
         parent.AppendSeparator()
         parent.Append(help='', id=wx.ID_UNDO,
-              kind=wx.ITEM_NORMAL, text=_('Undo\tCTRL+Z'))
+              kind=wx.ITEM_NORMAL, text='Undo\tCTRL+Z')
         parent.Append(help='', id=wx.ID_REDO,
-              kind=wx.ITEM_NORMAL, text=_('Redo\tCTRL+Y'))
+              kind=wx.ITEM_NORMAL, text='Redo\tCTRL+Y')
         parent.AppendSeparator()
         parent.Append(help='', id=ID_NETWORKEDITEDITMENUNODEINFOS,
-              kind=wx.ITEM_NORMAL, text=_('Node infos'))
+              kind=wx.ITEM_NORMAL, text='Node infos')
         parent.Append(help='', id=ID_NETWORKEDITEDITMENUDS301PROFILE,
-              kind=wx.ITEM_NORMAL, text=_('DS-301 Profile'))
+              kind=wx.ITEM_NORMAL, text='DS-301 Profile')
         parent.Append(help='', id=ID_NETWORKEDITEDITMENUDS302PROFILE,
-              kind=wx.ITEM_NORMAL, text=_('DS-302 Profile'))
+              kind=wx.ITEM_NORMAL, text='DS-302 Profile')
         parent.Append(help='', id=ID_NETWORKEDITEDITMENUOTHERPROFILE,
-              kind=wx.ITEM_NORMAL, text=_('Other Profile'))
+              kind=wx.ITEM_NORMAL, text='Other Profile')
         self.Bind(wx.EVT_MENU, self.OnRefreshMenu, id=wx.ID_REFRESH)
         self.Bind(wx.EVT_MENU, self.OnUndoMenu, id=wx.ID_UNDO)
         self.Bind(wx.EVT_MENU, self.OnRedoMenu, id=wx.ID_REDO)
@@ -233,17 +230,17 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
 
     def _init_coll_AddMenu_Items(self, parent):
         parent.Append(help='', id=ID_NETWORKEDITADDMENUSDOSERVER,
-              kind=wx.ITEM_NORMAL, text=_('SDO Server'))
+              kind=wx.ITEM_NORMAL, text='SDO Server')
         parent.Append(help='', id=ID_NETWORKEDITADDMENUSDOCLIENT,
-              kind=wx.ITEM_NORMAL, text=_('SDO Client'))
+              kind=wx.ITEM_NORMAL, text='SDO Client')
         parent.Append(help='', id=ID_NETWORKEDITADDMENUPDOTRANSMIT,
-              kind=wx.ITEM_NORMAL, text=_('PDO Transmit'))
+              kind=wx.ITEM_NORMAL, text='PDO Transmit')
         parent.Append(help='', id=ID_NETWORKEDITADDMENUPDORECEIVE,
-              kind=wx.ITEM_NORMAL, text=_('PDO Receive'))
+              kind=wx.ITEM_NORMAL, text='PDO Receive')
         parent.Append(help='', id=ID_NETWORKEDITADDMENUMAPVARIABLE,
-              kind=wx.ITEM_NORMAL, text=_('Map Variable'))
+              kind=wx.ITEM_NORMAL, text='Map Variable')
         parent.Append(help='', id=ID_NETWORKEDITADDMENUUSERTYPE,
-              kind=wx.ITEM_NORMAL, text=_('User Type'))
+              kind=wx.ITEM_NORMAL, text='User Type')
         self.Bind(wx.EVT_MENU, self.OnAddSDOServerMenu,
               id=ID_NETWORKEDITADDMENUSDOSERVER)
         self.Bind(wx.EVT_MENU, self.OnAddSDOClientMenu,
@@ -259,14 +256,14 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
 
     def _init_coll_HelpMenu_Items(self, parent):
         parent.Append(help='', id=wx.ID_HELP,
-              kind=wx.ITEM_NORMAL, text=_('DS-301 Standard\tF1'))
+              kind=wx.ITEM_NORMAL, text='DS-301 Standard\tF1')
         self.Bind(wx.EVT_MENU, self.OnHelpDS301Menu, id=wx.ID_HELP)
         parent.Append(help='', id=wx.ID_HELP_CONTEXT,
-              kind=wx.ITEM_NORMAL, text=_('CAN Festival Docs\tF2'))
+              kind=wx.ITEM_NORMAL, text='CAN Festival Docs\tF2')
         self.Bind(wx.EVT_MENU, self.OnHelpCANFestivalMenu, id=wx.ID_HELP_CONTEXT)
         if Html_Window and self.ModeSolo:
             parent.Append(help='', id=wx.ID_ABOUT,
-                  kind=wx.ITEM_NORMAL, text=_('About'))
+                  kind=wx.ITEM_NORMAL, text='About')
             self.Bind(wx.EVT_MENU, self.OnAboutMenu, id=wx.ID_ABOUT)
 
     def _init_coll_HelpBar_Fields(self, parent):
@@ -300,7 +297,7 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
     def _init_ctrls(self, prnt):
         wx.Frame.__init__(self, id=ID_NETWORKEDIT, name='networkedit',
               parent=prnt, pos=wx.Point(149, 178), size=wx.Size(1000, 700),
-              style=wx.DEFAULT_FRAME_STYLE, title=_('Networkedit'))
+              style=wx.DEFAULT_FRAME_STYLE, title='Networkedit')
         self._init_utils()
         self.SetClientSize(wx.Size(1000, 700))
         self.SetMenuBar(self.MenuBar)
@@ -370,7 +367,7 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
             defaultpath = os.path.dirname(self.NodeList.GetRoot())
         else:
             defaultpath = os.getcwd()
-        dialog = wx.DirDialog(self , _("Choose a project"), defaultpath, wx.DD_NEW_DIR_BUTTON)
+        dialog = wx.DirDialog(self , "Choose a project", defaultpath, wx.DD_NEW_DIR_BUTTON)
         if dialog.ShowModal() == wx.ID_OK:
             projectpath = dialog.GetPath()
             if os.path.isdir(projectpath) and len(os.listdir(projectpath)) == 0:
@@ -388,7 +385,7 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
                     self.RefreshProfileMenu()
                     self.RefreshMainMenu()
                 else:
-                    message = wx.MessageDialog(self, result, _("ERROR"), wx.OK|wx.ICON_ERROR)
+                    message = wx.MessageDialog(self, result, "ERROR", wx.OK|wx.ICON_ERROR)
                     message.ShowModal()
                     message.Destroy()
 
@@ -397,7 +394,7 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
             defaultpath = os.path.dirname(self.NodeList.GetRoot())
         else:
             defaultpath = os.getcwd()
-        dialog = wx.DirDialog(self , _("Choose a project"), defaultpath, 0)
+        dialog = wx.DirDialog(self , "Choose a project", defaultpath, 0)
         if dialog.ShowModal() == wx.ID_OK:
             projectpath = dialog.GetPath()
             if os.path.isdir(projectpath):
@@ -415,7 +412,7 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
                     self.RefreshProfileMenu()
                     self.RefreshMainMenu()
                 else:
-                    message = wx.MessageDialog(self, result, _("Error"), wx.OK|wx.ICON_ERROR)
+                    message = wx.MessageDialog(self, result, "Error", wx.OK|wx.ICON_ERROR)
                     message.ShowModal()
                     message.Destroy()
         dialog.Destroy()
@@ -426,20 +423,20 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
         else:
             result = self.NodeList.SaveProject()
             if result:
-                message = wx.MessageDialog(self, result, _("Error"), wx.OK|wx.ICON_ERROR)
+                message = wx.MessageDialog(self, result, "Error", wx.OK|wx.ICON_ERROR)
                 message.ShowModal()
                 message.Destroy()
 
     def OnCloseProjectMenu(self, event):
         if self.NodeList:
             if self.NodeList.HasChanged():
-                dialog = wx.MessageDialog(self, _("There are changes, do you want to save?"), _("Close Project"), wx.YES_NO|wx.CANCEL|wx.ICON_QUESTION)
+                dialog = wx.MessageDialog(self, "There are changes, do you want to save?", "Close Project", wx.YES_NO|wx.CANCEL|wx.ICON_QUESTION)
                 answer = dialog.ShowModal()
                 dialog.Destroy()
                 if answer == wx.ID_YES:
                     result = self.NodeList.SaveProject()
                     if result:
-                        message = wx.MessageDialog(self, result, _("Error"), wx.OK|wx.ICON_ERROR)
+                        message = wx.MessageDialog(self, result, "Error", wx.OK|wx.ICON_ERROR)
                         message.ShowModal()
                         message.Destroy()
                 elif answer == wx.ID_NO:
@@ -458,9 +455,9 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
 
     def RefreshTitle(self):
         if self.NodeList != None:
-            self.SetTitle(_("Networkedit - %s") % self.NodeList.GetNetworkName())
+            self.SetTitle("Networkedit - %s" % self.NodeList.GetNetworkName())
         else:
-            self.SetTitle(_("Networkedit"))
+            self.SetTitle("Networkedit")
 
     def RefreshStatusBar(self):
         selected = self.NetworkNodes.GetSelection()
@@ -527,13 +524,13 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
                 index, subIndex = result
                 result = OpenPDFDocIndex(index, ScriptDirectory)
                 if isinstance(result, (str,unicode)):
-                    message = wx.MessageDialog(self, result, _("ERROR"), wx.OK|wx.ICON_ERROR)
+                    message = wx.MessageDialog(self, result, "ERROR", wx.OK|wx.ICON_ERROR)
                     message.ShowModal()
                     message.Destroy()
         if not find_index:
             result = OpenPDFDocIndex(None, ScriptDirectory)
             if isinstance(result, (str,unicode)):
-                message = wx.MessageDialog(self, result, _("ERROR"), wx.OK|wx.ICON_ERROR)
+                message = wx.MessageDialog(self, result, "ERROR", wx.OK|wx.ICON_ERROR)
                 message.ShowModal()
                 message.Destroy()
 
@@ -548,7 +545,7 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
             os.system("xpdf -remote CANFESTIVAL %s %d &"%(os.path.join(ScriptDirectory, "doc/manual_en.pdf"),16))
 
     def OnAboutMenu(self, event):
-        self.OpenHtmlFrame(_("About CAN Festival"), os.path.join(ScriptDirectory, "doc/about.html"), wx.Size(500, 450))
+        self.OpenHtmlFrame("About CAN Festival", os.path.join(ScriptDirectory, "doc/about.html"), wx.Size(500, 450))
 
     def OpenHtmlFrame(self, title, file, size):
         if title not in self.HtmlFrameOpened:
@@ -568,12 +565,12 @@ Max_Traceback_List_Size = 20
 def Display_Exception_Dialog(e_type,e_value,e_tb):
     trcbck_lst = []
     for i,line in enumerate(traceback.extract_tb(e_tb)):
-        trcbck = " " + str(i+1) + _(". ")
+        trcbck = " " + str(i+1) + ". "
         if line[0].find(os.getcwd()) == -1:
-            trcbck += _("file : ") + str(line[0]) + _(",   ")
+            trcbck += "file : " + str(line[0]) + ",   "
         else:
-            trcbck += _("file : ") + str(line[0][len(os.getcwd()):]) + _(",   ")
-        trcbck += _("line : ") + str(line[1]) + _(",   ") + _("function : ") + str(line[2])
+            trcbck += "file : " + str(line[0][len(os.getcwd()):]) + ",   "
+        trcbck += "line : " + str(line[1]) + ",   " + "function : " + str(line[2])
         trcbck_lst.append(trcbck)
 
     # Allow clicking....
@@ -582,7 +579,7 @@ def Display_Exception_Dialog(e_type,e_value,e_tb):
         cap.ReleaseMouse()
 
     dlg = wx.SingleChoiceDialog(None,
-        _("""
+        """
 An error happens.
 
 Click on OK for saving an error report.
@@ -592,9 +589,9 @@ edouard.tisserant@gmail.com
 
 
 Error:
-""") +
-        str(e_type) + _(" : ") + str(e_value),
-        _("Error"),
+""" +
+        str(e_type) + " : " + str(e_value),
+        "Error",
         trcbck_lst)
     try:
         res = (dlg.ShowModal() == wx.ID_OK)
@@ -604,7 +601,7 @@ Error:
     return res
 
 def Display_Error_Dialog(e_value):
-    message = wx.MessageDialog(None, str(e_value), _("Error"), wx.OK|wx.ICON_ERROR)
+    message = wx.MessageDialog(None, str(e_value), "Error", wx.OK|wx.ICON_ERROR)
     message.ShowModal()
     message.Destroy()
 

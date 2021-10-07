@@ -19,7 +19,16 @@ else:
     unicode = str
 
 from operator import add
-from .combinators import or_, not_, and_, lazy_any
+
+or_ = lambda f,g: lambda x, f=f, g=g: f(x) or g(x)
+not_ = lambda f: lambda x, f=f: not f(x)
+and_ = lambda f,g: lambda x, f=f, g=g: f(x) and g(x)
+def shortcut_any(*fns):
+    accum = fns[0]
+    for fn in fns[1:]:
+        accum = or_(accum, fn)
+    return accum
+lazy_any = shortcut_any
 
 containers = (list, tuple, dict)
 simpletypes = (int, float, complex, str, unicode)

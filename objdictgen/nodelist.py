@@ -24,11 +24,10 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from builtins import object
+
 from .node import Node
 from . import eds_utils
-import os, shutil, types
-
-_ = lambda x: x
+import os, shutil
 
 #-------------------------------------------------------------------------------
 #                          Definition of NodeList Object
@@ -110,7 +109,7 @@ class NodeList(object):
 
         self.Root = root
         if not os.path.exists(self.Root):
-            return _("\"%s\" folder doesn't exist")%self.Root
+            return "\"%s\" folder doesn't exist"%self.Root
 
         eds_folder = self.GetEDSFolder()
         if not os.path.exists(eds_folder):
@@ -149,7 +148,7 @@ class NodeList(object):
         eds_folder = self.GetEDSFolder()
         eds = os.path.join(eds_folder, file)
         if not force and os.path.isfile(eds):
-            return _("EDS file already imported"), True
+            return "EDS file already imported", True
         else:
             shutil.copy(edspath, eds_folder)
             return self.LoadEDS(file), False
@@ -170,7 +169,7 @@ class NodeList(object):
             self.Changed = True
             return None
         else:
-            return _("\"%s\" EDS file is not available")%eds
+            return "\"%s\" EDS file is not available"%eds
 
     def RemoveSlaveNode(self, index):
         if index in self.SlaveNodes.keys():
@@ -178,7 +177,7 @@ class NodeList(object):
             self.Changed = True
             return None
         else:
-            return _("Node with \"0x%2.2X\" ID doesn't exist")
+            return "Node with \"0x%2.2X\" ID doesn't exist"
 
     def LoadMasterNode(self, netname = None):
         if netname:
@@ -201,7 +200,7 @@ class NodeList(object):
         if self.Manager.SaveCurrentInFile(masterpath):
             return None
         else:
-            return _("Fail to save Master Node")
+            return "Fail to save Master Node"
 
     def LoadSlaveNodes(self, netname = None):
         cpjpath = os.path.join(self.Root, "nodelist.cpj")
@@ -225,7 +224,7 @@ class NodeList(object):
                                 return result
                 self.Changed = False
             except SyntaxError as message:
-                return _("Unable to load CPJ file\n%s")%message
+                return "Unable to load CPJ file\n%s"%message
         return None
 
     def SaveNodeList(self, netname = None):
@@ -241,14 +240,14 @@ class NodeList(object):
             self.Changed = False
             return None
         except:
-            return _("Fail to save node list")
+            return "Fail to save node list"
 
     def GetSlaveNodeEntry(self, nodeid, index, subindex = None):
         if nodeid in self.SlaveNodes.keys():
             self.SlaveNodes[nodeid]["Node"].SetNodeID(nodeid)
             return self.SlaveNodes[nodeid]["Node"].GetEntry(index, subindex)
         else:
-            return _("Node 0x%2.2X doesn't exist")%nodeid
+            return "Node 0x%2.2X doesn't exist"%nodeid
 
     def GetMasterNodeEntry(self, index, subindex = None):
         return self.Manager.GetCurrentEntry(index, subindex)
@@ -316,7 +315,7 @@ class NodeList(object):
                             validindexes.append((node.GetEntryName(index), index))
                     return validindexes
                 else:
-                    print(_("Can't find node"))
+                    print("Can't find node")
         return []
 
     def GetCurrentEntryValues(self, index):
@@ -326,7 +325,7 @@ class NodeList(object):
                 node.SetNodeID(self.CurrentSelected)
                 return self.Manager.GetNodeEntryValues(node, index)
             else:
-                print(_("Can't find node"))
+                print("Can't find node")
         return [], []
 
     def AddToMasterDCF(self, node_id, index, subindex, size, value):
