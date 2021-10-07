@@ -11,17 +11,20 @@ def docstrings():
     """
     isContainer.__doc__  = "this and that"
 
-import sys, string
+import sys
 
-from types import *
+if sys.version_info[0] < 3:
+    from types import InstanceType
+else:
+    unicode = str
+
 from operator import add
 from .combinators import or_, not_, and_, lazy_any
 
-containers = (ListType, TupleType, DictType)
-simpletypes = (IntType, LongType, FloatType, ComplexType, StringType)
-simpletypes = simpletypes + (UnicodeType,)
+containers = (list, tuple, dict)
+simpletypes = (int, float, complex, str, unicode)
 datatypes = simpletypes+containers
-immutabletypes = simpletypes+(TupleType,)
+immutabletypes = simpletypes+(tuple,)
 
 class undef(object): pass
 
@@ -37,7 +40,7 @@ isImmutable	 = lambda o: isinstance_any(o, immutabletypes)
 
 isNewStyleInstance = lambda o: issubclass(o.__class__,__builtins__['object']) and \
                             not type(o) in datatypes
-isOldStyleInstance = lambda o: isinstance(o, ClassType)
+isOldStyleInstance = lambda o: False
 isClass			= or_(isOldStyleInstance, isNewStyleInstance)
 
 def isNewStyleClass(o):
@@ -120,10 +123,10 @@ def setCoreData(o, data, force=0):
         new = o.__class__(data)
         attr_update(new, attr_dict(o))	# __slots__ safe attr_dict()
         o = new
-    elif isinstance(o, DictType):
+    elif isinstance(o, dict):
         o.clear()
         o.update(data)
-    elif isinstance(o, ListType):
+    elif isinstance(o, list):
         o[:] = data
     return o
 

@@ -22,7 +22,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 from __future__ import absolute_import
-from builtins import str
+#from builtins import str
 from builtins import map
 from builtins import range
 import wx
@@ -836,7 +836,7 @@ class EditingPanel(wx.SplitterWindow):
                         elif value.startswith("0x"):
                             value = int(value, 16)
                         else:
-                            value = int(value.encode("hex_codec"), 16)
+                            value = int(value, 16)
                         self.Manager.AddToMasterDCF(node_id, index, subindex, max(1, typeinfos["size"] // 8), value)
                         self.ParentWindow.OpenMasterDCFDialog(node_id)
 

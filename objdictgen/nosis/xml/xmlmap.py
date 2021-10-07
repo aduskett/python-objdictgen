@@ -26,16 +26,8 @@ __all__ = ['usplit','is_legal_xml','is_legal_xml_char']
 
 import re
 
-# define True/False if this Python doesn't have them (only
-# used in this file)
-try:
-    a = True
-except:
-    True = 1
-    False = 0
-
 def usplit( uval ):
-    """
+    r"""
     Split Unicode string into a sequence of characters.
     \U sequences are considered to be a single character.
 
@@ -80,7 +72,7 @@ def usplit( uval ):
 
 # I put this in a function so the text would be a docstring
 def make_illegal_xml_regex():
-    """
+    r"""
     I want to define a regexp to match *illegal* characters.
     That way, I can do "re.search()" to find a single character,
     instead of "re.match()" to match the entire string. [Based on
@@ -140,7 +132,7 @@ def is_legal_xml( uval ):
     return (c_re_xml_illegal.search( uval ) == None)
 
 def is_legal_xml_char( uchar ):
-    """
+    r"""
     Check if a single unicode char is XML-legal.
     (This is faster that running the full 'is_legal_xml()' regexp
     when you need to go character-at-a-time. For string-at-a-time

@@ -4,7 +4,7 @@ from builtins import chr
 from builtins import str
 from builtins import object
 from ...pickle import __dict__ as pickle
-from types import *
+from types import ModuleType
 import sys
 CLASS_STORE = {}
 
@@ -16,7 +16,8 @@ class _EmptyClass(object): pass
 dynamic_module = _EmptyClass().__class__.__module__
 
 def dbg(s):
-    print(">> %s"% (s,))
+    pass
+    #print(">> %s"% (s,))
 
 # adapted from pickle.py, whichmodule()
 def get_function_info( func ):
@@ -56,7 +57,7 @@ def unpickle_function( module,name,paranoia ):
 def _get_class_from_locals(dict, modname, classname):
     for name in dict.keys():
         # class imported by caller
-        if name == modname and type(dict[name]) is ModuleType:
+        if name == modname and isinstance(dict[name], ModuleType):
             mod = dict[name]
             if hasattr(mod,classname):
                 return getattr(mod,classname)
@@ -107,7 +108,7 @@ def remove_class_from_store(classname):
 
 def get_class_from_vapor(classname):
     " Create new class from nothing"
-    print(">> EXEC in get_class_from_vapor() '%s'" %('class %s: pass' % classname))
+    dbg("EXEC in get_class_from_vapor() '%s'" %('class %s: pass' % classname))
     exec('class %s: pass' % classname)
     k = locals()[classname]
     return k
@@ -200,12 +201,12 @@ def safe_eval(s):
     if 0:   # Condition for malicious string in eval() block
         raise SecurityError("Malicious string '%s' should not be eval()'d" % s)
     else:
-        print(">> EVAL in safe_eval(): '%s'" %(s))
+        dbg("EVAL in safe_eval(): '%s'" %(s))
         return eval(s)
 
 def safe_string(s):
-    if isinstance(s, UnicodeType):
-        raise TypeError("Unicode strings may not be stored in XML attributes")
+    #if isinstance(s, unicode):
+    #    raise TypeError("Unicode strings may not be stored in XML attributes")
 
     # markup XML entities
     s = s.replace('&', '&amp;')
@@ -221,7 +222,7 @@ def unsafe_string(s):
     # for Python escapes, exec the string
     # (niggle w/ literalizing apostrophe)
     s = s.replace("'", r"\047")
-    #print(">> EXEC in unsafe_string(): '%s'" %("s='"+s+"'",))
+    dbg("EXEC in unsafe_string(): '%s'" %("s='"+s+"'",))
     exec("s='"+s+"'")
     # XML entities (DOM does it for us)
     return s
@@ -233,7 +234,7 @@ def safe_content(s):
     s = s.replace('>', '&gt;')
 
     # wrap "regular" python strings as unicode
-    if isinstance(s, StringType):
+    if isinstance(s, str):
         s = u"\xbb\xbb%s\xab\xab" % s
 
     return s.encode('utf-8')

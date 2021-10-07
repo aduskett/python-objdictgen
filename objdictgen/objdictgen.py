@@ -25,12 +25,14 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import unicode_literals
+#from builtins import str
 
 import getopt,sys,os
-from types import StringType, UnicodeType
 
 from .nodemanager import NodeManager
 
+if sys.version_info[0] >= 3:
+    unicode = str
 
 def usage():
     print("\nUsage of objdictgen :")
@@ -64,7 +66,7 @@ def main():
         if os.path.isfile(fileIn):
             print("Parsing input file")
             result = manager.OpenFileInCurrent(fileIn)
-            if not isinstance(result, (StringType, UnicodeType)):
+            if not isinstance(result, (str,unicode)):
                 Node = result
             else:
                 print(result)
@@ -74,7 +76,7 @@ def main():
             sys.exit(-1)
         print("Writing output file")
         result = manager.ExportCurrentToCFile(fileOut)
-        if isinstance(result, (UnicodeType, StringType)):
+        if isinstance(result, (str,unicode)):
             print(result)
             sys.exit(-1)
         print("All done")

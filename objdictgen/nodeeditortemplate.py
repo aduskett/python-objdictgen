@@ -1,12 +1,17 @@
 from __future__ import absolute_import
+#from builtins import str
 from builtins import object
 from builtins import range
 
 import wx
 
-from types import StringType, UnicodeType
 from .node import OD_Subindex, OD_MultipleSubindexes, OD_IdenticalSubindexes, OD_IdenticalIndexes
 from .commondialogs import NodeInfosDialog, CommunicationDialog, MapVariableDialog, UserTypeDialog
+
+import sys
+
+if sys.version_info[0] >= 3:
+    unicode = str
 
 _ = lambda x : x
 
@@ -206,7 +211,7 @@ class NodeEditorTemplate(object):
             dialog.SetIndex(index)
             if dialog.ShowModal() == wx.ID_OK:
                 result = self.Manager.AddMapVariableToCurrent(*dialog.GetValues())
-                if not isinstance(result, (StringType, UnicodeType)):
+                if not isinstance(result, (str,unicode)):
                     self.RefreshBufferState()
                     self.RefreshCurrentIndexList()
                 else:
@@ -220,7 +225,7 @@ class NodeEditorTemplate(object):
         dialog.SetTypeList(self.Manager.GetCustomisableTypes())
         if dialog.ShowModal() == wx.ID_OK:
             result = self.Manager.AddUserTypeToCurrent(*dialog.GetValues())
-            if not isinstance(result, (StringType, UnicodeType)):
+            if not isinstance(result, (str,unicode)):
                 self.RefreshBufferState()
                 self.RefreshCurrentIndexList()
             else:

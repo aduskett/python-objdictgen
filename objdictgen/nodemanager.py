@@ -23,16 +23,22 @@
 
 from __future__ import absolute_import
 from past.builtins import execfile
-from builtins import str
+#from builtins import str
 from builtins import object
 from builtins import range
 
 from .nosis.xml.pickle import load, dump
 
-from .node import Node, OD_MultipleSubindexes, OD_IdenticalSubindexes, OD_IdenticalIndexes, OD_Subindex, AccessType, BoolType, OptionType, CustomisableTypes, MappingDictionary, LE_to_BE, BE_to_LE, FindEntryName, FindEntryInfos, FindSubentryInfos, FindTypeIndex, FindTypeName, FindTypeDefaultValue, FindMandatoryIndexes
+from .node import (
+    Node,
+    OD_MultipleSubindexes, OD_IdenticalSubindexes,
+    AccessType, BoolType, OptionType, CustomisableTypes, MappingDictionary,
+    LE_to_BE, BE_to_LE,
+    FindEntryName, FindEntryInfos, FindSubentryInfos, FindTypeIndex,
+    FindTypeName, FindTypeDefaultValue, FindMandatoryIndexes,
+)
 from . import eds_utils, gen_cfile
 
-from types import ListType
 import os, re
 
 _ = lambda x: x
@@ -1014,7 +1020,7 @@ class NodeManager(object):
         list_ = [index for index in MappingDictionary.keys() if index >= 0x1000]
         profiles = self.CurrentNode.GetMappings(False)
         for profile in profiles:
-            list_.extend(list_(profile.keys()))
+            list_.extend(list(profile.keys()))
         list_.sort()
         for index in list_:
             if min <= index <= max and not self.CurrentNode.IsEntry(index) and index not in exclusionlist:
@@ -1037,7 +1043,7 @@ class NodeManager(object):
             editors = []
             values = node.GetEntry(index, compute = False)
             params = node.GetParamsEntry(index)
-            if isinstance(values, ListType):
+            if isinstance(values, list):
                 for i, value in enumerate(values):
                     data.append({"value" : value})
                     data[-1].update(params[i])
@@ -1062,7 +1068,7 @@ class NodeManager(object):
                           "type" : None, "value" : None,
                           "access" : None, "save" : "option",
                           "callback" : "option", "comment" : "string", "buffer_size" : "string"}
-                if isinstance(values, ListType) and i == 0:
+                if isinstance(values, list) and i == 0:
                     if 0x1600 <= index <= 0x17FF or 0x1A00 <= index <= 0x1C00:
                         editor["access"] = "raccess"
                 else:

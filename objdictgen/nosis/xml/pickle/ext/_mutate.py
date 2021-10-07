@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 from builtins import object
-from types import *
 from ....util.introspect import isInstanceLike, hasCoreData
 
 XMLPicklingError = "nosis.xml.pickle.XMLPicklingError"
@@ -41,7 +40,7 @@ def get_mutator(obj):
     # class, yet cannot serve as a base class (they can only be True or
     # False). Therefore, there will never be a need for a mutator, and
     # they can be completely handled in the main "if" block in _pickle.py.
-    if type(obj) is BooleanType:
+    if isinstance(obj, bool):
          return None
 
     if not hasattr(obj,'__class__'):

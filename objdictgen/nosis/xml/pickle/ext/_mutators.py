@@ -6,12 +6,15 @@ from builtins import map
 from builtins import object
 from ._mutate import XMLP_Mutator, XMLP_Mutated
 from . import _mutate
-import sys, string
-from types import *
+
 from ....util.introspect import isInstanceLike, attr_update, \
      data2attr, attr2data, getCoreData, setCoreData, isinstance_any
 from ..util import _klass, _module, obj_from_name
 from ....util.XtoY import aton
+
+import sys
+if sys.version_info[0] >= 3:
+    unicode = str
 
 class _EmptyClass(object): pass
 
@@ -155,16 +158,8 @@ def olddata_to_newdata(data,extra,paranoia):
     (module,klass) = extra.split()
     o = obj_from_name(klass,module,paranoia)
 
-    #if isinstance(o,ComplexType) and \
-    #	   type(data) in [StringType,UnicodeType]:
-    #	# yuck ... have to strip () from complex data before
-    #	# passing to __init__ (ran into this also in one of the
-    #	# parsers ... maybe the () shouldn't be in the XML at all?)
-    #	if data[0] == '(' and data[-1] == ')':
-    #		data = data[1:-1]
-
-    if isinstance_any(o,(IntType,FloatType,ComplexType,LongType)) and \
-                      type(data) in [StringType,UnicodeType]:
+    if isinstance_any(o,(int,float,complex)) and \
+                      isinstance(data, (str, unicode)):
         data = aton(data)
 
     o = setCoreData(o,data)
@@ -187,7 +182,7 @@ class mutate_bltin_instances(XMLP_Mutator):
 
     def mutate(self,obj):
 
-        if isinstance(obj,UnicodeType):
+        if isinstance(obj, unicode):
             # unicode strings are required to be placed in the body
             # (by our encoding scheme)
             self.in_body = 1

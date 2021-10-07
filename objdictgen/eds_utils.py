@@ -24,18 +24,17 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from past.builtins import execfile
-from builtins import str
+#from builtins import str
 from builtins import range
 
 from . import node
 from .node import nosub, var, array, rec, plurivar, pluriarray, plurirec
-try:
-    set
-except NameError:
-    from sets import Set as set
-from types import IntType, LongType, StringType, UnicodeType, ListType
 from time import localtime, strftime
 import os,re
+import sys
+
+if sys.version_info[0] >= 3:
+    unicode = str
 
 _ = lambda x: x
 
@@ -60,8 +59,8 @@ BOOL_TRANSLATE = {True : "1", False : "0"}
 ACCESS_TRANSLATE = {"RO" : "ro", "WO" : "wo", "RW" : "rw", "RWR" : "rw", "RWW" : "rw", "CONST" : "ro"}
 
 # Function for verifying data values
-is_integer = lambda x: type(x) in (IntType, LongType)
-is_string = lambda x: type(x) in (StringType, UnicodeType)
+is_integer = lambda x: isinstance(x, int)
+is_string = lambda x: isinstance(x, (str, unicode))
 is_boolean = lambda x: x in (0, 1)
 
 # Define checking of value for each attribute
@@ -416,7 +415,7 @@ def VerifyValue(values, section_name, param):
             elif values["DATATYPE"] == 0x01:
                 values[param.upper()] = {0 : False, 1 : True}[values[param.upper()]]
             else:
-                if not isinstance(values[param.upper()], (IntType, LongType)) and values[param.upper()].upper().find("$NODEID") == -1:
+                if not isinstance(values[param.upper()], int) and values[param.upper()].upper().find("$NODEID") == -1:
                     raise
         except:
             raise SyntaxError(_("Error on section \"[%s]\":\n%s incompatible with DataType")%(section_name, param))
@@ -538,7 +537,7 @@ def GenerateFileContent(Node, filepath):
         # Define section name
         text = "\n[%X]\n"%entry
         # If there is only one value, it's a VAR entry
-        if type(values) != ListType:
+        if not isinstance(values, list):
             # Extract the informations of the first subindex
             subentry_infos = Node.GetSubentryInfos(entry, 0)
             # Generate EDS informations for the entry

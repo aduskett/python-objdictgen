@@ -24,7 +24,7 @@
 from __future__ import print_function
 from future import standard_library
 standard_library.install_aliases()
-from builtins import str
+#from builtins import str
 from builtins import chr
 from builtins import object
 from builtins import range
@@ -32,10 +32,18 @@ from builtins import range
 from .nosis.xml.pickle.util import add_class_to_store
 
 import pickle
-from types import ListType, StringType, UnicodeType, IntType
 import re
 
+import sys
+
+if sys.version_info[0] >= 3:
+    unicode = str
+
 _ = lambda x: x
+
+def dbg(s):
+    pass
+    #print(">> %s"% (s,))
 
 """
 Dictionary of translation between access symbol and their signification
@@ -412,7 +420,7 @@ def StringFormat(text, idx, sub):
     result = name_model.match(text)
     if result:
         format = result.groups()
-        print(">> EVAL in StringFormat(): '%s'" %(format[1],))
+        dbg("EVAL in StringFormat(): '%s'" %(format[1],))
         return format[0]%eval(format[1])
     else:
         return text
@@ -581,7 +589,7 @@ class Node(object):
             elif subIndex == 1:
                 self.Dictionary[index] = [value]
                 return True
-        elif subIndex > 0 and type(self.Dictionary[index]) == ListType and subIndex == len(self.Dictionary[index]) + 1:
+        elif subIndex > 0 and isinstance(self.Dictionary[index], list) and subIndex == len(self.Dictionary[index]) + 1:
             self.Dictionary[index].append(value)
             return True
         return False
@@ -595,7 +603,7 @@ class Node(object):
                 if value != None:
                     self.Dictionary[index] = value
                 return True
-            elif type(self.Dictionary[index]) == ListType and 0 < subIndex <= len(self.Dictionary[index]):
+            elif isinstance(self.Dictionary[index], list) and 0 < subIndex <= len(self.Dictionary[index]):
                 if value != None:
                     self.Dictionary[index][subIndex - 1] = value
                 return True
@@ -607,7 +615,7 @@ class Node(object):
         if index in self.Dictionary:
             if (comment != None or save != None or callback != None or buffer_size != None) and index not in self.ParamsDictionary:
                 self.ParamsDictionary[index] = {}
-            if subIndex == None or type(self.Dictionary[index]) != ListType and subIndex == 0:
+            if subIndex == None or not isinstance(self.Dictionary[index], list) and subIndex == 0:
                 if comment != None:
                     self.ParamsDictionary[index]["comment"] = comment
                 if buffer_size != None:
@@ -617,7 +625,7 @@ class Node(object):
                 if callback != None:
                     self.ParamsDictionary[index]["callback"] = callback
                 return True
-            elif type(self.Dictionary[index]) == ListType and 0 <= subIndex <= len(self.Dictionary[index]):
+            elif isinstance(self.Dictionary[index], list) and 0 <= subIndex <= len(self.Dictionary[index]):
                 if (comment != None or save != None or callback != None or buffer_size != None) and subIndex not in self.ParamsDictionary[index]:
                     self.ParamsDictionary[index][subIndex] = {}
                 if comment != None:
@@ -643,7 +651,7 @@ class Node(object):
                 if index in self.ParamsDictionary:
                     self.ParamsDictionary.pop(index)
                 return True
-            elif type(self.Dictionary[index]) == ListType and subIndex == len(self.Dictionary[index]):
+            elif isinstance(self.Dictionary[index], list) and subIndex == len(self.Dictionary[index]):
                 self.Dictionary[index].pop(subIndex - 1)
                 if index in self.ParamsDictionary:
                     if subIndex in self.ParamsDictionary[index]:
@@ -674,7 +682,7 @@ class Node(object):
     def GetEntry(self, index, subIndex = None, compute = True):
         if index in self.Dictionary:
             if subIndex == None:
-                if type(self.Dictionary[index]) == ListType:
+                if isinstance(self.Dictionary[index], list):
                     values = [len(self.Dictionary[index])]
                     for value in self.Dictionary[index]:
                         values.append(self.CompileValue(value, index, compute))
@@ -682,11 +690,11 @@ class Node(object):
                 else:
                     return self.CompileValue(self.Dictionary[index], index, compute)
             elif subIndex == 0:
-                if type(self.Dictionary[index]) == ListType:
+                if isinstance(self.Dictionary[index], list):
                     return len(self.Dictionary[index])
                 else:
                     return self.CompileValue(self.Dictionary[index], index, compute)
-            elif type(self.Dictionary[index]) == ListType and 0 < subIndex <= len(self.Dictionary[index]):
+            elif isinstance(self.Dictionary[index], list) and 0 < subIndex <= len(self.Dictionary[index]):
                 return self.CompileValue(self.Dictionary[index][subIndex - 1], index, compute)
         return None
 
@@ -699,7 +707,7 @@ class Node(object):
             self.ParamsDictionary = {}
         if index in self.Dictionary:
             if subIndex == None:
-                if type(self.Dictionary[index]) == ListType:
+                if isinstance(self.Dictionary[index], list):
                     if index in self.ParamsDictionary:
                         result = []
                         for i in range(len(self.Dictionary[index]) + 1):
@@ -715,12 +723,12 @@ class Node(object):
                     if index in self.ParamsDictionary:
                         result.update(self.ParamsDictionary[index])
                     return result
-            elif subIndex == 0 and type(self.Dictionary[index]) != ListType:
+            elif subIndex == 0 and not isinstance(self.Dictionary[index], list):
                 result = DefaultParams.copy()
                 if index in self.ParamsDictionary:
                     result.update(self.ParamsDictionary[index])
                 return result
-            elif type(self.Dictionary[index]) == ListType and 0 <= subIndex <= len(self.Dictionary[index]):
+            elif isinstance(self.Dictionary[index], list) and 0 <= subIndex <= len(self.Dictionary[index]):
                 result = DefaultParams.copy()
                 if index in self.ParamsDictionary and subIndex in self.ParamsDictionary[index]:
                     result.update(self.ParamsDictionary[index][subIndex])
@@ -916,7 +924,7 @@ class Node(object):
         for index in listindex:
             name = self.GetEntryName(index)
             values = self.Dictionary[index]
-            if isinstance(values, ListType):
+            if isinstance(values, list):
                 result += "%04X (%s):\n"%(index, name)
                 for subidx, value in enumerate(values):
                     subentry_infos = self.GetSubentryInfos(index, subidx + 1)
@@ -935,23 +943,23 @@ class Node(object):
                             value += (" %0"+"%d"%(size * 2)+"X")%BE_to_LE(data[i+7:i+7+size])
                             i += 7 + size
                             count += 1
-                    elif isinstance(value, IntType):
+                    elif isinstance(value, int):
                         value = "%X"%value
                     result += "%04X %02X (%s): %s\n"%(index, subidx+1, subentry_infos["name"], value)
             else:
-                if isinstance(values, IntType):
+                if isinstance(values, int):
                     values = "%X"%values
                 result += "%04X (%s): %s\n"%(index, name, values)
         return result
 
     def CompileValue(self, value, index, compute = True):
-        if isinstance(value, (StringType, UnicodeType)) and value.upper().find("$NODEID") != -1:
+        if isinstance(value, (str,unicode)) and value.upper().find("$NODEID") != -1:
             base = self.GetBaseIndex(index)
             try:
-                print(">> EVAL in CompileValue(): '%s'" %(value,))
+                dbg("EVAL in CompileValue(): '%s'" %(value,))
                 raw = eval(value)
                 if compute:
-                    print(">> EVAL in CompileValue() #2: '%s'" %(raw.upper().replace("$NODEID","self.ID"),))
+                    dbg("EVAL in CompileValue() #2: '%s'" %(raw.upper().replace("$NODEID","self.ID"),))
                     return eval(raw.upper().replace("$NODEID","self.ID"))
                 return raw
             except:

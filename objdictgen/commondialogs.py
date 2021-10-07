@@ -22,7 +22,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 from __future__ import absolute_import
-from builtins import str
+#from builtins import str
 from builtins import range
 
 import wx
@@ -583,7 +583,7 @@ class UserTypeDialog(wx.Dialog):
         if length != None:
             self.Length.SetValue(str(length))
 
-    def SetTypeList(self, typedic, type = None):
+    def SetTypeList(self, typedic, type_ = None):
         self.Type.Clear()
         list_ = []
         for index, (name, valuetype) in typedic.items():
@@ -592,8 +592,8 @@ class UserTypeDialog(wx.Dialog):
         list_.sort()
         for index, name in list_:
             self.Type.Append(name)
-        if type != None:
-            self.Type.SetStringSelection(typedic[type][0])
+        if type_ != None:
+            self.Type.SetStringSelection(typedic[type_][0])
         self.RefreshValues()
 
     def OnTypeChoice(self, event):

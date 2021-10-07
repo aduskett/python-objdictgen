@@ -25,8 +25,12 @@ from ...util.XtoY import ntoa
 # XML legality checking
 from ..xmlmap import is_legal_xml
 
-from types import *
+from types import FunctionType, BuiltinFunctionType
 from io import StringIO
+
+import sys
+if sys.version_info[0] >= 3:
+    unicode = str
 
 # default settings
 TYPE_IN_BODY = {}
@@ -35,14 +39,13 @@ def setInBody(typename,val):
     TYPE_IN_BODY[typename] = val
 def getInBody(typename): return TYPE_IN_BODY.get(typename) or 0
 
-setInBody(IntType,0)
-setInBody(FloatType,0)
-setInBody(LongType,0)
-setInBody(ComplexType,0)
-setInBody(StringType,0)
+setInBody(int,0)
+setInBody(float,0)
+setInBody(complex,0)
+setInBody(str,0)
 # our unicode vs. "regular string" scheme relies on unicode
 # strings only being in the body, so this is hardcoded.
-setInBody(UnicodeType,1)
+setInBody(unicode,1)
 
 # Define exceptions and flags
 XMLPicklingError = "nosis.xml.pickle.XMLPicklingError"
@@ -79,7 +82,7 @@ class StreamWriter(object):
             self.iohandle = gzip.GzipFile(None,'wb',9,self.iohandle)
 
     def append(self,item):
-        if type(item) in (ListType, TupleType): item = ''.join(item)
+        if isinstance(item, (list, tuple)): item = ''.join(item)
         self.iohandle.write(item)
 
     def getvalue(self):
@@ -102,7 +105,7 @@ def StreamReader( stream ):
     appropriate for reading the stream."""
 
     # turn strings into stream
-    if type(stream) in [StringType,UnicodeType]:
+    if isinstance(stream, (str, unicode)):
         stream = StringIO(stream)
 
     # determine if we have a gzipped stream by checking magic
@@ -124,7 +127,6 @@ class XML_Pickler(object):
     """
     def __init__(self, py_obj=None):
         if py_obj is not None:
-            #if type(py_obj) is InstanceType:
             if isInstanceLike(py_obj):
                 self.to_pickle = py_obj
             else:
@@ -144,8 +146,6 @@ class XML_Pickler(object):
         fh = StreamReader(fh)
 
         visited = {}
-
-        print(">>-------")
 
         # Import parser directly
         from .parsers._dom import thing_from_dom
@@ -298,7 +298,7 @@ def pickle_instance(obj, list_, level=0, deepcopy=0):
     # decide how to save the "stuff", depending on whether we need
     # to later grab it back as a single object
     if not hasattr(obj,'__setstate__'):
-        if type(stuff) is DictType:
+        if isinstance(stuff, dict):
             # don't need it as a single object - save keys/vals as
             # first-level attributes
             for key,val in list_(stuff.items()):
@@ -401,12 +401,12 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
     (mtag,thing,in_body,mextra) = try_mutate(orig_thing,None,
                                              getInBody(type(orig_thing)), None)
 
-    if type(thing) is NoneType:
+    if thing is None:
         start_tag = start_tag + "%s />\n" % (_family_type('none','None',None,None))
         close_tag = ''
     # bool cannot be used as a base class (see sanity check above) so if thing
     # is a bool it will always be BooleanType, and either True or False
-    elif type(thing) is BooleanType:
+    elif isinstance(thing, bool):
         if thing is True:
             typestr = 'True'
         else: # must be False
@@ -425,7 +425,7 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
     # ClassType will get caught by isInstanceLike(), which is not
     # what we want. There are two cases here - the first catches
     # old-style classes, the second catches new-style classes.
-    elif isinstance(thing,ClassType) or isNewStyleClass(thing):
+    elif isNewStyleClass(thing):
         module = thing.__module__
         if module:
             extra = 'module="%s" class="%s"' % (module, thing.__name__)
@@ -454,7 +454,7 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
             pickle_instance(thing, tag_body, level+1, deepcopy)
         else:
             close_tag = ''
-    elif isinstance_any(thing, (IntType, LongType, FloatType, ComplexType)):
+    elif isinstance_any(thing, (int, float, complex)):
         #thing_str = repr(thing)
         thing_str = ntoa(thing)
 
@@ -471,13 +471,13 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
             start_tag = start_tag + '%s value="%s" />\n' % \
                       (_family_type('atom','numeric',mtag,mextra),thing_str)
             close_tag = ''
-    elif isinstance_any(thing, (StringType,UnicodeType)):
+    elif isinstance_any(thing, (str,unicode)):
         #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
         # special check for now - this will be fixed in the next major
         # gnosis release, so I don't care that the code is inline & gross
         # for now
         #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-        if isinstance(thing,UnicodeType):
+        if isinstance(thing,unicode):
             # can't pickle unicode containing the special "escape" sequence
             # we use for putting strings in the XML body (they'll be unpickled
             # as strings, not unicode, if we do!)
@@ -488,7 +488,7 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
             if not is_legal_xml(thing):
                 raise Exception("Unpickleable Unicode value. To be fixed in next major Gnosis release.")
 
-        if isinstance(thing,StringType) and getInBody(StringType):
+        if isinstance(thing,str) and getInBody(str):
             # technically, this will crash safe_content(), but I prefer to
             # have the test here for clarity
             try:
@@ -520,7 +520,7 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
     #	   before pickling subitems, in case it contains self-references
     #	   (we CANNOT just move the visited{} update to the top of this
     #	   function, since that would screw up every _family_type() call)
-    elif type(thing) is TupleType:
+    elif isinstance(thing, tuple):
         start_tag, do_copy = \
                    _tag_compound(start_tag,_family_type('seq','tuple',mtag,mextra),
                                  orig_thing,deepcopy)
@@ -529,7 +529,7 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
                 tag_body.append(_item_tag(item, level+1, deepcopy))
         else:
             close_tag = ''
-    elif type(thing) is ListType:
+    elif isinstance(thing, list):
         start_tag, do_copy = \
                    _tag_compound(start_tag,_family_type('seq','list',mtag,mextra),
                                  orig_thing,deepcopy)
@@ -540,7 +540,7 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
                 tag_body.append(_item_tag(item, level+1, deepcopy))
         else:
             close_tag = ''
-    elif type(thing) in [DictType]:
+    elif isinstance(thing, dict):
         start_tag, do_copy = \
                    _tag_compound(start_tag,_family_type('map','dict',mtag,mextra),
                                  orig_thing,deepcopy)
@@ -551,7 +551,7 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
                 tag_body.append(_entry_tag(key, val, level+1, deepcopy))
         else:
             close_tag = ''
-    elif type(thing) in [FunctionType,BuiltinFunctionType]:
+    elif isinstance(thing, (FunctionType,BuiltinFunctionType)):
         info = get_function_info(thing)
         # use module/class tags -- not perfect semantically, but better
         # that creating new attr names

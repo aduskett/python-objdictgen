@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from types import *
 from xml.dom import minidom
 from ..util import subnodes, _EmptyClass, unsafe_string, \
      unsafe_content, safe_eval, obj_from_name, unpickle_function, \
@@ -64,7 +63,7 @@ def unpickle_instance(node, paranoia):
     if hasattr(pyobj,'__setstate__'):
         pyobj.__setstate__(stuff)
     else:
-        if type(stuff) is DictType:	 # must be a Dict if no __setstate__
+        if isinstance(stuff, dict):	 # must be a Dict if no __setstate__
             # see note in pickle.py/load_build() about restricted
             # execution -- do the same thing here
             #try:

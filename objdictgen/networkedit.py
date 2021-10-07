@@ -24,12 +24,14 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from builtins import str
+#from builtins import str
 from builtins import range
 import wx
 
-from types import StringType, UnicodeType
 import os, re, platform, sys, time, traceback, getopt
+
+if sys.version_info[0] >= 3:
+    unicode = str
 
 _ = lambda x: x
 
@@ -524,13 +526,13 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
                 find_index = True
                 index, subIndex = result
                 result = OpenPDFDocIndex(index, ScriptDirectory)
-                if isinstance(result, (StringType, UnicodeType)):
+                if isinstance(result, (str,unicode)):
                     message = wx.MessageDialog(self, result, _("ERROR"), wx.OK|wx.ICON_ERROR)
                     message.ShowModal()
                     message.Destroy()
         if not find_index:
             result = OpenPDFDocIndex(None, ScriptDirectory)
-            if isinstance(result, (StringType, UnicodeType)):
+            if isinstance(result, (str,unicode)):
                 message = wx.MessageDialog(self, result, _("ERROR"), wx.OK|wx.ICON_ERROR)
                 message.ShowModal()
                 message.Destroy()

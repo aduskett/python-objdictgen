@@ -22,10 +22,8 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 from __future__ import absolute_import
-from builtins import str
+#from builtins import str
 from builtins import range
-
-from types import ListType
 
 from .node import OD_IdenticalSubindexes, OD_MultipleSubindexes
 
@@ -96,12 +94,12 @@ def GetValidTypeInfos(typename, items=[]):
             raise ValueError(_("""!!! %s isn't a valid type for CanFestival.""")%typename)
     return typeinfos
 
-def ComputeValue(type, value):
-    if type == "visible_string":
+def ComputeValue(type_, value):
+    if type_ == "visible_string":
         return "\"%s\""%value, ""
-    elif type == "domain":
+    elif type_ == "domain":
         return "\"%s\""%''.join(["\\x%2.2x"%ord(char) for char in value]), ""
-    elif type.startswith("real"):
+    elif type_.startswith("real"):
         return "%f"%value, ""
     else: # value is integer; make sure to handle negative numbers correctly
         if value < 0:
@@ -110,7 +108,7 @@ def ComputeValue(type, value):
             return "0x%X"%value, "\t/* %s */"%str(value)
 
 def WriteFile(filepath, content):
-    cfile = open(filepath,"w")
+    cfile = open(filepath,"wb")
     cfile.write(content.encode('utf-8'))
     cfile.close()
 
@@ -199,7 +197,7 @@ def GenerateFileContent(Node, headerfilepath, pointers_dict = {}):
         strIndex = ""
         entry_infos = Node.GetEntryInfos(index)
         params_infos = Node.GetParamsEntry(index)
-        texts["EntryName"] = entry_infos["name"].encode('ascii','replace')
+        texts["EntryName"] = entry_infos["name"]
         values = Node.GetEntry(index)
         if index in variablelist:
             strIndex += "\n/* index 0x%(index)04X :   Mapped variable %(EntryName)s */\n"%texts
@@ -207,11 +205,11 @@ def GenerateFileContent(Node, headerfilepath, pointers_dict = {}):
             strIndex += "\n/* index 0x%(index)04X :   %(EntryName)s. */\n"%texts
 
         # Entry type is VAR
-        if not isinstance(values, ListType):
+        if not isinstance(values, list):
             subentry_infos = Node.GetSubentryInfos(index, 0)
             typename = GetTypeName(Node, subentry_infos["type"])
             typeinfos = GetValidTypeInfos(typename, [values])
-            if typename is "DOMAIN" and index in variablelist:
+            if typename == "DOMAIN" and index in variablelist:
                 if not typeinfos[1]:
                     raise ValueError(_("\nDomain variable not initialized\nindex : 0x%04X\nsubindex : 0x00")%index)
             texts["subIndexType"] = typeinfos[0]
@@ -265,7 +263,7 @@ def GenerateFileContent(Node, headerfilepath, pointers_dict = {}):
                             if subIndex == len(values)-1:
                                 sep = ""
                             value, comment = ComputeValue(typeinfos[2], value)
-                            if len(value) is 2 and typename is "DOMAIN":
+                            if len(value) == 2 and typename == "DOMAIN":
                                 raise ValueError("\nDomain variable not initialized\nindex : 0x%04X\nsubindex : 0x%02X"%(index, subIndex))
                             mappedVariableContent += "    %s%s%s\n"%(value, sep, comment)
                     mappedVariableContent += "  };\n"

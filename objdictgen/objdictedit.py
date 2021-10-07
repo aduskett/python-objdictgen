@@ -24,12 +24,14 @@
 from __future__ import print_function
 from __future__ import absolute_import
 
-from builtins import str
+#from builtins import str
 from builtins import range
 import wx
 
-from types import IntType, LongType, StringType, UnicodeType
 import os, re, platform, sys, time, traceback, getopt
+
+if sys.version_info[0] >= 3:
+    unicode = str
 
 _ = lambda x: x
 
@@ -311,7 +313,7 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
         if self.ModeSolo:
             for filepath in filesOpen:
                 result = self.Manager.OpenFileInCurrent(os.path.abspath(filepath))
-                if isinstance(result, (IntType, LongType)):
+                if isinstance(result, int):
                     new_editingpanel = EditingPanel(self.FileOpened, self, self.Manager)
                     new_editingpanel.SetIndex(result)
                     self.FileOpened.AddPage(new_editingpanel, "")
@@ -360,13 +362,13 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
                 find_index = True
                 index, subIndex = result
                 result = OpenPDFDocIndex(index, ScriptDirectory)
-                if isinstance(result, (StringType, UnicodeType)):
+                if isinstance(result, (str,unicode)):
                     message = wx.MessageDialog(self, result, _("ERROR"), wx.OK|wx.ICON_ERROR)
                     message.ShowModal()
                     message.Destroy()
         if not find_index:
             result = OpenPDFDocIndex(None, ScriptDirectory)
-            if isinstance(result, (StringType, UnicodeType)):
+            if isinstance(result, (str,unicode)):
                 message = wx.MessageDialog(self, result, _("ERROR"), wx.OK|wx.ICON_ERROR)
                 message.ShowModal()
                 message.Destroy()
@@ -510,7 +512,7 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
             NMT = dialog.GetNMTManagement()
             options = dialog.GetOptions()
             result = self.Manager.CreateNewNode(name, id, nodetype, description, profile, filepath, NMT, options)
-            if isinstance(result, (IntType, LongType)):
+            if isinstance(result, int):
                 new_editingpanel = EditingPanel(self.FileOpened, self, self.Manager)
                 new_editingpanel.SetIndex(result)
                 self.FileOpened.AddPage(new_editingpanel, "")
@@ -538,7 +540,7 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
             filepath = dialog.GetPath()
             if os.path.isfile(filepath):
                 result = self.Manager.OpenFileInCurrent(filepath)
-                if isinstance(result, (IntType, LongType)):
+                if isinstance(result, int):
                     new_editingpanel = EditingPanel(self.FileOpened, self, self.Manager)
                     new_editingpanel.SetIndex(result)
                     self.FileOpened.AddPage(new_editingpanel, "")
@@ -571,7 +573,7 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
         result = self.Manager.SaveCurrentInFile()
         if not result:
             self.SaveAs()
-        elif not isinstance(result, (StringType, UnicodeType)):
+        elif not isinstance(result, (str,unicode)):
             self.RefreshBufferState()
         else:
             message = wx.MessageDialog(self, result, _("Error"), wx.OK|wx.ICON_ERROR)
@@ -589,7 +591,7 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
             filepath = dialog.GetPath()
             if os.path.isdir(os.path.dirname(filepath)):
                 result = self.Manager.SaveCurrentInFile(filepath)
-                if not isinstance(result, (StringType, UnicodeType)):
+                if not isinstance(result, (str,unicode)):
                     self.RefreshBufferState()
                 else:
                     message = wx.MessageDialog(self, result, _("Error"), wx.OK|wx.ICON_ERROR)
@@ -633,7 +635,7 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
             filepath = dialog.GetPath()
             if os.path.isfile(filepath):
                 result = self.Manager.ImportCurrentFromEDSFile(filepath)
-                if isinstance(result, (IntType, LongType)):
+                if isinstance(result, int):
                     new_editingpanel = EditingPanel(self.FileOpened, self, self.Manager)
                     new_editingpanel.SetIndex(result)
                     self.FileOpened.AddPage(new_editingpanel, "")
