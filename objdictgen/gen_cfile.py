@@ -106,9 +106,8 @@ def ComputeValue(type_, value):
             return "0x%X"%value, "\t/* %s */"%str(value)
 
 def WriteFile(filepath, content):
-    cfile = open(filepath,"wb")
-    cfile.write(content.encode('utf-8'))
-    cfile.close()
+    with open(filepath, "wb") as f:
+        f.write(content.encode('utf-8'))
 
 def GetTypeName(Node, typenumber):
     typename = Node.GetTypeName(typenumber)

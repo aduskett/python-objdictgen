@@ -18,14 +18,12 @@ for Python 2.7. Download and install both.
 
 To setup the virtual environment run:
 
-    $ py -2 -mvirtualenv venv       # py.exe comes from newer py3 installations
+    $ py -2 -mvirtualenv --system-site-packages venv
     $ venv/Scripts/python -mpip install --upgrade pip wheel setuptools
     $ venv/Scripts/pip install .
 
-Unfortunately wxPython isn't able to find wx installed centrally. To copy them
-into the `venv` do the following
-
-    $ cp -a /c/Python27/Lib/site-packages/wx* venv/Lib/site-packages/
+NOTE: `py` is for Windows, and it requires python 3 to be installed on the
+system.
 
 
 ## Python 3

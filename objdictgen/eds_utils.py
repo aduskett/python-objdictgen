@@ -147,7 +147,8 @@ def ExtractSections(file):
 def ParseCPJFile(filepath):
     networks = []
     # Read file text
-    cpj_file = open(filepath,'r').read()
+    with open(filepath, "r") as f:
+        cpj_file = f.read()
     sections = ExtractSections(cpj_file)
     # Parse assignments for each section
     for section_name, assignments in sections:
@@ -257,7 +258,8 @@ def ParseCPJFile(filepath):
 def ParseEDSFile(filepath):
     eds_dict = {}
     # Read file text
-    eds_file = open(filepath,'r').read()
+    with open(filepath, 'r') as f:
+        eds_file = f.read()
     sections = ExtractSections(eds_file)
 
     # Parse assignments for each section
@@ -421,12 +423,8 @@ def VerifyValue(values, section_name, param):
 
 # Function that write an EDS file after generate it's content
 def WriteFile(filepath, content):
-    # Open file in write mode
-    cfile = open(filepath,"w")
-    # Write content
-    cfile.write(content)
-    # Close file
-    cfile.close()
+    with open(filepath, "w") as f:
+        f.write(content)
 
 
 # Function that generate the EDS file content for the current node in the manager

@@ -232,11 +232,11 @@ class NodeList(object):
             cpjpath = os.path.join(self.Root, "nodelist.cpj")
             content = eds_utils.GenerateCPJContent(self)
             if netname:
-                file = open(cpjpath, "a")
+                mode = "a"
             else:
-                file = open(cpjpath, "w")
-            file.write(content)
-            file.close()
+                mode = "w"
+            with open(cpjpath, mode=mode) as f:
+                f.write(content)
             self.Changed = False
             return None
         except:

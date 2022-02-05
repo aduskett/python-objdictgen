@@ -45,77 +45,6 @@ from .nodemanager import NodeManager
 from .nodeeditortemplate import NodeEditorTemplate
 from .subindextable import EditingPanel
 from .commondialogs import CreateNodeDialog
-from .doc_index.DS301_index import OpenPDFDocIndex, get_acroversion
-
-try:
-    import wx.html
-
-    EVT_HTML_URL_CLICK = wx.NewId()
-
-    class HtmlWindowUrlClick(wx.PyEvent):
-        def __init__(self, linkinfo):
-            wx.PyEvent.__init__(self)
-            self.SetEventType(EVT_HTML_URL_CLICK)
-            self.linkinfo = (linkinfo.GetHref(), linkinfo.GetTarget())
-
-    class UrlClickHtmlWindow(wx.html.HtmlWindow):
-        """ HTML window that generates and OnLinkClicked event.
-
-        Use this to avoid having to override HTMLWindow
-        """
-        def OnLinkClicked(self, linkinfo):
-            wx.PostEvent(self, HtmlWindowUrlClick(linkinfo))
-
-        def Bind(self, event, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
-            if event == HtmlWindowUrlClick:
-                self.Connect(-1, -1, EVT_HTML_URL_CLICK, handler)
-            else:
-                wx.html.HtmlWindow.Bind(event, handler, source=source, id=id, id2=id2)
-
-#-------------------------------------------------------------------------------
-#                                Html Frame
-#-------------------------------------------------------------------------------
-
-    [ID_HTMLFRAME, ID_HTMLFRAMEHTMLCONTENT] = [wx.NewId() for _init_ctrls in range(2)]
-
-    class HtmlFrame(wx.Frame):
-        def _init_ctrls(self, prnt):
-            wx.Frame.__init__(self, id=ID_HTMLFRAME, name='HtmlFrame',
-                  parent=prnt, pos=wx.Point(320, 231), size=wx.Size(853, 616),
-                  style=wx.DEFAULT_FRAME_STYLE, title='')
-            self.Bind(wx.EVT_CLOSE, self.OnCloseFrame)
-
-            self.HtmlContent = UrlClickHtmlWindow(id=ID_HTMLFRAMEHTMLCONTENT,
-                  name='HtmlContent', parent=self, pos=wx.Point(0, 0),
-                  size=wx.Size(-1, -1), style=wx.html.HW_SCROLLBAR_AUTO|wx.html.HW_NO_SELECTION)
-            self.HtmlContent.Bind(HtmlWindowUrlClick, self.OnLinkClick)
-
-        def __init__(self, parent, opened):
-            self._init_ctrls(parent)
-            self.HtmlFrameOpened = opened
-
-        def SetHtmlCode(self, htmlcode):
-            self.HtmlContent.SetPage(htmlcode)
-
-        def SetHtmlPage(self, htmlpage):
-            self.HtmlContent.LoadPage(htmlpage)
-
-        def OnCloseFrame(self, event):
-            self.HtmlFrameOpened.remove(self.GetTitle())
-            event.Skip()
-
-        def OnLinkClick(self, event):
-            url = event.linkinfo[0]
-            try:
-                import webbrowser
-            except ImportError:
-                wx.MessageBox('Please point your browser at: %s' % url)
-            else:
-                webbrowser.open(url)
-
-    Html_Window = True
-except:
-    Html_Window = False
 
 [ID_OBJDICTEDIT, ID_OBJDICTEDITFILEOPENED,
  ID_OBJDICTEDITHELPBAR,
@@ -143,7 +72,6 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
             parent.Append(menu=self.FileMenu, title='File')
         parent.Append(menu=self.EditMenu, title='Edit')
         parent.Append(menu=self.AddMenu, title='Add')
-        parent.Append(menu=self.HelpMenu, title='Help')
 
     def _init_coll_FileMenu_Items(self, parent):
         parent.Append(help='', id=wx.ID_NEW,
@@ -235,18 +163,6 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
         self.Bind(wx.EVT_MENU, self.OnAddUserTypeMenu,
               id=ID_OBJDICTEDITADDMENUUSERTYPE)
 
-    def _init_coll_HelpMenu_Items(self, parent):
-        parent.Append(help='', id=wx.ID_HELP,
-              kind=wx.ITEM_NORMAL, text='DS-301 Standard\tF1')
-        self.Bind(wx.EVT_MENU, self.OnHelpDS301Menu, id=wx.ID_HELP)
-        parent.Append(help='', id=wx.ID_HELP_CONTEXT,
-              kind=wx.ITEM_NORMAL, text='CAN Festival Docs\tF2')
-        self.Bind(wx.EVT_MENU, self.OnHelpCANFestivalMenu, id=wx.ID_HELP_CONTEXT)
-        if Html_Window and self.ModeSolo:
-            parent.Append(help='', id=wx.ID_ABOUT,
-                  kind=wx.ITEM_NORMAL, text='About')
-            self.Bind(wx.EVT_MENU, self.OnAboutMenu, id=wx.ID_ABOUT)
-
     def _init_coll_HelpBar_Fields(self, parent):
         parent.SetFieldsCount(3)
 
@@ -271,7 +187,6 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
             self._init_coll_FileMenu_Items(self.FileMenu)
         self._init_coll_EditMenu_Items(self.EditMenu)
         self._init_coll_AddMenu_Items(self.AddMenu)
-        self._init_coll_HelpMenu_Items(self.HelpMenu)
 
     def _init_ctrls(self, prnt):
         wx.Frame.__init__(self, id=ID_OBJDICTEDIT, name='objdictedit',
@@ -303,7 +218,6 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
         else:
             NodeEditorTemplate.__init__(self, manager, self, False)
         self._init_ctrls(parent)
-        self.HtmlFrameOpened = []
 
         icon = wx.Icon(os.path.join(ScriptDirectory,"networkedit.ico"),wx.BITMAP_TYPE_ICO)
         self.SetIcon(icon)
@@ -349,58 +263,6 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
                     self.RefreshStatusBar()
                     self.RefreshProfileMenu()
         event.Skip()
-
-    def OnHelpDS301Menu(self, event):
-        find_index = False
-        selected = self.FileOpened.GetSelection()
-        if selected >= 0:
-            window = self.FileOpened.GetPage(selected)
-            result = window.GetSelection()
-            if result:
-                find_index = True
-                index, subIndex = result
-                result = OpenPDFDocIndex(index, ScriptDirectory)
-                if isinstance(result, (str,unicode)):
-                    message = wx.MessageDialog(self, result, "ERROR", wx.OK|wx.ICON_ERROR)
-                    message.ShowModal()
-                    message.Destroy()
-        if not find_index:
-            result = OpenPDFDocIndex(None, ScriptDirectory)
-            if isinstance(result, (str,unicode)):
-                message = wx.MessageDialog(self, result, "ERROR", wx.OK|wx.ICON_ERROR)
-                message.ShowModal()
-                message.Destroy()
-
-    def OnHelpCANFestivalMenu(self, event):
-        #self.OpenHtmlFrame("CAN Festival Reference", os.path.join(ScriptDirectory, "doc/canfestival.html"), wx.Size(1000, 600))
-        if wx.Platform == '__WXMSW__':
-            readerpath = get_acroversion()
-            readerexepath = os.path.join(readerpath,"AcroRd32.exe")
-            if(os.path.isfile(readerexepath)):
-                os.spawnl(os.P_DETACH, readerexepath, "AcroRd32.exe", '"%s"'%os.path.join(ScriptDirectory, "doc","manual_en.pdf"))
-            else:
-                message = wx.MessageDialog(self, "Check if Acrobat Reader is correctly installed on your computer", "ERROR", wx.OK|wx.ICON_ERROR)
-                message.ShowModal()
-                message.Destroy()
-        else:
-            try:
-                os.system("xpdf -remote CANFESTIVAL %s %d &"%(os.path.join(ScriptDirectory, "doc/manual_en.pdf"),16))
-            except:
-                message = wx.MessageDialog(self, "Check if xpdf is correctly installed on your computer", "ERROR", wx.OK|wx.ICON_ERROR)
-                message.ShowModal()
-                message.Destroy()
-
-    def OnAboutMenu(self, event):
-        self.OpenHtmlFrame("About CAN Festival", os.path.join(ScriptDirectory, "doc/about.html"), wx.Size(500, 450))
-
-    def OpenHtmlFrame(self, title, file, size):
-        if title not in self.HtmlFrameOpened:
-            self.HtmlFrameOpened.append(title)
-            window = HtmlFrame(self, self.HtmlFrameOpened)
-            window.SetTitle(title)
-            window.SetHtmlPage(file)
-            window.SetClientSize(size)
-            window.Show()
 
     def OnQuitMenu(self, event):
         self.Close()
@@ -795,11 +657,11 @@ def AddExceptHook(path, app_version='[No version]'):#, ignored_exceptions=[]):
                     if 'self' in exception_locals:
                         info['self'] = format_namespace(exception_locals['self'].__dict__)
 
-                output = open(path+os.sep+"bug_report_"+info['date'].replace(':','-').replace(' ','_')+".txt",'w')
-                lst = list(info.keys())
-                lst.sort()
-                for a in lst:
-                    output.write(a+":\n"+str(info[a])+"\n\n")
+                with open(path + os.sep + "bug_report_" + info['date'].replace(':', '-').replace(' ', '_') + ".txt", 'w') as output:
+                    lst = list(info.keys())
+                    lst.sort()
+                    for a in lst:
+                        output.write(a + ":\n" + str(info[a]) + "\n\n")
 
     #sys.excepthook = lambda *args: wx.CallAfter(handle_exception, *args)
     sys.excepthook = handle_exception

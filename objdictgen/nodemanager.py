@@ -285,9 +285,8 @@ class NodeManager(object):
     def OpenFileInCurrent(self, filepath):
         #try:
             # Open and load file
-            file = open(filepath, "r")
-            node = load(file)
-            file.close()
+            with open(filepath, "r") as f:
+                node = load(f)
             self.CurrentNode = node
             self.CurrentNode.SetNodeID(0)
             # Add a new buffer and defining current state
@@ -307,9 +306,8 @@ class NodeManager(object):
             if filepath == "":
                 return False
         # Save node in file
-        file = open(filepath, "w")
-        dump(self.CurrentNode, file)
-        file.close()
+        with open(filepath, "w") as f:
+            dump(self.CurrentNode, f)
         self.SetCurrentFilePath(filepath)
         # Update saved state in buffer
         self.UndoBuffers[self.NodeIndex].CurrentSaved()
