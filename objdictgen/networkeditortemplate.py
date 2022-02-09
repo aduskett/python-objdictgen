@@ -7,8 +7,10 @@ from .nodeeditortemplate import NodeEditorTemplate
 from .subindextable import EditingPanel
 from .commondialogs import AddSlaveDialog
 
-[ID_NETWORKEDITNETWORKNODES,
+[
+    ID_NETWORKEDITNETWORKNODES,
 ] = [wx.NewId() for _init_ctrls in range(1)]
+
 
 class NetworkEditorTemplate(NodeEditorTemplate):
 
@@ -63,24 +65,24 @@ class NetworkEditorTemplate(NodeEditorTemplate):
             wx.CallAfter(self.RefreshStatusBar)
         event.Skip()
 
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #                              Buffer Functions
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
     def RefreshBufferState(self):
         if self.NodeList is not None:
             nodeID = self.Manager.GetCurrentNodeID()
             if nodeID != None:
-                nodename = "0x%2.2X %s"%(nodeID, self.Manager.GetCurrentNodeName())
+                nodename = "0x%2.2X %s" % (nodeID, self.Manager.GetCurrentNodeName())
             else:
                 nodename = self.Manager.GetCurrentNodeName()
             self.NetworkNodes.SetPageText(0, nodename)
             for idx, name in enumerate(self.NodeList.GetSlaveNames()):
                 self.NetworkNodes.SetPageText(idx + 1, name)
 
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #                             Slave Nodes Management
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
     def OnAddSlaveMenu(self, event):
         dialog = AddSlaveDialog(self.Frame)

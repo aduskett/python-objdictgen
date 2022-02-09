@@ -26,18 +26,24 @@ from __future__ import absolute_import
 #from builtins import str
 from builtins import range
 
+import os
+import platform
+import sys
+import time
+import traceback
+import getopt
+
 import wx
-import os, platform, sys, time, traceback, getopt
 
 if sys.version_info[0] >= 3:
-    unicode = str
+    unicode = str  # pylint: disable=invalid-name
 
 __version__ = "$Revision: 1.27 $"
 
 if __name__ == '__main__':
     def usage():
         print("\nUsage of networkedit.py :")
-        print("\n   %s [Projectpath]\n"%sys.argv[0])
+        print("\n   %s [Projectpath]\n" % sys.argv[0])
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "h", ["help"])
@@ -93,9 +99,9 @@ try:
             else:
                 wx.html.HtmlWindow.Bind(event, handler, source=source, id=id, id2=id2)
 
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #                                Html Frame
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
     [ID_HTMLFRAME, ID_HTMLFRAMEHTMLCONTENT] = [wx.NewId() for _init_ctrls in range(2)]
 
@@ -109,7 +115,7 @@ try:
 
             self.HtmlContent = UrlClickHtmlWindow(id=ID_HTMLFRAMEHTMLCONTENT,
                   name='HtmlContent', parent=self, pos=wx.Point(0, 0),
-                  size=wx.Size(-1, -1), style=wx.html.HW_SCROLLBAR_AUTO|wx.html.HW_NO_SELECTION)
+                  size=wx.Size(-1, -1), style=wx.html.HW_SCROLLBAR_AUTO | wx.html.HW_NO_SELECTION)
             self.HtmlContent.Bind(HtmlWindowUrlClick, self.OnLinkClick)
 
         def __init__(self, parent, opened):
@@ -139,21 +145,26 @@ try:
 except:
     Html_Window = False
 
-[ID_NETWORKEDIT, ID_NETWORKEDITNETWORKNODES,
- ID_NETWORKEDITHELPBAR,
+[
+    ID_NETWORKEDIT, ID_NETWORKEDITNETWORKNODES,
+    ID_NETWORKEDITHELPBAR,
 ] = [wx.NewId() for _init_ctrls in range(3)]
 
-[ID_NETWORKEDITNETWORKMENUBUILDMASTER,
+[
+    ID_NETWORKEDITNETWORKMENUBUILDMASTER,
 ] = [wx.NewId() for _init_coll_AddMenu_Items in range(1)]
 
-[ID_NETWORKEDITEDITMENUNODEINFOS, ID_NETWORKEDITEDITMENUDS301PROFILE,
- ID_NETWORKEDITEDITMENUDS302PROFILE, ID_NETWORKEDITEDITMENUOTHERPROFILE,
+[
+    ID_NETWORKEDITEDITMENUNODEINFOS, ID_NETWORKEDITEDITMENUDS301PROFILE,
+    ID_NETWORKEDITEDITMENUDS302PROFILE, ID_NETWORKEDITEDITMENUOTHERPROFILE,
 ] = [wx.NewId() for _init_coll_EditMenu_Items in range(4)]
 
-[ID_NETWORKEDITADDMENUSDOSERVER, ID_NETWORKEDITADDMENUSDOCLIENT,
- ID_NETWORKEDITADDMENUPDOTRANSMIT, ID_NETWORKEDITADDMENUPDORECEIVE,
- ID_NETWORKEDITADDMENUMAPVARIABLE, ID_NETWORKEDITADDMENUUSERTYPE,
+[
+    ID_NETWORKEDITADDMENUSDOSERVER, ID_NETWORKEDITADDMENUSDOCLIENT,
+    ID_NETWORKEDITADDMENUPDOTRANSMIT, ID_NETWORKEDITADDMENUPDORECEIVE,
+    ID_NETWORKEDITADDMENUMAPVARIABLE, ID_NETWORKEDITADDMENUUSERTYPE,
 ] = [wx.NewId() for _init_coll_AddMenu_Items in range(6)]
+
 
 class networkedit(wx.Frame, NetworkEditorTemplate):
 
@@ -196,8 +207,8 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
               kind=wx.ITEM_NORMAL, text='Build Master Dictionary')
         self.Bind(wx.EVT_MENU, self.OnAddSlaveMenu, id=wx.ID_ADD)
         self.Bind(wx.EVT_MENU, self.OnRemoveSlaveMenu, id=wx.ID_DELETE)
-##        self.Bind(wx.EVT_MENU, self.OnBuildMasterMenu,
-##              id=ID_NETWORKEDITNETWORKMENUBUILDMASTER)
+        # self.Bind(wx.EVT_MENU, self.OnBuildMasterMenu,
+        #       id=ID_NETWORKEDITNETWORKMENUBUILDMASTER)
 
     def _init_coll_EditMenu_Items(self, parent):
         parent.Append(help='', id=wx.ID_REFRESH,
@@ -314,7 +325,7 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
         self._init_coll_HelpBar_Fields(self.HelpBar)
         self.SetStatusBar(self.HelpBar)
 
-    def __init__(self, parent, nodelist = None, projectOpen = None):
+    def __init__(self, parent, nodelist=None, projectOpen=None):
         if nodelist is None:
             NetworkEditorTemplate.__init__(self, NodeList(NodeManager()), self, True)
         else:
@@ -322,7 +333,7 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
         self._init_ctrls(parent)
         self.HtmlFrameOpened = []
 
-        icon = wx.Icon(os.path.join(ScriptDirectory,"networkedit.ico"),wx.BITMAP_TYPE_ICO)
+        icon = wx.Icon(os.path.join(ScriptDirectory, "networkedit.ico"), wx.BITMAP_TYPE_ICO)
         self.SetIcon(icon)
 
         if self.ModeSolo:
@@ -358,16 +369,16 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
     def OnQuitMenu(self, event):
         self.Close()
 
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #                         Load and Save Funtions
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
     def OnNewProjectMenu(self, event):
         if self.NodeList:
             defaultpath = os.path.dirname(self.NodeList.GetRoot())
         else:
             defaultpath = os.getcwd()
-        dialog = wx.DirDialog(self , "Choose a project", defaultpath, wx.DD_NEW_DIR_BUTTON)
+        dialog = wx.DirDialog(self, "Choose a project", defaultpath, wx.DD_NEW_DIR_BUTTON)
         if dialog.ShowModal() == wx.ID_OK:
             projectpath = dialog.GetPath()
             if os.path.isdir(projectpath) and len(os.listdir(projectpath)) == 0:
@@ -385,7 +396,7 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
                     self.RefreshProfileMenu()
                     self.RefreshMainMenu()
                 else:
-                    message = wx.MessageDialog(self, result, "ERROR", wx.OK|wx.ICON_ERROR)
+                    message = wx.MessageDialog(self, result, "ERROR", wx.OK | wx.ICON_ERROR)
                     message.ShowModal()
                     message.Destroy()
 
@@ -394,7 +405,7 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
             defaultpath = os.path.dirname(self.NodeList.GetRoot())
         else:
             defaultpath = os.getcwd()
-        dialog = wx.DirDialog(self , "Choose a project", defaultpath, 0)
+        dialog = wx.DirDialog(self, "Choose a project", defaultpath, 0)
         if dialog.ShowModal() == wx.ID_OK:
             projectpath = dialog.GetPath()
             if os.path.isdir(projectpath):
@@ -412,7 +423,7 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
                     self.RefreshProfileMenu()
                     self.RefreshMainMenu()
                 else:
-                    message = wx.MessageDialog(self, result, "Error", wx.OK|wx.ICON_ERROR)
+                    message = wx.MessageDialog(self, result, "Error", wx.OK | wx.ICON_ERROR)
                     message.ShowModal()
                     message.Destroy()
         dialog.Destroy()
@@ -423,20 +434,20 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
         else:
             result = self.NodeList.SaveProject()
             if result:
-                message = wx.MessageDialog(self, result, "Error", wx.OK|wx.ICON_ERROR)
+                message = wx.MessageDialog(self, result, "Error", wx.OK | wx.ICON_ERROR)
                 message.ShowModal()
                 message.Destroy()
 
     def OnCloseProjectMenu(self, event):
         if self.NodeList:
             if self.NodeList.HasChanged():
-                dialog = wx.MessageDialog(self, "There are changes, do you want to save?", "Close Project", wx.YES_NO|wx.CANCEL|wx.ICON_QUESTION)
+                dialog = wx.MessageDialog(self, "There are changes, do you want to save?", "Close Project", wx.YES_NO | wx.CANCEL | wx.ICON_QUESTION)
                 answer = dialog.ShowModal()
                 dialog.Destroy()
                 if answer == wx.ID_YES:
                     result = self.NodeList.SaveProject()
                     if result:
-                        message = wx.MessageDialog(self, result, "Error", wx.OK|wx.ICON_ERROR)
+                        message = wx.MessageDialog(self, result, "Error", wx.OK | wx.ICON_ERROR)
                         message.ShowModal()
                         message.Destroy()
                 elif answer == wx.ID_NO:
@@ -448,10 +459,9 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
                 self.RefreshTitle()
                 self.RefreshMainMenu()
 
-
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #                             Refresh Functions
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
     def RefreshTitle(self):
         if self.NodeList != None:
@@ -500,18 +510,18 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
                     self.MenuBar.EnableTop(1, False)
                     self.MenuBar.EnableTop(2, False)
 
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #                              Buffer Functions
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
     def RefreshBufferState(self):
         NetworkEditorTemplate.RefreshBufferState(self)
         if self.NodeList is not None:
             self.RefreshTitle()
 
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #                                Help Method
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
     def OnHelpDS301Menu(self, event):
         find_index = False
@@ -523,14 +533,14 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
                 find_index = True
                 index, subIndex = result
                 result = OpenPDFDocIndex(index, ScriptDirectory)
-                if isinstance(result, (str,unicode)):
-                    message = wx.MessageDialog(self, result, "ERROR", wx.OK|wx.ICON_ERROR)
+                if isinstance(result, (str, unicode)):
+                    message = wx.MessageDialog(self, result, "ERROR", wx.OK | wx.ICON_ERROR)
                     message.ShowModal()
                     message.Destroy()
         if not find_index:
             result = OpenPDFDocIndex(None, ScriptDirectory)
-            if isinstance(result, (str,unicode)):
-                message = wx.MessageDialog(self, result, "ERROR", wx.OK|wx.ICON_ERROR)
+            if isinstance(result, (str, unicode)):
+                message = wx.MessageDialog(self, result, "ERROR", wx.OK | wx.ICON_ERROR)
                 message.ShowModal()
                 message.Destroy()
 
@@ -538,11 +548,11 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
         #self.OpenHtmlFrame("CAN Festival Reference", os.path.join(ScriptDirectory, "doc/canfestival.html"), wx.Size(1000, 600))
         if wx.Platform == '__WXMSW__':
             readerpath = get_acroversion()
-            readerexepath = os.path.join(readerpath,"AcroRd32.exe")
-            if(os.path.isfile(readerexepath)):
-                os.spawnl(os.P_DETACH, readerexepath, "AcroRd32.exe", '"%s"'%os.path.join(ScriptDirectory, "doc","manual_en.pdf"))
+            readerexepath = os.path.join(readerpath, "AcroRd32.exe")
+            if os.path.isfile(readerexepath):
+                os.spawnl(os.P_DETACH, readerexepath, "AcroRd32.exe", '"%s"' % os.path.join(ScriptDirectory, "doc", "manual_en.pdf"))
         else:
-            os.system("xpdf -remote CANFESTIVAL %s %d &"%(os.path.join(ScriptDirectory, "doc/manual_en.pdf"),16))
+            os.system("xpdf -remote CANFESTIVAL %s %d &" % (os.path.join(ScriptDirectory, "doc/manual_en.pdf"), 16))
 
     def OnAboutMenu(self, event):
         self.OpenHtmlFrame("About CAN Festival", os.path.join(ScriptDirectory, "doc/about.html"), wx.Size(500, 450))
@@ -556,16 +566,18 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
             window.SetClientSize(size)
             window.Show()
 
-#-------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 #                               Exception Handler
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 Max_Traceback_List_Size = 20
 
-def Display_Exception_Dialog(e_type,e_value,e_tb):
+
+def Display_Exception_Dialog(e_type, e_value, e_tb):
     trcbck_lst = []
-    for i,line in enumerate(traceback.extract_tb(e_tb)):
-        trcbck = " " + str(i+1) + ". "
+    for i, line in enumerate(traceback.extract_tb(e_tb)):
+        trcbck = " " + str(i + 1) + ". "
         if line[0].find(os.getcwd()) == -1:
             trcbck += "file : " + str(line[0]) + ",   "
         else:
@@ -600,10 +612,12 @@ Error:
 
     return res
 
+
 def Display_Error_Dialog(e_value):
-    message = wx.MessageDialog(None, str(e_value), "Error", wx.OK|wx.ICON_ERROR)
+    message = wx.MessageDialog(None, str(e_value), "Error", wx.OK | wx.ICON_ERROR)
     message.ShowModal()
     message.Destroy()
+
 
 def get_last_traceback(tb):
     while tb.tb_next:
@@ -615,36 +629,37 @@ def format_namespace(d, indent='    '):
     return '\n'.join(['%s%s: %s' % (indent, k, repr(v)[:10000]) for k, v in d.items()])
 
 
-ignored_exceptions = [] # a problem with a line in a module is only reported once per session
+ignored_exceptions = []  # a problem with a line in a module is only reported once per session
 
-def AddExceptHook(path, app_version='[No version]'):#, ignored_exceptions=[]):
+
+def AddExceptHook(path, app_version='[No version]'):  # , ignored_exceptions=[]):
 
     def handle_exception(e_type, e_value, e_traceback):
-        traceback.print_exception(e_type, e_value, e_traceback) # this is very helpful when there's an exception in the rest of this func
+        traceback.print_exception(e_type, e_value, e_traceback)  # this is very helpful when there's an exception in the rest of this func
         last_tb = get_last_traceback(e_traceback)
         ex = (last_tb.tb_frame.f_code.co_filename, last_tb.tb_frame.f_lineno)
         if str(e_value).startswith("!!!"):
             Display_Error_Dialog(e_value)
         elif ex not in ignored_exceptions:
             ignored_exceptions.append(ex)
-            result = Display_Exception_Dialog(e_type,e_value,e_traceback)
+            result = Display_Exception_Dialog(e_type, e_value, e_traceback)
             if result:
                 info = {
-                    'app-title' : wx.GetApp().GetAppName(), # app_title
-                    'app-version' : app_version,
-                    'wx-version' : wx.VERSION_STRING,
-                    'wx-platform' : wx.Platform,
-                    'python-version' : platform.python_version(), #sys.version.split()[0],
-                    'platform' : platform.platform(),
-                    'e-type' : e_type,
-                    'e-value' : e_value,
-                    'date' : time.ctime(),
-                    'cwd' : os.getcwd(),
-                    }
+                    'app-title': wx.GetApp().GetAppName(),  # app_title
+                    'app-version': app_version,
+                    'wx-version': wx.VERSION_STRING,
+                    'wx-platform': wx.Platform,
+                    'python-version': platform.python_version(),  # sys.version.split()[0],
+                    'platform': platform.platform(),
+                    'e-type': e_type,
+                    'e-value': e_value,
+                    'date': time.ctime(),
+                    'cwd': os.getcwd(),
+                }
                 if e_traceback:
                     info['traceback'] = ''.join(traceback.format_tb(e_traceback)) + '%s: %s' % (e_type, e_value)
                     last_tb = get_last_traceback(e_traceback)
-                    exception_locals = last_tb.tb_frame.f_locals # the locals at the level of the stack trace where the exception actually occurred
+                    exception_locals = last_tb.tb_frame.f_locals  # the locals at the level of the stack trace where the exception actually occurred
                     info['locals'] = format_namespace(exception_locals)
                     if 'self' in exception_locals:
                         info['self'] = format_namespace(exception_locals['self'].__dict__)
@@ -658,11 +673,12 @@ def AddExceptHook(path, app_version='[No version]'):#, ignored_exceptions=[]):
     #sys.excepthook = lambda *args: wx.CallAfter(handle_exception, *args)
     sys.excepthook = handle_exception
 
+
 if __name__ == '__main__':
     wx.InitAllImageHandlers()
 
     # Install a exception handle for bug reports
-    AddExceptHook(os.getcwd(),__version__)
+    AddExceptHook(os.getcwd(), __version__)
 
     frame = networkedit(None, projectOpen=projectOpen)
 

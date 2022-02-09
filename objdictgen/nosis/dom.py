@@ -2,9 +2,11 @@ from __future__ import absolute_import
 
 from xml.dom import minidom
 
-from .util import subnodes, _EmptyClass, unsafe_string, \
-     unsafe_content, safe_eval, obj_from_name, unpickle_function, \
-     get_class_from_name
+from .util import (
+    subnodes, _EmptyClass, unsafe_string,
+    unsafe_content, safe_eval, obj_from_name, unpickle_function,
+    get_class_from_name
+)
 from .introspect import attr_update
 from .mutate import can_unmutate, unmutate
 from .XtoY import to_number
@@ -22,17 +24,20 @@ XMLUnpicklingError = "nosis.xml.pickle.XMLUnpicklingError"
 TRUE_VALUE = True
 FALSE_VALUE = False
 
+
 # entry point expected by XML_Pickle
 def thing_from_dom(fh, paranoia=1):
     global visited
     visited = {}
-    return _thing_from_dom(minidom.parse(fh),None,paranoia)
+    return _thing_from_dom(minidom.parse(fh), None, paranoia)
+
 
 def _save_obj_with_id(node, obj):
     id = node.getAttribute('id')
 
     if len(id):		# might be None, or empty - shouldn't use as key
         visited[id] = obj
+
 
 def unpickle_instance(node, paranoia):
     """Take a <PyObject> or <.. type="PyObject"> DOM node and unpickle the object."""
@@ -50,29 +55,29 @@ def unpickle_instance(node, paranoia):
     # pass initargs, if defined
     try:
         args = raw.__getinitargs__
-        delattr(raw,'__getinitargs__') # don't want this in pyobj (below)
+        delattr(raw, '__getinitargs__')  # don't want this in pyobj (below)
         pyobj.__init__(*args)
     except:
         pass
 
     # next, decide what "stuff" is supposed to go into pyobj
-    if hasattr(raw,'__getstate__'):
+    if hasattr(raw, '__getstate__'):
         stuff = raw.__getstate__
     else:
         stuff = raw.__dict__
 
     # finally, decide how to get the stuff into pyobj
-    if hasattr(pyobj,'__setstate__'):
+    if hasattr(pyobj, '__setstate__'):
         pyobj.__setstate__(stuff)
     else:
         if isinstance(stuff, dict):	 # must be a Dict if no __setstate__
             # see note in pickle.py/load_build() about restricted
             # execution -- do the same thing here
-            #try:
-            #	pyobj.__dict__.update(stuff)
-            #except RuntimeError:
-            #	for k,v in stuff.items():
-            #		setattr(pyobj, k, v)
+            # try:
+            #     pyobj.__dict__.update(stuff)
+            # except RuntimeError:
+            #     for k,v in stuff.items():
+            #         setattr(pyobj, k, v)
             attr_update(pyobj, stuff)
         else:
             # subtle -- this can happen either because the class really
@@ -83,6 +88,7 @@ def unpickle_instance(node, paranoia):
                   "(PARANOIA setting may be too high)")
 
     return pyobj
+
 
 def obj_from_node(node, paranoia=1):
     """Given a <PyObject> node, return an object of that type.
@@ -96,8 +102,9 @@ def obj_from_node(node, paranoia=1):
     try:
         modname = node.getAttribute('module')
     except:
-        modname = None	# must exist in xml_pickle namespace, or thin-air
+        modname = None  # must exist in xml_pickle namespace, or thin-air
     return obj_from_name(classname, modname, paranoia)
+
 
 def get_node_valuetext(node):
     "Get text from node, whether in value=, or in element body."
@@ -119,7 +126,8 @@ def get_node_valuetext(node):
             btext = ''
         return unsafe_content(btext)
 
-def _fix_family(family,typename):
+
+def _fix_family(family, typename):
     """
     If family is None or empty, guess family based on typename.
     (We can only guess for builtins, of course.)
@@ -153,6 +161,7 @@ def _fix_family(family,typename):
     else:
         raise XMLUnpicklingError("family= must be given for unknown type %s" % typename)
 
+
 def _thing_from_dom(dom_node, container=None, paranoia=1):
     "Converts an [xml_pickle] DOM tree to a 'native' Python object"
     for node in subnodes(dom_node):
@@ -163,9 +172,9 @@ def _thing_from_dom(dom_node, container=None, paranoia=1):
             if node.getAttribute('type'):
                 # get unmutator by type=
                 klass = node.getAttribute('type')
-                if can_unmutate(klass,container):
+                if can_unmutate(klass, container):
                     # note -- 'extra' isn't handled (yet) at the toplevel
-                    container = unmutate(klass,container,paranoia,None)
+                    container = unmutate(klass, container, paranoia, None)
 
             try:
                 id = node.getAttribute('id')
@@ -173,7 +182,7 @@ def _thing_from_dom(dom_node, container=None, paranoia=1):
             except KeyError:
                 pass
 
-        elif node.nodeName in ['attr','item','key','val']:
+        elif node.nodeName in ['attr', 'item', 'key', 'val']:
             node_family = node.getAttribute('family')
             node_type = node.getAttribute('type')
             node_name = node.getAttribute('name')
@@ -192,13 +201,13 @@ def _thing_from_dom(dom_node, container=None, paranoia=1):
 
             # if we didn't find a family tag, guess (do after refid check --
             # old pickles will set type="ref" which _fix_family can't handle)
-            node_family = _fix_family(node_family,node_type)
+            node_family = _fix_family(node_family, node_type)
 
             node_valuetext = get_node_valuetext(node)
 
             # step 1 - set node_val to basic thing
-            #if node_name == '__parent__' and getExcludeParentAttr():
-            #	continue	# Do not pickle xml_objectify bookkeeping attribute
+            # if node_name == '__parent__' and getExcludeParentAttr():
+            #     continue  # Do not pickle xml_objectify bookkeeping attribute
             if node_family == 'none':
                 node_val = None
             elif node_family == 'atom':
@@ -207,14 +216,14 @@ def _thing_from_dom(dom_node, container=None, paranoia=1):
                 # seq must exist in visited{} before we unpickle subitems,
                 # in order to handle self-references
                 seq = []
-                _save_obj_with_id(node,seq)
-                node_val = _thing_from_dom(node,seq,paranoia)
+                _save_obj_with_id(node, seq)
+                node_val = _thing_from_dom(node, seq, paranoia)
             elif node_family == 'map':
                 # map must exist in visited{} before we unpickle subitems,
                 # in order to handle self-references
                 map = {}
-                _save_obj_with_id(node,map)
-                node_val = _thing_from_dom(node,map,paranoia)
+                _save_obj_with_id(node, map)
+                node_val = _thing_from_dom(node, map, paranoia)
             elif node_family == 'obj':
                 node_val = unpickle_instance(node, paranoia)
             elif node_family == 'lang':
@@ -255,7 +264,7 @@ def _thing_from_dom(dom_node, container=None, paranoia=1):
                 else:
                     raise XMLUnpicklingError("Unknown uniq type %s" % node_type)
             else:
-                raise XMLUnpicklingError("UNKNOWN family %s,%s,%s" % (node_family,node_type,node_name))
+                raise XMLUnpicklingError("UNKNOWN family %s,%s,%s" % (node_family, node_type, node_name))
 
             # step 2 - take basic thing and make exact thing
             # Note there are several NOPs here since node_val has been decided
@@ -266,7 +275,7 @@ def _thing_from_dom(dom_node, container=None, paranoia=1):
             if node_type == 'None':
                 node_val = None
             elif node_type == 'numeric':
-                #node_val = safe_eval(node_val)
+                # node_val = safe_eval(node_val)
                 node_val = to_number(node_val)
             elif node_type == 'string':
                 node_val = node_val
@@ -289,23 +298,22 @@ def _thing_from_dom(dom_node, container=None, paranoia=1):
                 node_val = node_val
             elif node_type == 'False':
                 node_val = node_val
-            elif can_unmutate(node_type,node_val):
+            elif can_unmutate(node_type, node_val):
                 mextra = node.getAttribute('extra')
-                node_val = unmutate(node_type,node_val,paranoia,
-                                           mextra)
+                node_val = unmutate(node_type, node_val, paranoia, mextra)
             elif node_type == 'PyObject':
                 node_val = node_val
-            #elif ext.can_handle_xml(node_type,node_valuetext):
-            #	node_val = ext.xml_to_obj(node_type, node_valuetext, paranoia)
+            # elif ext.can_handle_xml(node_type,node_valuetext):
+            #     node_val = ext.xml_to_obj(node_type, node_valuetext, paranoia)
             else:
-                raise XMLUnpicklingError("Unknown type %s,%s" % (node,node_type))
+                raise XMLUnpicklingError("Unknown type %s,%s" % (node, node_type))
 
             if node.nodeName == 'attr':
-                setattr(container,node_name,node_val)
+                setattr(container, node_name, node_val)
             else:
                 container.append(node_val)
 
-            _save_obj_with_id(node,node_val)
+            _save_obj_with_id(node, node_val)
 
         elif node.nodeName == 'entry':
             keyval = _thing_from_dom(node, [], paranoia)

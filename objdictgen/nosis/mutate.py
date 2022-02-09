@@ -11,6 +11,7 @@ XMLUnpicklingError = "nosis.xml.pickle.XMLUnpicklingError"
 _mutators_by_classtype = {}
 _unmutators_by_tag = {}
 
+
 # for test purposes ... (hm ... could it be useful for some reason?)
 def __disable_extensions():
     global _mutators_by_classtype
@@ -21,7 +22,9 @@ def __disable_extensions():
         if tag != "rawpickle":
             del _unmutators_by_tag[tag]
 
+
 _has_coredata_cache = {}
+
 
 def get_mutator(obj):
     # note we can't cache the search results since mutators can decide
@@ -42,21 +45,22 @@ def get_mutator(obj):
     # False). Therefore, there will never be a need for a mutator, and
     # they can be completely handled in the main "if" block in _pickle.py.
     if isinstance(obj, bool):
-         return None
+        return None
 
-    if not hasattr(obj,'__class__'):
+    if not hasattr(obj, '__class__'):
         return None
 
     if obj.__class__ in _has_coredata_cache:
         return _has_coredata_cache[obj.__class__]
 
     if hasCoreData(obj):
-        _has_coredata_cache[obj.__class__] = get_unmutator('__compound__',None)
-        return get_unmutator('__compound__',None)
+        _has_coredata_cache[obj.__class__] = get_unmutator('__compound__', None)
+        return get_unmutator('__compound__', None)
     else:
         _has_coredata_cache[obj.__class__] = None
 
     return None
+
 
 def can_mutate(obj):
     if get_mutator(obj):
@@ -64,33 +68,37 @@ def can_mutate(obj):
     else:
         return 0
 
+
 def mutate(obj):
     mutator = get_mutator(obj)
     tobj = mutator.mutate(obj)
 
-    if not isinstance(tobj,XMLP_Mutated):
+    if not isinstance(tobj, XMLP_Mutated):
         raise XMLPicklingError("Bad type returned from mutator %s" % mutator)
 
-    return (mutator.tag,tobj.obj,mutator.in_body,tobj.extra)
+    return (mutator.tag, tobj.obj, mutator.in_body, tobj.extra)
+
 
 # one-step replacement for:
 #      if can_mutate():
 #          mutate()
 # (one get_mutator() call vs. two)
 
-def try_mutate(obj,alt_tag,alt_in_body,alt_extra):
+
+def try_mutate(obj, alt_tag, alt_in_body, alt_extra):
 
     mutator = get_mutator(obj)
 
     if mutator is None:
-        return (alt_tag,obj,alt_in_body,alt_extra)
+        return (alt_tag, obj, alt_in_body, alt_extra)
 
     tobj = mutator.mutate(obj)
 
-    if not isinstance(tobj,XMLP_Mutated):
+    if not isinstance(tobj, XMLP_Mutated):
         raise XMLPicklingError("Bad type returned from mutator %s" % mutator)
 
-    return (mutator.tag,tobj.obj,mutator.in_body,tobj.extra)
+    return (mutator.tag, tobj.obj, mutator.in_body, tobj.extra)
+
 
 def get_unmutator(tag, obj):
     list_ = _unmutators_by_tag.get(tag) or []
@@ -100,16 +108,19 @@ def get_unmutator(tag, obj):
 
     return None
 
+
 def can_unmutate(tag, obj):
-    if get_unmutator(tag,obj):
+    if get_unmutator(tag, obj):
         return 1
     else:
         return 0
 
+
 def unmutate(tag, obj, paranoia, mextra):
     unmutator = get_unmutator(tag, obj)
 
-    return unmutator.unmutate(XMLP_Mutated(obj,mextra))
+    return unmutator.unmutate(XMLP_Mutated(obj, mextra))
+
 
 def add_mutator(xmlp_mutator):
     "Register an XMLP_Mutator object"
@@ -120,13 +131,14 @@ def add_mutator(xmlp_mutator):
     # the the classtype chain. They "hide" by setting class_type=None (not type(None)!!)
     if xmlp_mutator.class_type:
         try:
-            _mutators_by_classtype[xmlp_mutator.class_type].insert(0,xmlp_mutator)
+            _mutators_by_classtype[xmlp_mutator.class_type].insert(0, xmlp_mutator)
         except:
             _mutators_by_classtype[xmlp_mutator.class_type] = [xmlp_mutator]
     try:
-        _unmutators_by_tag[xmlp_mutator.tag].insert(0,xmlp_mutator)
+        _unmutators_by_tag[xmlp_mutator.tag].insert(0, xmlp_mutator)
     except:
         _unmutators_by_tag[xmlp_mutator.tag] = [xmlp_mutator]
+
 
 def remove_mutator(xmlp_mutator):
     "De-register an XMLP_Mutator object"
@@ -135,15 +147,17 @@ def remove_mutator(xmlp_mutator):
     list_ = _mutators_by_classtype[xmlp_mutator.class_type]
     list_.remove(xmlp_mutator)
 
+
 class XMLP_Mutated(object):
     """This is the type that XMLP_Mutator.mutate() returns.
     Having this as a distinct type will make it easy to add flags,
     etc., in the future without breaking existing mutators.
     In most cases, you just wrap your mutated obj like this:
         return XMLP_Mutated( obj )"""
-    def __init__(self,obj,extra=None):
+    def __init__(self, obj, extra=None):
         self.obj = obj
         self.extra = extra
+
 
 class XMLP_Mutator(object):
     "Parent class for XMLP Mutators"
@@ -168,18 +182,18 @@ class XMLP_Mutator(object):
         self.paranoia = paranoia
         self.in_body = in_body
 
-    def wants_obj(self,obj):
+    def wants_obj(self, obj):
         # by default, we want everything of class_type.
         # derived classes can override if they need specialization.
         # anything not wanted is passed down the line.
         return 1
 
-    def wants_mutated(self,mobj):
+    def wants_mutated(self, mobj):
         "obj is of type XMLP_Mutated"
         # can I unmutate the mutated object?
         return 1
 
-    def mutate(self,obj):
+    def mutate(self, obj):
         """given obj, return an XMLP_Mutated object, where the
         XMLP_Mutated.obj member is a basic type (string,numeric,
         assoc,seq,or PyObject)"""
@@ -187,7 +201,7 @@ class XMLP_Mutator(object):
         # this member is required
         raise NotImplementedError()
 
-    def unmutate(self,mobj):
+    def unmutate(self, mobj):
         "take an XMLP_Mutated obj and recreate the original object"
 
         # this member is required

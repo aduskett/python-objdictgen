@@ -2,21 +2,22 @@ from __future__ import print_function
 from __future__ import absolute_import
 from builtins import str
 from builtins import object
-"""Store Python objects to (pickle-like) XML Documents
 
-Please see the information at gnosis.xml.pickle.doc for
-explanation of usage, design, license, and other details
-"""
-from .util import \
-     _klass, _module, _EmptyClass, \
-     safe_string, safe_content,\
-     get_class_from_stack, get_class_full_search, \
-     get_class_from_store, get_class_from_vapor, \
-     get_function_info
-from .mutate import can_mutate, mutate, \
-     can_unmutate, unmutate, get_unmutator, try_mutate
-from .introspect import isinstance_any, attr_dict, isInstanceLike, \
-     hasCoreData, isNewStyleClass
+from .util import (
+    _klass, _module, _EmptyClass,
+    safe_string, safe_content,
+    get_class_from_stack, get_class_full_search,
+    get_class_from_store, get_class_from_vapor,
+    get_function_info
+)
+from .mutate import (
+    can_mutate, mutate,
+    can_unmutate, unmutate, get_unmutator, try_mutate
+)
+from .introspect import (
+    isinstance_any, attr_dict, isInstanceLike,
+    hasCoreData, isNewStyleClass
+)
 from .XtoY import ntoa
 
 from types import FunctionType, BuiltinFunctionType
@@ -26,20 +27,26 @@ import sys
 if sys.version_info[0] >= 3:
     unicode = str
 
-# default settings
 TYPE_IN_BODY = {}
-def setInBody(typename,val):
+
+
+def setInBody(typename, val):
     global TYPE_IN_BODY
     TYPE_IN_BODY[typename] = val
-def getInBody(typename): return TYPE_IN_BODY.get(typename) or 0
 
-setInBody(int,0)
-setInBody(float,0)
-setInBody(complex,0)
-setInBody(str,0)
+
+def getInBody(typename):
+    return TYPE_IN_BODY.get(typename) or 0
+
+
+# default settings
+setInBody(int, 0)
+setInBody(float, 0)
+setInBody(complex, 0)
+setInBody(str, 0)
 # our unicode vs. "regular string" scheme relies on unicode
 # strings only being in the body, so this is hardcoded.
-setInBody(unicode,1)
+setInBody(unicode, 1)
 
 # Define exceptions and flags
 XMLPicklingError = "nosis.xml.pickle.XMLPicklingError"
@@ -48,6 +55,7 @@ XMLUnpicklingError = "nosis.xml.pickle.XMLUnpicklingError"
 # Maintain list of object identities for multiple and cyclical references
 # (also to keep temporary objects alive)
 visited = {}
+
 
 # a multipurpose list-like object. it is nicer conceptually for us
 # to pass lists around at the lower levels, yet we'd also like to be
@@ -68,20 +76,23 @@ class StreamWriter(object):
         """
     def __init__(self, iohandle=None, compress=None):
 
-        if iohandle: self.iohandle = iohandle
-        else: self.iohandle = self.sio = StringIO()
+        if iohandle:
+            self.iohandle = iohandle
+        else:
+            self.iohandle = self.sio = StringIO()
 
-        if compress == 1: # maybe we'll add more types someday
+        if compress == 1:  # maybe we'll add more types someday
             import gzip
-            self.iohandle = gzip.GzipFile(None,'wb',9,self.iohandle)
+            self.iohandle = gzip.GzipFile(None, 'wb', 9, self.iohandle)
 
-    def append(self,item):
-        if isinstance(item, (list, tuple)): item = ''.join(item)
+    def append(self, item):
+        if isinstance(item, (list, tuple)):
+            item = ''.join(item)
         self.iohandle.write(item)
 
     def getvalue(self):
         "Returns memory stream as a single string, or None for file objs"
-        if hasattr(self,'sio'):
+        if hasattr(self, 'sio'):
             if self.iohandle != self.sio:
                 # if iohandle is a GzipFile, we need to close it to flush
                 # remaining bits, write the CRC, etc. However, if iohandle is
@@ -92,8 +103,9 @@ class StreamWriter(object):
             # don't raise an exception - want getvalue() unconditionally
             return None
 
+
 # split off for future expansion of compression types, etc.
-def StreamReader( stream ):
+def StreamReader(stream):
     """stream can be either a filehandle or string, and can
     be compressed/uncompressed. Will return either a fileobj
     appropriate for reading the stream."""
@@ -109,9 +121,10 @@ def StreamReader( stream ):
     stream.seek(pos)
     if magic == '\037\213':
         import gzip
-        stream = gzip.GzipFile(None,'rb',None,stream)
+        stream = gzip.GzipFile(None, 'rb', None, stream)
 
     return stream
+
 
 class XML_Pickler(object):
     """Framework for 'pickle to XML'.
@@ -129,12 +142,13 @@ class XML_Pickler(object):
     def dump(self, iohandle, obj=None, binary=0, deepcopy=None):
         "Write the XML representation of obj to iohandle."
         # dumps() does all the work, but uses our filehandle
-        self.dumps(obj,binary,deepcopy,iohandle)
+        self.dumps(obj, binary, deepcopy, iohandle)
 
     def load(self, fh, paranoia=None):
         "Load pickled object from file fh."
         global visited
-        if paranoia is None: paranoia=0
+        if paranoia is None:
+            paranoia = 0
 
         # read from a file,compressed file,string,or compressed string
         fh = StreamReader(fh)
@@ -152,25 +166,28 @@ class XML_Pickler(object):
 
     def dumps(self, obj=None, binary=0, deepcopy=None, iohandle=None):
         "Create the XML representation as a string."
-        if deepcopy is None: deepcopy = 0
+        if deepcopy is None:
+            deepcopy = 0
 
         # write to a file or string, either compressed or not
-        list_ = StreamWriter(iohandle,binary)
+        list_ = StreamWriter(iohandle, binary)
 
         # here are our three forms:
-        if obj is not None:				# XML_Pickler().dumps(obj)
-            return _pickle_toplevel_obj(list_,obj, deepcopy)
-        elif hasattr(self,'to_pickle'): # XML_Pickler(obj).dumps()
-            return _pickle_toplevel_obj(list_,self.to_pickle, deepcopy)
-        else:							# myXML_Pickler().dumps()
-            return _pickle_toplevel_obj(list_,self, deepcopy)
+        if obj is not None:  # XML_Pickler().dumps(obj)
+            return _pickle_toplevel_obj(list_, obj, deepcopy)
+        elif hasattr(self, 'to_pickle'):  # XML_Pickler(obj).dumps()
+            return _pickle_toplevel_obj(list_, self.to_pickle, deepcopy)
+        else:  # myXML_Pickler().dumps()
+            return _pickle_toplevel_obj(list_, self, deepcopy)
 
     def loads(self, xml_str, paranoia=None):
         "Load a pickled object from the given XML string."
         # really just syntactic sugar for load()
-        return self.load(xml_str,paranoia)
+        return self.load(xml_str, paranoia)
 
-#-- support functions
+
+# -- support functions
+
 
 def _pickle_toplevel_obj(xml_list, py_obj, deepcopy):
     "handle the top object -- add XML header, etc."
@@ -192,13 +209,13 @@ def _pickle_toplevel_obj(xml_list, py_obj, deepcopy):
     # module= that we need to read before unmutating (i.e. the mutator
     # mutated into a PyObject)
 
-    famtype = '' # unless we have to, don't add family= and type=
+    famtype = ''  # unless we have to, don't add family= and type=
 
-    #if type(py_obj) is not InstanceType:
+    # if type(py_obj) is not InstanceType:
     if not isInstanceLike(py_obj):
         # use our wrapper-mutator to pickle builtin types.
         # get by name since mutator classtype is None
-        mutator = get_unmutator('builtin_wrapper',None)
+        mutator = get_unmutator('builtin_wrapper', None)
         # wrapper must not have an id (otherwise the wrapper AND the
         # wrapper-obj would appear to have the same id)
         if not deepcopy:
@@ -210,10 +227,10 @@ def _pickle_toplevel_obj(xml_list, py_obj, deepcopy):
         module = None
         # refs get funny here, but since this is a special case, and we're
         # only pickling a single object, turning deepcopy off is easiest
-        #deepcopy = 1
+        # deepcopy = 1
     else:
         if can_mutate(py_obj):
-            (mtype,py_obj,in_body,extra) = mutate(py_obj)
+            (mtype, py_obj, in_body, extra) = mutate(py_obj)
             # sanity check until/if we eventually support these
             # at the toplevel
             if in_body or extra:
@@ -225,10 +242,12 @@ def _pickle_toplevel_obj(xml_list, py_obj, deepcopy):
     klass_tag = _klass(py_obj)
 
     # Generate the XML string
-    if module: extra = '%smodule="%s" class="%s"' % (famtype,module,klass_tag)
-    else:	   extra = '%s class="%s"' % (famtype,klass_tag)
+    if module:
+        extra = '%smodule="%s" class="%s"' % (famtype, module, klass_tag)
+    else:
+        extra = '%s class="%s"' % (famtype, klass_tag)
 
-    xml_list.append('<?xml version="1.0"?>\n'+
+    xml_list.append('<?xml version="1.0"?>\n' +
                     '<!DOCTYPE PyObject SYSTEM "PyObjects.dtd">\n')
 
     if deepcopy:
@@ -245,6 +264,7 @@ def _pickle_toplevel_obj(xml_list, py_obj, deepcopy):
     # know that (or not care)
     return xml_list.getvalue()
 
+
 def pickle_instance(obj, list_, level=0, deepcopy=0):
     """Pickle the given object into a <PyObject>
 
@@ -252,8 +272,8 @@ def pickle_instance(obj, list_, level=0, deepcopy=0):
     """
     # concept: to pickle an object, we pickle two things:
     #
-    #	1. the object attributes (the "stuff")
-    #	2. initargs, if defined
+    #   1. the object attributes (the "stuff")
+    #   2. initargs, if defined
     #
     # There is a twist to this -- instead of always putting the "stuff"
     # into a container, we can make the elements of "stuff" first-level attributes,
@@ -281,7 +301,7 @@ def pickle_instance(obj, list_, level=0, deepcopy=0):
     try:
         stuff = obj.__getstate__()
     except:
-        #stuff = obj.__dict__
+        # stuff = obj.__dict__
         stuff = attr_dict(obj)
 
     # save initargs, if we have them
@@ -291,11 +311,11 @@ def pickle_instance(obj, list_, level=0, deepcopy=0):
 
     # decide how to save the "stuff", depending on whether we need
     # to later grab it back as a single object
-    if not hasattr(obj,'__setstate__'):
+    if not hasattr(obj, '__setstate__'):
         if isinstance(stuff, dict):
             # don't need it as a single object - save keys/vals as
             # first-level attributes
-            for key,val in list_(stuff.items()):
+            for key, val in list_(stuff.items()):
                 list_.append(_attr_tag(key, val, level, deepcopy))
         else:
             raise XMLPicklingError("__getstate__ must return a DictType here")
@@ -303,27 +323,31 @@ def pickle_instance(obj, list_, level=0, deepcopy=0):
         # else, encapsulate the "stuff" in an <attr name="__getstate__" ...>
         list_.append(_attr_tag('__getstate__', stuff, level, deepcopy))
 
-#--- Functions to create XML output tags ---
+
+# --- Functions to create XML output tags ---
 def _attr_tag(name, thing, level=0, deepcopy=0):
-    start_tag = '  '*level+('<attr name="%s" ' % name)
-    close_tag ='  '*level+'</attr>\n'
+    start_tag = '  ' * level + ('<attr name="%s" ' % name)
+    close_tag = '  ' * level + '</attr>\n'
     return _tag_completer(start_tag, thing, close_tag, level, deepcopy)
+
 
 def _item_tag(thing, level=0, deepcopy=0):
-    start_tag = '  '*level+'<item '
-    close_tag ='  '*level+'</item>\n'
+    start_tag = '  ' * level + '<item '
+    close_tag = '  ' * level + '</item>\n'
     return _tag_completer(start_tag, thing, close_tag, level, deepcopy)
 
+
 def _entry_tag(key, val, level=0, deepcopy=0):
-    start_tag = '  '*level+'<entry>\n'
-    close_tag = '  '*level+'</entry>\n'
-    start_key = '  '*level+'  <key '
-    close_key = '  '*level+'  </key>\n'
-    key_block = _tag_completer(start_key, key, close_key, level+1, deepcopy)
-    start_val = '  '*level+'  <val '
-    close_val = '  '*level+'  </val>\n'
-    val_block = _tag_completer(start_val, val, close_val, level+1, deepcopy)
+    start_tag = '  ' * level + '<entry>\n'
+    close_tag = '  ' * level + '</entry>\n'
+    start_key = '  ' * level + '  <key '
+    close_key = '  ' * level + '  </key>\n'
+    key_block = _tag_completer(start_key, key, close_key, level + 1, deepcopy)
+    start_val = '  ' * level + '  <val '
+    close_val = '  ' * level + '  </val>\n'
+    val_block = _tag_completer(start_val, val, close_val, level + 1, deepcopy)
     return (start_tag + key_block + val_block + close_tag)
+
 
 def _tag_compound(start_tag, family_type, thing, deepcopy, extra=''):
     """Make a start tag for a compound object, handling deepcopy & refs.
@@ -332,14 +356,14 @@ def _tag_compound(start_tag, family_type, thing, deepcopy, extra=''):
     """
     if deepcopy:
         # don't need ids in a deepcopied file (looks neater)
-        start_tag = start_tag + '%s %s>\n' % (family_type,extra)
+        start_tag = start_tag + '%s %s>\n' % (family_type, extra)
         return (start_tag, 1)
     else:
         if visited.get(id(thing)):
-            start_tag = start_tag + '%s refid="%s" />\n' % (family_type,id(thing))
+            start_tag = start_tag + '%s refid="%s" />\n' % (family_type, id(thing))
             return (start_tag, 0)
         else:
-            start_tag = start_tag + '%s id="%s" %s>\n' % (family_type,id(thing),extra)
+            start_tag = start_tag + '%s id="%s" %s>\n' % (family_type, id(thing), extra)
             return (start_tag, 1)
 
 #
@@ -347,30 +371,31 @@ def _tag_compound(start_tag, family_type, thing, deepcopy, extra=''):
 # it needs to be documented somewhere. The following are the family
 # types currently defined:
 #
-#	obj - thing with attributes and possibly coredata
+#   obj - thing with attributes and possibly coredata
 #
-#	uniq - unique thing, its type gives its value, and vice versa
+#   uniq - unique thing, its type gives its value, and vice versa
 #
-#	map - thing that maps objects to other objects
+#   map - thing that maps objects to other objects
 #
-#	seq - thing that holds a series of objects
+#   seq - thing that holds a series of objects
 #
-#		   XXX - Py2.3 maybe the new 'Set' type should go here?
+#         XXX - Py2.3 maybe the new 'Set' type should go here?
 #
-#	atom - non-unique thing without attributes (e.g. only coredata)
+#   atom - non-unique thing without attributes (e.g. only coredata)
 #
-#	lang - thing that likely has meaning only in the
-#		   host language (functions, classes).
+#   lang - thing that likely has meaning only in the
+#          host language (functions, classes).
 #
-#		   [Note that in Gnosis-1.0.6 and earlier, these were
-#			mistakenly placed under 'uniq'. Those encodings are
-#			still accepted by the parsers for compatibility.]
+#          [Note that in Gnosis-1.0.6 and earlier, these were
+#           mistakenly placed under 'uniq'. Those encodings are
+#           still accepted by the parsers for compatibility.]
 #
 
 # Temp hack
 VERBOSE_XML = 0
 
-def _family_type(family,typename,mtype,mextra):
+
+def _family_type(family, typename, mtype, mextra):
     """Create a type= string for an object, including family= if necessary.
     typename is the builtin type, mtype is the mutated type (or None for
     non-mutants). mextra is mutant-specific data, or None."""
@@ -385,36 +410,35 @@ def _family_type(family,typename,mtype,mextra):
             mextra = 'extra="%s"' % mextra
         else:
             mextra = ''
-        return 'family="%s" type="%s" %s' % (family,mtype,mextra)
+        return 'family="%s" type="%s" %s' % (family, mtype, mextra)
     else:
-        return 'family="%s" type="%s"' % (family,typename)
+        return 'family="%s" type="%s"' % (family, typename)
+
 
 def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
     tag_body = []
 
-    (mtag,thing,in_body,mextra) = try_mutate(orig_thing,None,
+    (mtag, thing, in_body, mextra) = try_mutate(orig_thing, None,
                                              getInBody(type(orig_thing)), None)
 
     if thing is None:
-        start_tag = start_tag + "%s />\n" % (_family_type('none','None',None,None))
+        start_tag = start_tag + "%s />\n" % (_family_type('none', 'None', None, None))
         close_tag = ''
     # bool cannot be used as a base class (see sanity check above) so if thing
     # is a bool it will always be BooleanType, and either True or False
     elif isinstance(thing, bool):
         if thing is True:
             typestr = 'True'
-        else: # must be False
+        else:  # must be False
             typestr = 'False'
 
         if in_body:
-            start_tag = start_tag + '%s>%s' % \
-                      (_family_type('uniq',typestr,mtag,mextra),
-                       '')
+            start_tag = start_tag + '%s>%s' % (
+                _family_type('uniq', typestr, mtag, mextra), '')
             close_tag = close_tag.lstrip()
         else:
-            start_tag = start_tag + '%s value="%s" />\n' % \
-                      (_family_type('uniq',typestr,mtag,mextra),
-                       '')
+            start_tag = start_tag + '%s value="%s" />\n' % (
+                _family_type('uniq', typestr, mtag, mextra), '')
             close_tag = ''
     # ClassType will get caught by isInstanceLike(), which is not
     # what we want. There are two cases here - the first catches
@@ -425,8 +449,8 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
             extra = 'module="%s" class="%s"' % (module, thing.__name__)
         else:
             extra = 'class="%s"' % _klass(thing.__name__)
-        start_tag = start_tag + '%s %s/>\n' % \
-                     (_family_type('lang','class',mtag,mextra),extra)
+        start_tag = start_tag + '%s %s/>\n' % (
+            _family_type('lang', 'class', mtag, mextra), extra)
 
         close_tag = ''
     # have to check for instance-like next since ints, etc., can be
@@ -439,17 +463,17 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
             extra = 'module="%s" class="%s"' % (module, _klass(thing))
         else:
             extra = 'class="%s"' % _klass(thing)
-        start_tag, do_copy = \
-                   _tag_compound(start_tag,_family_type('obj','PyObject',mtag,mextra),
-                                 orig_thing, deepcopy, extra)
+        start_tag, do_copy = _tag_compound(
+            start_tag, _family_type('obj', 'PyObject', mtag, mextra),
+            orig_thing, deepcopy, extra)
         # need to remember we've seen container before pickling subitems
         visited[id(orig_thing)] = orig_thing
         if do_copy:
-            pickle_instance(thing, tag_body, level+1, deepcopy)
+            pickle_instance(thing, tag_body, level + 1, deepcopy)
         else:
             close_tag = ''
     elif isinstance_any(thing, (int, float, complex)):
-        #thing_str = repr(thing)
+        # thing_str = repr(thing)
         thing_str = ntoa(thing)
 
         if in_body:
@@ -457,24 +481,23 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
             # contain special XML chars.
             # the unpickler can either call unsafe_content() or not,
             # it won't matter
-            start_tag = start_tag + '%s>%s' % \
-                      (_family_type('atom','numeric',mtag,mextra),
-                       thing_str)
+            start_tag = start_tag + '%s>%s' % (
+                _family_type('atom', 'numeric', mtag, mextra), thing_str)
             close_tag = close_tag.lstrip()
         else:
-            start_tag = start_tag + '%s value="%s" />\n' % \
-                      (_family_type('atom','numeric',mtag,mextra),thing_str)
+            start_tag = start_tag + '%s value="%s" />\n' % (
+                _family_type('atom', 'numeric', mtag, mextra), thing_str)
             close_tag = ''
-    elif isinstance_any(thing, (str,unicode)):
-        #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    elif isinstance_any(thing, (str, unicode)):
+        # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
         # special check for now - this will be fixed in the next major
         # gnosis release, so I don't care that the code is inline & gross
         # for now
-        #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-        if isinstance(thing,unicode):
+        # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        if isinstance(thing, unicode):
             raise Exception("Unpickleable Unicode value.")
 
-        if isinstance(thing,str) and getInBody(str):
+        if isinstance(thing, str) and getInBody(str):
             # technically, this will crash safe_content(), but I prefer to
             # have the test here for clarity
             try:
@@ -484,66 +507,63 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
             except:
                 raise Exception("Unpickleable string value (%s). To be fixed in next major Gnosis release." % repr(thing))
 
-        #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
         # End of temporary hack code
-        #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
         if in_body:
-            start_tag = start_tag + '%s>%s' % \
-                      (_family_type('atom','string',mtag,mextra),
-                       safe_content(thing))
+            start_tag = start_tag + '%s>%s' % (
+                _family_type('atom', 'string', mtag, mextra), safe_content(thing))
             close_tag = close_tag.lstrip()
         else:
-            start_tag = start_tag + '%s value="%s" />\n' % \
-                      (_family_type('atom','string',mtag,mextra),
-                       safe_string(thing))
+            start_tag = start_tag + '%s value="%s" />\n' % (
+                _family_type('atom', 'string', mtag, mextra), safe_string(thing))
             close_tag = ''
     # General notes:
-    #	1. When we make references, set type to referenced object
-    #	   type -- we don't need type when unpickling, but it may be useful
-    #	   to someone reading the XML file
-    #	2. For containers, we have to stick the container into visited{}
-    #	   before pickling subitems, in case it contains self-references
-    #	   (we CANNOT just move the visited{} update to the top of this
-    #	   function, since that would screw up every _family_type() call)
+    #   1. When we make references, set type to referenced object
+    #      type -- we don't need type when unpickling, but it may be useful
+    #      to someone reading the XML file
+    #   2. For containers, we have to stick the container into visited{}
+    #      before pickling subitems, in case it contains self-references
+    #      (we CANNOT just move the visited{} update to the top of this
+    #      function, since that would screw up every _family_type() call)
     elif isinstance(thing, tuple):
-        start_tag, do_copy = \
-                   _tag_compound(start_tag,_family_type('seq','tuple',mtag,mextra),
-                                 orig_thing,deepcopy)
+        start_tag, do_copy = _tag_compound(
+            start_tag, _family_type('seq', 'tuple', mtag, mextra),
+            orig_thing, deepcopy)
         if do_copy:
             for item in thing:
-                tag_body.append(_item_tag(item, level+1, deepcopy))
+                tag_body.append(_item_tag(item, level + 1, deepcopy))
         else:
             close_tag = ''
     elif isinstance(thing, list):
-        start_tag, do_copy = \
-                   _tag_compound(start_tag,_family_type('seq','list',mtag,mextra),
-                                 orig_thing,deepcopy)
+        start_tag, do_copy = _tag_compound(
+            start_tag, _family_type('seq', 'list', mtag, mextra),
+            orig_thing, deepcopy)
         # need to remember we've seen container before pickling subitems
         visited[id(orig_thing)] = orig_thing
         if do_copy:
             for item in thing:
-                tag_body.append(_item_tag(item, level+1, deepcopy))
+                tag_body.append(_item_tag(item, level + 1, deepcopy))
         else:
             close_tag = ''
     elif isinstance(thing, dict):
-        start_tag, do_copy = \
-                   _tag_compound(start_tag,_family_type('map','dict',mtag,mextra),
-                                 orig_thing,deepcopy)
+        start_tag, do_copy = _tag_compound(
+            start_tag, _family_type('map', 'dict', mtag, mextra),
+            orig_thing, deepcopy)
         # need to remember we've seen container before pickling subitems
         visited[id(orig_thing)] = orig_thing
         if do_copy:
             for key, val in thing.items():
-                tag_body.append(_entry_tag(key, val, level+1, deepcopy))
+                tag_body.append(_entry_tag(key, val, level + 1, deepcopy))
         else:
             close_tag = ''
-    elif isinstance(thing, (FunctionType,BuiltinFunctionType)):
+    elif isinstance(thing, (FunctionType, BuiltinFunctionType)):
         info = get_function_info(thing)
         # use module/class tags -- not perfect semantically, but better
         # that creating new attr names
-        start_tag = start_tag + '%s module="%s" class="%s"/>\n' % \
-                     (_family_type('lang','function',mtag,mextra),
-                      info[0],info[1])
+        start_tag = start_tag + '%s module="%s" class="%s"/>\n' % (
+            _family_type('lang', 'function', mtag, mextra), info[0], info[1])
         close_tag = ''
     else:
         # try using pickled value as the XML value tag.
@@ -558,10 +578,9 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
             # (mutator & unmutator are always the same object)
 
             # always put rawpickles in the element body
-            mutator = get_unmutator('rawpickle',None)
+            mutator = get_unmutator('rawpickle', None)
             thing = safe_content(mutator.mutate(thing).obj)
-            start_tag = start_tag + '%s>%s' % (_family_type('atom',None,'rawpickle',None),
-                                   thing)
+            start_tag = start_tag + '%s>%s' % (_family_type('atom', None, 'rawpickle', None), thing)
             close_tag = close_tag.lstrip()
         except:
             raise XMLPicklingError("non-handled type %s" % type(thing))
@@ -577,12 +596,12 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
 
     return start_tag + ''.join(tag_body) + close_tag
 
+
 # pickle-compatible API, not exported by default (note we have to
 # reverse the args in dump() -- we can't reverse the XML_Pickler.dump()
 # args without losing functionality)
 
-dump = lambda o,f,b=0: XML_Pickler().dump(f,o,b)
-dumps = lambda o,b=0: XML_Pickler().dumps(o,b)
+dump = lambda o, f, b=0: XML_Pickler().dump(f, o, b)
+dumps = lambda o, b=0: XML_Pickler().dumps(o, b)
 loads = XML_Pickler().loads
 load = XML_Pickler().load
-

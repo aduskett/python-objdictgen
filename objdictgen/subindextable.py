@@ -30,27 +30,35 @@ import wx
 import wx.grid
 
 from .commondialogs import DCFEntryValuesDialog, UserTypeDialog
-
 from .node import OD_MultipleSubindexes, OD_IdenticalSubindexes
 
 ColSizes = [75, 250, 150, 125, 100, 60, 250, 60]
 ColAlignements = [wx.ALIGN_CENTER, wx.ALIGN_LEFT, wx.ALIGN_CENTER, wx.ALIGN_RIGHT, wx.ALIGN_CENTER, wx.ALIGN_CENTER, wx.ALIGN_LEFT, wx.ALIGN_LEFT]
 
+
 def GetAccessList(write=True):
     if write:
         return ["Read Only", "Write Only", "Read/Write"]
     return ["Read Only", "Read/Write"]
+
+
 AccessList = ",".join(GetAccessList())
 RAccessList = ",".join(GetAccessList(False))
 ACCESS_LIST_DICT = dict([(access, access) for access in GetAccessList()])
 
+
 def GetBoolList():
     return ["True", "False"]
+
+
 BoolList = ",".join(GetBoolList())
 BOOL_LIST_DICT = dict([(b, b) for b in GetBoolList()])
 
+
 def GetOptionList():
     return ["Yes", "No"]
+
+
 OptionList = ",".join(GetOptionList())
 OPTION_LIST_DICT = dict([(option, option) for option in GetOptionList()])
 
@@ -69,30 +77,32 @@ INDEXCHOICE_OPTIONS = {
 INDEXCHOICE_OPTIONS_DICT = dict([(translation, option) for option, (translation, object, function) in list(INDEXCHOICE_OPTIONS.items())])
 
 INDEXCHOICE_SECTIONS = {
-    0 : [USER_TYPE],
-    2 : [SDO_SERVER, SDO_CLIENT],
-    3 : [PDO_RECEIVE],
-    4 : [PDO_RECEIVE],
-    5 : [PDO_TRANSMIT],
-    6 : [PDO_TRANSMIT],
-    8 : [MAP_VARIABLE],
+    0: [USER_TYPE],
+    2: [SDO_SERVER, SDO_CLIENT],
+    3: [PDO_RECEIVE],
+    4: [PDO_RECEIVE],
+    5: [PDO_TRANSMIT],
+    6: [PDO_TRANSMIT],
+    8: [MAP_VARIABLE],
 }
+
 
 def GetSubindexTableColnames():
     return ["subindex", "name", "type", "value", "access", "save", "comment", "buffer_size"]
 
+
 DictionaryOrganisation = [
-    {"minIndex" : 0x0001, "maxIndex" : 0x0FFF, "name" : "Data Type Definitions"},
-    {"minIndex" : 0x1000, "maxIndex" : 0x1029, "name" : "Communication Parameters"},
-    {"minIndex" : 0x1200, "maxIndex" : 0x12FF, "name" : "SDO Parameters"},
-    {"minIndex" : 0x1400, "maxIndex" : 0x15FF, "name" : "Receive PDO Parameters"},
-    {"minIndex" : 0x1600, "maxIndex" : 0x17FF, "name" : "Receive PDO Mapping"},
-    {"minIndex" : 0x1800, "maxIndex" : 0x19FF, "name" : "Transmit PDO Parameters"},
-    {"minIndex" : 0x1A00, "maxIndex" : 0x1BFF, "name" : "Transmit PDO Mapping"},
-    {"minIndex" : 0x1C00, "maxIndex" : 0x1FFF, "name" : "Other Communication Parameters"},
-    {"minIndex" : 0x2000, "maxIndex" : 0x5FFF, "name" : "Manufacturer Specific"},
-    {"minIndex" : 0x6000, "maxIndex" : 0x9FFF, "name" : "Standardized Device Profile"},
-    {"minIndex" : 0xA000, "maxIndex" : 0xBFFF, "name" : "Standardized Interface Profile"}]
+    {"minIndex": 0x0001, "maxIndex": 0x0FFF, "name": "Data Type Definitions"},
+    {"minIndex": 0x1000, "maxIndex": 0x1029, "name": "Communication Parameters"},
+    {"minIndex": 0x1200, "maxIndex": 0x12FF, "name": "SDO Parameters"},
+    {"minIndex": 0x1400, "maxIndex": 0x15FF, "name": "Receive PDO Parameters"},
+    {"minIndex": 0x1600, "maxIndex": 0x17FF, "name": "Receive PDO Mapping"},
+    {"minIndex": 0x1800, "maxIndex": 0x19FF, "name": "Transmit PDO Parameters"},
+    {"minIndex": 0x1A00, "maxIndex": 0x1BFF, "name": "Transmit PDO Mapping"},
+    {"minIndex": 0x1C00, "maxIndex": 0x1FFF, "name": "Other Communication Parameters"},
+    {"minIndex": 0x2000, "maxIndex": 0x5FFF, "name": "Manufacturer Specific"},
+    {"minIndex": 0x6000, "maxIndex": 0x9FFF, "name": "Standardized Device Profile"},
+    {"minIndex": 0xA000, "maxIndex": 0xBFFF, "name": "Standardized Interface Profile"}]
 
 IECTypeConversion = {
     "BOOLEAN": "BOOL",
@@ -119,7 +129,8 @@ IECTypeConversion = {
     "UNSIGNED56": "ULINT",
     "UNSIGNED64": "ULINT",
 }
-SizeConversion = {1 : "X", 8 : "B", 16 : "W", 24 : "D", 32 : "D", 40 : "L", 48 : "L", 56 : "L", 64 : "L"}
+SizeConversion = {1: "X", 8: "B", 16: "W", 24: "D", 32: "D", 40: "L", 48: "L", 56: "L", 64: "L"}
+
 
 class SubindexTable(wx.grid.PyGridTableBase):
 
@@ -197,10 +208,10 @@ class SubindexTable(wx.grid.PyGridTableBase):
             (self._cols, self.GetNumberCols(), wx.grid.GRIDTABLE_NOTIFY_COLS_DELETED, wx.grid.GRIDTABLE_NOTIFY_COLS_APPENDED),
         ]:
             if new < current:
-                msg = wx.grid.GridTableMessage(self,delmsg,new,current-new)
+                msg = wx.grid.GridTableMessage(self, delmsg, new, current - new)
                 grid.ProcessTableMessage(msg)
             elif new > current:
-                msg = wx.grid.GridTableMessage(self,addmsg,new-current)
+                msg = wx.grid.GridTableMessage(self, addmsg, new - current)
                 grid.ProcessTableMessage(msg)
                 self.UpdateValues(grid)
         grid.EndBatch()
@@ -213,7 +224,6 @@ class SubindexTable(wx.grid.PyGridTableBase):
         # update the scrollbars and the displayed part of the grid
         grid.AdjustScrollbars()
         grid.ForceRefresh()
-
 
     def UpdateValues(self, grid):
         """Update all displayed values"""
@@ -265,7 +275,7 @@ class SubindexTable(wx.grid.PyGridTableBase):
                         editor = wx.grid.GridCellNumberEditor()
                         renderer = wx.grid.GridCellNumberRenderer()
                         if colname == "value" and "min" in editors and "max" in editors:
-                            editor.SetParameters("%s,%s"%(editors["min"],editors["max"]))
+                            editor.SetParameters("%s,%s" % (editors["min"], editors["max"]))
                     elif editortype == "float":
                         editor = wx.grid.GridCellTextEditor()
                         renderer = wx.grid.GridCellStringRenderer()
@@ -324,19 +334,24 @@ class SubindexTable(wx.grid.PyGridTableBase):
         self.data = []
         self.editors = []
 
-[ID_EDITINGPANEL, ID_EDITINGPANELADDBUTTON, ID_EDITINGPANELINDEXCHOICE,
- ID_EDITINGPANELINDEXLIST, ID_EDITINGPANELINDEXLISTPANEL, ID_EDITINGPANELPARTLIST,
- ID_EDITINGPANELSECONDSPLITTER, ID_EDITINGPANELSUBINDEXGRID,
- ID_EDITINGPANELSUBINDEXGRIDPANEL, ID_EDITINGPANELCALLBACKCHECK,
+
+[
+    ID_EDITINGPANEL, ID_EDITINGPANELADDBUTTON, ID_EDITINGPANELINDEXCHOICE,
+    ID_EDITINGPANELINDEXLIST, ID_EDITINGPANELINDEXLISTPANEL, ID_EDITINGPANELPARTLIST,
+    ID_EDITINGPANELSECONDSPLITTER, ID_EDITINGPANELSUBINDEXGRID,
+    ID_EDITINGPANELSUBINDEXGRIDPANEL, ID_EDITINGPANELCALLBACKCHECK,
 ] = [wx.NewId() for _init_ctrls in range(10)]
 
-[ID_EDITINGPANELINDEXLISTMENUITEMS0, ID_EDITINGPANELINDEXLISTMENUITEMS1,
- ID_EDITINGPANELINDEXLISTMENUITEMS2,
+[
+    ID_EDITINGPANELINDEXLISTMENUITEMS0, ID_EDITINGPANELINDEXLISTMENUITEMS1,
+    ID_EDITINGPANELINDEXLISTMENUITEMS2,
 ] = [wx.NewId() for _init_coll_IndexListMenu_Items in range(3)]
 
-[ID_EDITINGPANELMENU1ITEMS0, ID_EDITINGPANELMENU1ITEMS1,
- ID_EDITINGPANELMENU1ITEMS3, ID_EDITINGPANELMENU1ITEMS4,
+[
+    ID_EDITINGPANELMENU1ITEMS0, ID_EDITINGPANELMENU1ITEMS1,
+    ID_EDITINGPANELMENU1ITEMS3, ID_EDITINGPANELMENU1ITEMS4,
 ] = [wx.NewId() for _init_coll_SubindexGridMenu_Items in range(4)]
+
 
 class EditingPanel(wx.SplitterWindow):
     def _init_coll_AddToListSizer_Items(self, parent):
@@ -491,7 +506,7 @@ class EditingPanel(wx.SplitterWindow):
 
         self._init_sizers()
 
-    def __init__(self, parent, window, manager, editable = True):
+    def __init__(self, parent, window, manager, editable=True):
         self.Editable = editable
         self._init_ctrls(parent)
         self.ParentWindow = window
@@ -502,7 +517,7 @@ class EditingPanel(wx.SplitterWindow):
         self.Index = None
 
         for values in DictionaryOrganisation:
-            text = "   0x%04X-0x%04X      %s"%(values["minIndex"], values["maxIndex"], values["name"])
+            text = "   0x%04X-0x%04X      %s" % (values["minIndex"], values["maxIndex"], values["name"])
             self.PartList.Append(text)
         self.Table = SubindexTable(self, [], [], GetSubindexTableColnames())
         self.SubindexGrid.SetTable(self.Table)
@@ -550,7 +565,7 @@ class EditingPanel(wx.SplitterWindow):
                             var_name = "%s_%04x_%02x" % (self.Manager.GetCurrentNodeName(), index, subindex)
                             size = typeinfos["size"]
                             data = wx.TextDataObject(str(
-                                ("%s%s.%d.%d"%(SizeConversion[size], bus_id, index, subindex),
+                                ("%s%s.%d.%d" % (SizeConversion[size], bus_id, index, subindex),
                                  "location",
                                  IECTypeConversion.get(typeinfos["name"]),
                                  var_name, "")))
@@ -573,7 +588,7 @@ class EditingPanel(wx.SplitterWindow):
                             var_name = "%s_%04x_%02x" % (self.Manager.GetSlaveName(node_id), index, subindex)
                             size = typeinfos["size"]
                             data = wx.TextDataObject(str(
-                                ("%s%s.%d.%d.%d"%(SizeConversion[size], bus_id, node_id, index, subindex),
+                                ("%s%s.%d.%d.%d" % (SizeConversion[size], bus_id, node_id, index, subindex),
                                  "location",
                                  IECTypeConversion.get(typeinfos["name"]),
                                  var_name, "")))
@@ -620,9 +635,9 @@ class EditingPanel(wx.SplitterWindow):
             wx.CallAfter(self.ParentWindow.RefreshStatusBar)
         event.Skip()
 
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #                             Refresh Functions
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
     def RefreshIndexList(self):
         selected = self.IndexList.GetSelection()
@@ -637,7 +652,7 @@ class EditingPanel(wx.SplitterWindow):
             values = DictionaryOrganisation[i]
             self.ListIndex = []
             for name, index in self.Manager.GetCurrentValidIndexes(values["minIndex"], values["maxIndex"]):
-                self.IndexList.Append("0x%04X   %s"%(index, name))
+                self.IndexList.Append("0x%04X   %s" % (index, name))
                 self.ListIndex.append(index)
             if self.Editable:
                 self.ChoiceIndex = []
@@ -653,7 +668,7 @@ class EditingPanel(wx.SplitterWindow):
                 else:
                     for name, index in self.Manager.GetCurrentValidChoices(values["minIndex"], values["maxIndex"]):
                         if index:
-                            self.IndexChoice.Append("0x%04X   %s"%(index, name))
+                            self.IndexChoice.Append("0x%04X   %s" % (index, name))
                         else:
                             self.IndexChoice.Append(name)
                         self.ChoiceIndex.append(index)
@@ -688,9 +703,9 @@ class EditingPanel(wx.SplitterWindow):
                 self.Table.ResetView(self.SubindexGrid)
         self.ParentWindow.RefreshStatusBar()
 
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #                        Editing Table value function
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
     def OnSubindexGridEditorShown(self, event):
         row, col = event.GetRow(), event.GetCol()
@@ -735,9 +750,9 @@ class EditingPanel(wx.SplitterWindow):
             wx.CallAfter(self.RefreshTable)
         event.Skip()
 
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #                          Contextual Menu functions
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
     def OnIndexListRightUp(self, event):
         if self.Editable:
@@ -844,8 +859,8 @@ class EditingPanel(wx.SplitterWindow):
                 index = self.ListIndex[selected]
                 if self.Manager.IsCurrentEntry(index):
                     infos = self.Manager.GetEntryInfos(index)
-                    dialog = wx.TextEntryDialog(self, "Give a new name for index 0x%04X"%index,
-                                 "Rename an index", infos["name"], wx.OK|wx.CANCEL)
+                    dialog = wx.TextEntryDialog(self, "Give a new name for index 0x%04X" % index,
+                                 "Rename an index", infos["name"], wx.OK | wx.CANCEL)
                     if dialog.ShowModal() == wx.ID_OK:
                         self.Manager.SetCurrentEntryName(index, dialog.GetValue())
                         self.ParentWindow.RefreshBufferState()
@@ -862,9 +877,9 @@ class EditingPanel(wx.SplitterWindow):
                     dialog = UserTypeDialog(self)
                     dialog.SetTypeList(self.Manager.GetCustomisableTypes(), values[1])
                     if valuetype == 0:
-                        dialog.SetValues(min = values[2], max = values[3])
+                        dialog.SetValues(min=values[2], max=values[3])
                     elif valuetype == 1:
-                        dialog.SetValues(length = values[2])
+                        dialog.SetValues(length=values[2])
                     if dialog.ShowModal() == wx.ID_OK:
                         type, min, max, length = dialog.GetValues()
                         self.Manager.SetCurrentUserType(index, type, min, max, length)
@@ -877,7 +892,7 @@ class EditingPanel(wx.SplitterWindow):
             if selected != wx.NOT_FOUND:
                 index = self.ListIndex[selected]
                 if self.Manager.IsCurrentEntry(index):
-                    self.Manager.ManageEntriesOfCurrent([],[index])
+                    self.Manager.ManageEntriesOfCurrent([], [index])
                     self.ParentWindow.RefreshBufferState()
                     self.RefreshIndexList()
 
@@ -888,7 +903,7 @@ class EditingPanel(wx.SplitterWindow):
                 index = self.ListIndex[selected]
                 if self.Manager.IsCurrentEntry(index):
                     dialog = wx.TextEntryDialog(self, "Number of subindexes to add:",
-                                 "Add subindexes", "1", wx.OK|wx.CANCEL)
+                                 "Add subindexes", "1", wx.OK | wx.CANCEL)
                     if dialog.ShowModal() == wx.ID_OK:
                         try:
                             number = int(dialog.GetValue())
@@ -896,7 +911,7 @@ class EditingPanel(wx.SplitterWindow):
                             self.ParentWindow.RefreshBufferState()
                             self.RefreshIndexList()
                         except:
-                            message = wx.MessageDialog(self, "An integer is required!", "ERROR", wx.OK|wx.ICON_ERROR)
+                            message = wx.MessageDialog(self, "An integer is required!", "ERROR", wx.OK | wx.ICON_ERROR)
                             message.ShowModal()
                             message.Destroy()
                     dialog.Destroy()
@@ -908,7 +923,7 @@ class EditingPanel(wx.SplitterWindow):
                 index = self.ListIndex[selected]
                 if self.Manager.IsCurrentEntry(index):
                     dialog = wx.TextEntryDialog(self, "Number of subindexes to delete:",
-                                 "Delete subindexes", "1", wx.OK|wx.CANCEL)
+                                 "Delete subindexes", "1", wx.OK | wx.CANCEL)
                     if dialog.ShowModal() == wx.ID_OK:
                         try:
                             number = int(dialog.GetValue())
@@ -916,7 +931,7 @@ class EditingPanel(wx.SplitterWindow):
                             self.ParentWindow.RefreshBufferState()
                             self.RefreshIndexList()
                         except:
-                            message = wx.MessageDialog(self, "An integer is required!", "ERROR", wx.OK|wx.ICON_ERROR)
+                            message = wx.MessageDialog(self, "An integer is required!", "ERROR", wx.OK | wx.ICON_ERROR)
                             message.ShowModal()
                             message.Destroy()
                     dialog.Destroy()

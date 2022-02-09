@@ -29,38 +29,39 @@ from builtins import chr
 from builtins import object
 from builtins import range
 
+import sys
+import re
+import pickle
+
 from .nosis.util import add_class_to_store
 
-import pickle
-import re
-
-import sys
-
 if sys.version_info[0] >= 3:
-    unicode = str
+    unicode = str  # pylint: disable=invalid-name
+
 
 def dbg(s):
     pass
     #print(">> %s"% (s,))
 
-"""
-Dictionary of translation between access symbol and their signification
-"""
-AccessType = {"ro" : "Read Only", "wo" : "Write Only", "rw" : "Read/Write"}
 
-BoolType = {True : "True", False : "False"}
-OptionType = {True : "Yes", False : "No"}
+#
+# Dictionary of translation between access symbol and their signification
+#
+AccessType = {"ro": "Read Only", "wo": "Write Only", "rw": "Read/Write"}
+
+BoolType = {True: "True", False: "False"}
+OptionType = {True: "Yes", False: "No"}
 
 CustomisableTypes = [(0x02, 0), (0x03, 0), (0x04, 0), (0x05, 0), (0x06, 0), (0x07, 0),
     (0x08, 0), (0x09, 1), (0x0A, 1), (0x0B, 1), (0x10, 0), (0x11, 0), (0x12, 0),
     (0x13, 0), (0x14, 0), (0x15, 0), (0x16, 0), (0x18, 0), (0x19, 0), (0x1A, 0),
     (0x1B, 0)]
 
-DefaultParams = {"comment" : "", "save" : False, "buffer_size" : ""}
+DefaultParams = {"comment": "", "save": False, "buffer_size": ""}
 
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #                      Dictionary Mapping and Organisation
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 """
 Properties of entry structure in the Object Dictionary
@@ -74,14 +75,14 @@ OD_IdenticalIndexes = 8     # Entry has the same description on multiple indexes
 Structures of entry in the Object Dictionary, sum of the properties described above
 for all sorts of entries use in CAN Open specification
 """
-nosub = 0 # Entry without subindex (only for type declaration)
+nosub = 0  # Entry without subindex (only for type declaration)
 var = OD_Subindex
 array = OD_Subindex | OD_MultipleSubindexes
 rec = OD_Subindex | OD_MultipleSubindexes | OD_IdenticalSubindexes
 # Entries identical on multiple indexes
 plurivar = OD_Subindex | OD_IdenticalIndexes
-pluriarray = OD_Subindex | OD_MultipleSubindexes | OD_IdenticalIndexes # Example : PDO Parameters
-plurirec = OD_Subindex | OD_MultipleSubindexes | OD_IdenticalSubindexes |OD_IdenticalIndexes   # Example : PDO Mapping
+pluriarray = OD_Subindex | OD_MultipleSubindexes | OD_IdenticalIndexes  # Example : PDO Parameters
+plurirec = OD_Subindex | OD_MultipleSubindexes | OD_IdenticalSubindexes | OD_IdenticalIndexes  # Example : PDO Mapping
 
 """
 MappingDictionary is the structure used for writing a good organised Object
@@ -91,170 +92,171 @@ organisation of this object, it will involve in a malfunction of the application
 """
 
 MappingDictionary = {
-    0x0001 : {"name" : "BOOLEAN", "struct" : nosub, "size" : 1, "default" : False, "values" : []},
-    0x0002 : {"name" : "INTEGER8", "struct" : nosub, "size" : 8, "default" : 0, "values" : []},
-    0x0003 : {"name" : "INTEGER16", "struct" : nosub, "size" : 16, "default" : 0, "values" : []},
-    0x0004 : {"name" : "INTEGER32", "struct" : nosub, "size" : 32, "default" : 0, "values" : []},
-    0x0005 : {"name" : "UNSIGNED8", "struct" : nosub, "size" : 8, "default" : 0, "values" : []},
-    0x0006 : {"name" : "UNSIGNED16", "struct" : nosub, "size" : 16, "default" : 0, "values" : []},
-    0x0007 : {"name" : "UNSIGNED32", "struct" : nosub, "size" : 32, "default" : 0, "values" : []},
-    0x0008 : {"name" : "REAL32", "struct" : nosub, "size" : 32, "default" : 0.0, "values" : []},
-    0x0009 : {"name" : "VISIBLE_STRING", "struct" : nosub, "size" : 8, "default" : "", "values" : []},
-    0x000A : {"name" : "OCTET_STRING", "struct" : nosub, "size" : 8, "default" : "", "values" : []},
-    0x000B : {"name" : "UNICODE_STRING", "struct" : nosub, "size" : 16, "default" : "", "values" : []},
-#    0x000C : {"name" : "TIME_OF_DAY", "struct" : nosub, "size" : 48, "default" : 0, "values" : []},
-#    0x000D : {"name" : "TIME_DIFFERENCE", "struct" : nosub, "size" : 48, "default" : 0, "values" : []},
-    0x000F : {"name" : "DOMAIN", "struct" : nosub, "size" : 0, "default" : "", "values" : []},
-    0x0010 : {"name" : "INTEGER24", "struct" : nosub, "size" : 24, "default" : 0, "values" : []},
-    0x0011 : {"name" : "REAL64", "struct" : nosub, "size" : 64, "default" : 0.0, "values" : []},
-    0x0012 : {"name" : "INTEGER40", "struct" : nosub, "size" : 40, "default" : 0, "values" : []},
-    0x0013 : {"name" : "INTEGER48", "struct" : nosub, "size" : 48, "default" : 0, "values" : []},
-    0x0014 : {"name" : "INTEGER56", "struct" : nosub, "size" : 56, "default" : 0, "values" : []},
-    0x0015 : {"name" : "INTEGER64", "struct" : nosub, "size" : 64, "default" : 0, "values" : []},
-    0x0016 : {"name" : "UNSIGNED24", "struct" : nosub, "size" : 24, "default" : 0, "values" : []},
-    0x0018 : {"name" : "UNSIGNED40", "struct" : nosub, "size" : 40, "default" : 0, "values" : []},
-    0x0019 : {"name" : "UNSIGNED48", "struct" : nosub, "size" : 48, "default" : 0, "values" : []},
-    0x001A : {"name" : "UNSIGNED56", "struct" : nosub, "size" : 56, "default" : 0, "values" : []},
-    0x001B : {"name" : "UNSIGNED64", "struct" : nosub, "size" : 64, "default" : 0, "values" : []},
-    0x1000 : {"name" : "Device Type", "struct" : var, "need" : True, "values" :
-                [{"name" : "Device Type", "type" : 0x07, "access" : 'ro', "pdo" : False}]},
-    0x1001 : {"name" : "Error Register", "struct" : var,  "need" : True, "values" :
-                [{"name" : "Error Register", "type" : 0x05, "access": 'ro', "pdo" : True}]},
-    0x1002 : {"name" : "Manufacturer Status Register", "struct" : var, "need" : False,  "values" :
-                [{"name" : "Manufacturer Status Register", "type" : 0x07, "access" : 'ro', "pdo" : True}]},
-    0x1003 : {"name" : "Pre-defined Error Field", "struct" : rec, "need" : False, "callback" : True,  "values" :
-                [{"name" : "Number of Errors", "type" : 0x05, "access" : 'rw', "pdo" : False},
-                 {"name" : "Standard Error Field", "type" : 0x07, "access" : 'ro', "pdo" : False, "nbmin" : 1, "nbmax" : 0xFE}]},
-    0x1005 : {"name" : "SYNC COB ID", "struct" : var, "need" : False, "callback" : True, "values" :
-                [{"name" : "SYNC COB ID", "type" : 0x07, "access" : 'rw', "pdo" : False}]},
-    0x1006 : {"name" : "Communication / Cycle Period", "struct" : var, "need" : False, "callback" : True, "values" :
-                [{"name" : "Communication Cycle Period", "type" : 0x07, "access" : 'rw', "pdo" : False}]},
-    0x1007 : {"name" : "Synchronous Window Length", "struct" : var, "need" : False, "values" :
-                [{"name" : "Synchronous Window Length", "type" : 0x07, "access" : 'rw', "pdo" : False}]},
-    0x1008 : {"name" : "Manufacturer Device Name", "struct" : var, "need" : False, "values" :
-                [{"name" : "Manufacturer Device Name", "type" : 0x09, "access" : 'ro', "pdo" : False}]},
-    0x1009 : {"name" : "Manufacturer Hardware Version", "struct" : var, "need" : False, "values" :
-                [{"name" : "Manufacturer Hardware Version", "type" : 0x09, "access" : 'ro', "pdo" : False}]},
-    0x100A : {"name" : "Manufacturer Software Version", "struct" : var, "need" : False, "values" :
-                [{"name" : "Manufacturer Software Version", "type" : 0x09, "access" : 'ro', "pdo" : False}]},
-    0x100C : {"name" : "Guard Time", "struct" : var, "need" : False, "values" :
-                [{"name" : "Guard Time", "type" : 0x06, "access" : 'rw', "pdo" : False}]},
-    0x100D : {"name" : "Life Time Factor", "struct" : var, "need" : False, "values" :
-                [{"name" : "Life Time Factor", "type" : 0x05, "access" : 'rw', "pdo" : False}]},
-    0x1010 : {"name" : "Store parameters", "struct" : array, "need" : False, "values" :
-                [{"name" : "Number of Entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
-                 {"name" : "Save All Parameters", "type" : 0x07, "access" : 'rw', "pdo" : False},
-                 {"name" : "Save Communication Parameters", "type" : 0x07, "access" : 'rw', "pdo" : False},
-                 {"name" : "Save Application Parameters", "type" : 0x07, "access" : 'rw', "pdo" : False},
-                 {"name" : "Save Manufacturer Parameters %d[(sub - 3)]", "type" : 0x07, "access" : 'rw', "pdo" : False, "nbmax" : 0x7C}]},
-    0x1011 : {"name" : "Restore Default Parameters", "struct" : array, "need" : False, "values" :
-                [{"name" : "Number of Entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
-                 {"name" : "Restore All Default Parameters", "type" : 0x07, "access" : 'rw', "pdo" : False},
-                 {"name" : "Restore Communication Default Parameters", "type" : 0x07, "access" : 'rw', "pdo" : False},
-                 {"name" : "Restore Application Default Parameters", "type" : 0x07, "access" : 'rw', "pdo" : False},
-                 {"name" : "Restore Manufacturer Defined Default Parameters %d[(sub - 3)]", "type" : 0x07, "access" : 'rw', "pdo" : False, "nbmax" : 0x7C}]},
-    0x1012 : {"name" : "TIME COB ID", "struct" : var, "need" : False, "values" :
-                [{"name" : "TIME COB ID", "type" : 0x07, "access" : 'rw', "pdo" : False}]},
-    0x1013 : {"name" : "High Resolution Timestamp", "struct" : var, "need" : False, "values" :
-                [{"name" : "High Resolution Time Stamp", "type" : 0x07, "access" : 'rw', "pdo" : True}]},
-    0x1014 : {"name" : "Emergency COB ID", "struct" : var, "need" : False, "values" :
-                [{"name" : "Emergency COB ID", "type" : 0x07, "access" : 'rw', "pdo" : False, "default" : "\"$NODEID+0x80\""}]},
-    0x1015 : {"name" : "Inhibit Time Emergency", "struct" : var, "need" : False, "values" :
-                [{"name" : "Inhibit Time Emergency", "type" : 0x06, "access" : 'rw', "pdo" : False}]},
-    0x1016 : {"name" : "Consumer Heartbeat Time", "struct" : rec, "need" : False, "values" :
-                [{"name" : "Number of Entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
-                 {"name" : "Consumer Heartbeat Time", "type" : 0x07, "access" : 'rw', "pdo" : False, "nbmin" : 1, "nbmax" : 0x7F}]},
-    0x1017 : {"name" : "Producer Heartbeat Time", "struct" : var, "need" : False, "callback" : True, "values" :
-                [{"name" : "Producer Heartbeat Time", "type" : 0x06, "access" : 'rw', "pdo" : False}]},
-    0x1018 : {"name" : "Identity", "struct" : array, "need" : True, "values" :
-                [{"name" : "Number of Entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
-                 {"name" : "Vendor ID", "type" : 0x07, "access" : 'ro', "pdo" : False},
-                 {"name" : "Product Code", "type" : 0x07, "access" : 'ro', "pdo" : False},
-                 {"name" : "Revision Number", "type" : 0x07, "access" : 'ro', "pdo" : False},
-                 {"name" : "Serial Number", "type" : 0x07, "access" : 'ro', "pdo" : False}]},
-    0x1019 : {"name" : "Synchronous counter overflow value", "struct" : var, "need" : False, "values" :
-                [{"name" : "Synchronous counter overflow value", "type" : 0x05, "access" : 'rw', "pdo" : False}]},
-    0x1020 : {"name" : "Verify Configuration", "struct" : array, "need" : False, "values" :
-                [{"name" : "Number of Entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
-                 {"name" : "Configuration Date", "type" : 0x07, "access" : 'rw', "pdo" : False},
-                 {"name" : "Configuration Time", "type" : 0x07, "access" : 'rw', "pdo" : False}]},
-#    0x1021 : {"name" : "Store EDS", "struct" : var, "need" : False, "values" :
-#                [{"name" : "Store EDS", "type" : 0x0F, "access" : 'rw', "pdo" : False}]},
-#    0x1022 : {"name" : "Storage Format", "struct" : var, "need" : False, "values" :
-#                [{"name" : "Storage Format", "type" : 0x06, "access" : 'rw', "pdo" : False}]},
-    0x1023 : {"name" : "OS Command", "struct" : array, "need" : False, "values" :
-                [{"name" : "Number of Entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
-                 {"name" : "Command", "type" : 0x0A, "access" : 'rw', "pdo" : False},
-                 {"name" : "Status", "type" : 0x05, "access" : 'ro', "pdo" : False},
-                 {"name" : "Reply", "type" : 0x0A, "access" : 'ro', "pdo" : False}]},
-    0x1024 : {"name" : "OS Command Mode", "struct" : var, "need" : False, "values" :
-                [{"name" : "OS Command Mode", "type" : 0x05, "access" : 'wo', "pdo" : False}]},
-    0x1025 : {"name" : "OS Debugger Interface", "struct" : array, "need" : False, "values" :
-                [{"name" : "Number of Entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
-                 {"name" : "Command", "type" : 0x0A, "access" : 'rw', "pdo" : False},
-                 {"name" : "Status", "type" : 0x05, "access" : 'ro', "pdo" : False},
-                 {"name" : "Reply", "type" : 0x0A, "access" : 'ro', "pdo" : False}]},
-    0x1026 : {"name" : "OS Prompt", "struct" : array, "need" : False, "values" :
-                [{"name" : "Number of Entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
-                 {"name" : "StdIn", "type" : 0x05, "access" : 'wo', "pdo" : True},
-                 {"name" : "StdOut", "type" : 0x05, "access" : 'ro', "pdo" : True},
-                 {"name" : "StdErr", "type" : 0x05, "access" : 'ro', "pdo" : True}]},
-    0x1027 : {"name" : "Module List", "struct" : rec, "need" : False, "values" :
-                [{"name" : "Number of Connected Modules", "type" : 0x05, "access" : 'ro', "pdo" : False},
-                 {"name" : "Module %d[(sub)]", "type" : 0x06, "access" : 'ro', "pdo" : False, "nbmin" : 1, "nbmax" : 0xFE}]},
-    0x1028 : {"name" : "Emergency Consumer", "struct" : rec, "need" : False, "values" :
-                [{"name" : "Number of Consumed Emergency Objects", "type" : 0x05, "access" : 'ro', "pdo" : False},
-                 {"name" : "Emergency Consumer", "type" : 0x07, "access" : 'rw', "pdo" : False, "nbmin" : 1, "nbmax" : 0x7F}]},
-    0x1029 : {"name" : "Error Behavior", "struct" : array, "need" : False, "values" :
-                [{"name" : "Number of Error Classes", "type" : 0x05, "access" : 'ro', "pdo" : False},
-                 {"name" : "Communication Error", "type" : 0x05, "access" : 'rw', "pdo" : False},
-                 {"name" : "Device Profile", "type" : 0x05, "access" : 'rw', "pdo" : False, "nbmax" : 0xFE}]},
-    0x1200 : {"name" : "Server SDO Parameter", "struct" : array, "need" : False, "values" :
-                [{"name" : "Number of Entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
-                 {"name" : "COB ID Client to Server (Receive SDO)", "type" : 0x07, "access" : 'ro', "pdo" : False, "default" : "\"$NODEID+0x600\""},
-                 {"name" : "COB ID Server to Client (Transmit SDO)", "type" : 0x07, "access" : 'ro', "pdo" : False, "default" : "\"$NODEID+0x580\""}]},
-    0x1201 : {"name" : "Additional Server SDO %d Parameter[(idx)]", "struct" : pluriarray, "incr" : 1, "nbmax" : 0x7F, "need" : False, "values" :
-                [{"name" : "Number of Entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
-                 {"name" : "COB ID Client to Server (Receive SDO)", "type" : 0x07, "access" : 'ro', "pdo" : False},
-                 {"name" : "COB ID Server to Client (Transmit SDO)", "type" : 0x07, "access" : 'ro', "pdo" : False},
-                 {"name" : "Node ID of the SDO Client", "type" : 0x05, "access" : 'ro', "pdo" : False}]},
-    0x1280 : {"name" : "Client SDO %d Parameter[(idx)]", "struct" : pluriarray, "incr" : 1, "nbmax" : 0x100, "need" : False, "values" :
-                [{"name" : "Number of Entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
-                 {"name" : "COB ID Client to Server (Transmit SDO)", "type" : 0x07, "access" : 'rw', "pdo" : False},
-                 {"name" : "COB ID Server to Client (Receive SDO)", "type" : 0x07, "access" : 'rw', "pdo" : False},
-                 {"name" : "Node ID of the SDO Server", "type" : 0x05, "access" : 'rw', "pdo" : False}]},
-    0x1400 : {"name" : "Receive PDO %d Parameter[(idx)]", "struct" : pluriarray, "incr" : 1, "nbmax" : 0x200, "need" : False, "values" :
-                [{"name" : "Highest SubIndex Supported", "type" : 0x05, "access" : 'ro', "pdo" : False},
-                 {"name" : "COB ID used by PDO", "type" : 0x07, "access" : 'rw', "pdo" : False, "default" : "{True:\"$NODEID+0x%X00\"%(base+2),False:0x80000000}[base<4]"},
-                 {"name" : "Transmission Type", "type" : 0x05, "access" : 'rw', "pdo" : False},
-                 {"name" : "Inhibit Time", "type" : 0x06, "access" : 'rw', "pdo" : False},
-                 {"name" : "Compatibility Entry", "type" : 0x05, "access" : 'rw', "pdo" : False},
-                 {"name" : "Event Timer", "type" : 0x06, "access" : 'rw', "pdo" : False},
-                 {"name" : "SYNC start value", "type" : 0x05, "access" : 'rw', "pdo" : False}]},
-    0x1600 : {"name" : "Receive PDO %d Mapping[(idx)]", "struct" : plurirec, "incr" : 1, "nbmax" : 0x200, "need" : False, "values" :
-                [{"name" : "Number of Entries", "type" : 0x05, "access" : 'rw', "pdo" : False},
-                 {"name" : "PDO %d Mapping for an application object %d[(idx,sub)]", "type" : 0x07, "access" : 'rw', "pdo" : False, "nbmin" : 0, "nbmax" : 0x40}]},
-    0x1800 : {"name" : "Transmit PDO %d Parameter[(idx)]", "struct" : pluriarray, "incr" : 1, "nbmax" : 0x200, "need" : False, "callback" : True, "values" :
-                [{"name" : "Highest SubIndex Supported", "type" : 0x05, "access" : 'ro', "pdo" : False},
-                 {"name" : "COB ID used by PDO", "type" : 0x07, "access" : 'rw', "pdo" : False, "default" : "{True:\"$NODEID+0x%X80\"%(base+1),False:0x80000000}[base<4]"},
-                 {"name" : "Transmission Type", "type" : 0x05, "access" : 'rw', "pdo" : False},
-                 {"name" : "Inhibit Time", "type" : 0x06, "access" : 'rw', "pdo" : False},
-                 {"name" : "Compatibility Entry", "type" : 0x05, "access" : 'rw', "pdo" : False},
-                 {"name" : "Event Timer", "type" : 0x06, "access" : 'rw', "pdo" : False},
-                 {"name" : "SYNC start value", "type" : 0x05, "access" : 'rw', "pdo" : False}]},
-    0x1A00 : {"name" : "Transmit PDO %d Mapping[(idx)]", "struct" : plurirec, "incr" : 1, "nbmax" : 0x200, "need" : False, "values" :
-                [{"name" : "Number of Entries", "type" : 0x05, "access" : 'rw', "pdo" : False},
-                 {"name" : "PDO %d Mapping for a process data variable %d[(idx,sub)]", "type" : 0x07, "access" : 'rw', "pdo" : False, "nbmin" : 0, "nbmax" : 0x40}]},
+    0x0001: {"name": "BOOLEAN", "struct": nosub, "size": 1, "default": False, "values": []},
+    0x0002: {"name": "INTEGER8", "struct": nosub, "size": 8, "default": 0, "values": []},
+    0x0003: {"name": "INTEGER16", "struct": nosub, "size": 16, "default": 0, "values": []},
+    0x0004: {"name": "INTEGER32", "struct": nosub, "size": 32, "default": 0, "values": []},
+    0x0005: {"name": "UNSIGNED8", "struct": nosub, "size": 8, "default": 0, "values": []},
+    0x0006: {"name": "UNSIGNED16", "struct": nosub, "size": 16, "default": 0, "values": []},
+    0x0007: {"name": "UNSIGNED32", "struct": nosub, "size": 32, "default": 0, "values": []},
+    0x0008: {"name": "REAL32", "struct": nosub, "size": 32, "default": 0.0, "values": []},
+    0x0009: {"name": "VISIBLE_STRING", "struct": nosub, "size": 8, "default": "", "values": []},
+    0x000A: {"name": "OCTET_STRING", "struct": nosub, "size": 8, "default": "", "values": []},
+    0x000B: {"name": "UNICODE_STRING", "struct": nosub, "size": 16, "default": "", "values": []},
+    # 0x000C: {"name": "TIME_OF_DAY", "struct": nosub, "size": 48, "default": 0, "values": []},
+    # 0x000D: {"name": "TIME_DIFFERENCE", "struct": nosub, "size": 48, "default": 0, "values": []},
+    0x000F: {"name": "DOMAIN", "struct": nosub, "size": 0, "default": "", "values": []},
+    0x0010: {"name": "INTEGER24", "struct": nosub, "size": 24, "default": 0, "values": []},
+    0x0011: {"name": "REAL64", "struct": nosub, "size": 64, "default": 0.0, "values": []},
+    0x0012: {"name": "INTEGER40", "struct": nosub, "size": 40, "default": 0, "values": []},
+    0x0013: {"name": "INTEGER48", "struct": nosub, "size": 48, "default": 0, "values": []},
+    0x0014: {"name": "INTEGER56", "struct": nosub, "size": 56, "default": 0, "values": []},
+    0x0015: {"name": "INTEGER64", "struct": nosub, "size": 64, "default": 0, "values": []},
+    0x0016: {"name": "UNSIGNED24", "struct": nosub, "size": 24, "default": 0, "values": []},
+    0x0018: {"name": "UNSIGNED40", "struct": nosub, "size": 40, "default": 0, "values": []},
+    0x0019: {"name": "UNSIGNED48", "struct": nosub, "size": 48, "default": 0, "values": []},
+    0x001A: {"name": "UNSIGNED56", "struct": nosub, "size": 56, "default": 0, "values": []},
+    0x001B: {"name": "UNSIGNED64", "struct": nosub, "size": 64, "default": 0, "values": []},
+    0x1000: {"name": "Device Type", "struct": var, "need": True, "values":
+                [{"name": "Device Type", "type": 0x07, "access": 'ro', "pdo": False}]},
+    0x1001: {"name": "Error Register", "struct": var, "need": True, "values":
+                [{"name": "Error Register", "type": 0x05, "access": 'ro', "pdo": True}]},
+    0x1002: {"name": "Manufacturer Status Register", "struct": var, "need": False, "values":
+                [{"name": "Manufacturer Status Register", "type": 0x07, "access": 'ro', "pdo": True}]},
+    0x1003: {"name": "Pre-defined Error Field", "struct": rec, "need": False, "callback": True, "values":
+                [{"name": "Number of Errors", "type": 0x05, "access": 'rw', "pdo": False},
+                 {"name": "Standard Error Field", "type": 0x07, "access": 'ro', "pdo": False, "nbmin": 1, "nbmax": 0xFE}]},
+    0x1005: {"name": "SYNC COB ID", "struct": var, "need": False, "callback": True, "values":
+                [{"name": "SYNC COB ID", "type": 0x07, "access": 'rw', "pdo": False}]},
+    0x1006: {"name": "Communication / Cycle Period", "struct": var, "need": False, "callback": True, "values":
+                [{"name": "Communication Cycle Period", "type": 0x07, "access": 'rw', "pdo": False}]},
+    0x1007: {"name": "Synchronous Window Length", "struct": var, "need": False, "values":
+                [{"name": "Synchronous Window Length", "type": 0x07, "access": 'rw', "pdo": False}]},
+    0x1008: {"name": "Manufacturer Device Name", "struct": var, "need": False, "values":
+                [{"name": "Manufacturer Device Name", "type": 0x09, "access": 'ro', "pdo": False}]},
+    0x1009: {"name": "Manufacturer Hardware Version", "struct": var, "need": False, "values":
+                [{"name": "Manufacturer Hardware Version", "type": 0x09, "access": 'ro', "pdo": False}]},
+    0x100A: {"name": "Manufacturer Software Version", "struct": var, "need": False, "values":
+                [{"name": "Manufacturer Software Version", "type": 0x09, "access": 'ro', "pdo": False}]},
+    0x100C: {"name": "Guard Time", "struct": var, "need": False, "values":
+                [{"name": "Guard Time", "type": 0x06, "access": 'rw', "pdo": False}]},
+    0x100D: {"name": "Life Time Factor", "struct": var, "need": False, "values":
+                [{"name": "Life Time Factor", "type": 0x05, "access": 'rw', "pdo": False}]},
+    0x1010: {"name": "Store parameters", "struct": array, "need": False, "values":
+                [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
+                 {"name": "Save All Parameters", "type": 0x07, "access": 'rw', "pdo": False},
+                 {"name": "Save Communication Parameters", "type": 0x07, "access": 'rw', "pdo": False},
+                 {"name": "Save Application Parameters", "type": 0x07, "access": 'rw', "pdo": False},
+                 {"name": "Save Manufacturer Parameters %d[(sub - 3)]", "type": 0x07, "access": 'rw', "pdo": False, "nbmax": 0x7C}]},
+    0x1011: {"name": "Restore Default Parameters", "struct": array, "need": False, "values":
+                [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
+                 {"name": "Restore All Default Parameters", "type": 0x07, "access": 'rw', "pdo": False},
+                 {"name": "Restore Communication Default Parameters", "type": 0x07, "access": 'rw', "pdo": False},
+                 {"name": "Restore Application Default Parameters", "type": 0x07, "access": 'rw', "pdo": False},
+                 {"name": "Restore Manufacturer Defined Default Parameters %d[(sub - 3)]", "type": 0x07, "access": 'rw', "pdo": False, "nbmax": 0x7C}]},
+    0x1012: {"name": "TIME COB ID", "struct": var, "need": False, "values":
+                [{"name": "TIME COB ID", "type": 0x07, "access": 'rw', "pdo": False}]},
+    0x1013: {"name": "High Resolution Timestamp", "struct": var, "need": False, "values":
+                [{"name": "High Resolution Time Stamp", "type": 0x07, "access": 'rw', "pdo": True}]},
+    0x1014: {"name": "Emergency COB ID", "struct": var, "need": False, "values":
+                [{"name": "Emergency COB ID", "type": 0x07, "access": 'rw', "pdo": False, "default": "\"$NODEID+0x80\""}]},
+    0x1015: {"name": "Inhibit Time Emergency", "struct": var, "need": False, "values":
+                [{"name": "Inhibit Time Emergency", "type": 0x06, "access": 'rw', "pdo": False}]},
+    0x1016: {"name": "Consumer Heartbeat Time", "struct": rec, "need": False, "values":
+                [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
+                 {"name": "Consumer Heartbeat Time", "type": 0x07, "access": 'rw', "pdo": False, "nbmin": 1, "nbmax": 0x7F}]},
+    0x1017: {"name": "Producer Heartbeat Time", "struct": var, "need": False, "callback": True, "values":
+                [{"name": "Producer Heartbeat Time", "type": 0x06, "access": 'rw', "pdo": False}]},
+    0x1018: {"name": "Identity", "struct": array, "need": True, "values":
+                [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
+                 {"name": "Vendor ID", "type": 0x07, "access": 'ro', "pdo": False},
+                 {"name": "Product Code", "type": 0x07, "access": 'ro', "pdo": False},
+                 {"name": "Revision Number", "type": 0x07, "access": 'ro', "pdo": False},
+                 {"name": "Serial Number", "type": 0x07, "access": 'ro', "pdo": False}]},
+    0x1019: {"name": "Synchronous counter overflow value", "struct": var, "need": False, "values":
+                [{"name": "Synchronous counter overflow value", "type": 0x05, "access": 'rw', "pdo": False}]},
+    0x1020: {"name": "Verify Configuration", "struct": array, "need": False, "values":
+                [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
+                 {"name": "Configuration Date", "type": 0x07, "access": 'rw', "pdo": False},
+                 {"name": "Configuration Time", "type": 0x07, "access": 'rw', "pdo": False}]},
+    # 0x1021: {"name": "Store EDS", "struct": var, "need": False, "values":
+    #             [{"name": "Store EDS", "type": 0x0F, "access": 'rw', "pdo": False}]},
+    # 0x1022: {"name": "Storage Format", "struct": var, "need": False, "values":
+    #             [{"name": "Storage Format", "type": 0x06, "access": 'rw', "pdo": False}]},
+    0x1023: {"name": "OS Command", "struct": array, "need": False, "values":
+                [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
+                 {"name": "Command", "type": 0x0A, "access": 'rw', "pdo": False},
+                 {"name": "Status", "type": 0x05, "access": 'ro', "pdo": False},
+                 {"name": "Reply", "type": 0x0A, "access": 'ro', "pdo": False}]},
+    0x1024: {"name": "OS Command Mode", "struct": var, "need": False, "values":
+                [{"name": "OS Command Mode", "type": 0x05, "access": 'wo', "pdo": False}]},
+    0x1025: {"name": "OS Debugger Interface", "struct": array, "need": False, "values":
+                [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
+                 {"name": "Command", "type": 0x0A, "access": 'rw', "pdo": False},
+                 {"name": "Status", "type": 0x05, "access": 'ro', "pdo": False},
+                 {"name": "Reply", "type": 0x0A, "access": 'ro', "pdo": False}]},
+    0x1026: {"name": "OS Prompt", "struct": array, "need": False, "values":
+                [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
+                 {"name": "StdIn", "type": 0x05, "access": 'wo', "pdo": True},
+                 {"name": "StdOut", "type": 0x05, "access": 'ro', "pdo": True},
+                 {"name": "StdErr", "type": 0x05, "access": 'ro', "pdo": True}]},
+    0x1027: {"name": "Module List", "struct": rec, "need": False, "values":
+                [{"name": "Number of Connected Modules", "type": 0x05, "access": 'ro', "pdo": False},
+                 {"name": "Module %d[(sub)]", "type": 0x06, "access": 'ro', "pdo": False, "nbmin": 1, "nbmax": 0xFE}]},
+    0x1028: {"name": "Emergency Consumer", "struct": rec, "need": False, "values":
+                [{"name": "Number of Consumed Emergency Objects", "type": 0x05, "access": 'ro', "pdo": False},
+                 {"name": "Emergency Consumer", "type": 0x07, "access": 'rw', "pdo": False, "nbmin": 1, "nbmax": 0x7F}]},
+    0x1029: {"name": "Error Behavior", "struct": array, "need": False, "values":
+                [{"name": "Number of Error Classes", "type": 0x05, "access": 'ro', "pdo": False},
+                 {"name": "Communication Error", "type": 0x05, "access": 'rw', "pdo": False},
+                 {"name": "Device Profile", "type": 0x05, "access": 'rw', "pdo": False, "nbmax": 0xFE}]},
+    0x1200: {"name": "Server SDO Parameter", "struct": array, "need": False, "values":
+                [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
+                 {"name": "COB ID Client to Server (Receive SDO)", "type": 0x07, "access": 'ro', "pdo": False, "default": "\"$NODEID+0x600\""},
+                 {"name": "COB ID Server to Client (Transmit SDO)", "type": 0x07, "access": 'ro', "pdo": False, "default": "\"$NODEID+0x580\""}]},
+    0x1201: {"name": "Additional Server SDO %d Parameter[(idx)]", "struct": pluriarray, "incr": 1, "nbmax": 0x7F, "need": False, "values":
+                [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
+                 {"name": "COB ID Client to Server (Receive SDO)", "type": 0x07, "access": 'ro', "pdo": False},
+                 {"name": "COB ID Server to Client (Transmit SDO)", "type": 0x07, "access": 'ro', "pdo": False},
+                 {"name": "Node ID of the SDO Client", "type": 0x05, "access": 'ro', "pdo": False}]},
+    0x1280: {"name": "Client SDO %d Parameter[(idx)]", "struct": pluriarray, "incr": 1, "nbmax": 0x100, "need": False, "values":
+                [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
+                 {"name": "COB ID Client to Server (Transmit SDO)", "type": 0x07, "access": 'rw', "pdo": False},
+                 {"name": "COB ID Server to Client (Receive SDO)", "type": 0x07, "access": 'rw', "pdo": False},
+                 {"name": "Node ID of the SDO Server", "type": 0x05, "access": 'rw', "pdo": False}]},
+    0x1400: {"name": "Receive PDO %d Parameter[(idx)]", "struct": pluriarray, "incr": 1, "nbmax": 0x200, "need": False, "values":
+                [{"name": "Highest SubIndex Supported", "type": 0x05, "access": 'ro', "pdo": False},
+                 {"name": "COB ID used by PDO", "type": 0x07, "access": 'rw', "pdo": False, "default": "{True:\"$NODEID+0x%X00\"%(base+2),False:0x80000000}[base<4]"},
+                 {"name": "Transmission Type", "type": 0x05, "access": 'rw', "pdo": False},
+                 {"name": "Inhibit Time", "type": 0x06, "access": 'rw', "pdo": False},
+                 {"name": "Compatibility Entry", "type": 0x05, "access": 'rw', "pdo": False},
+                 {"name": "Event Timer", "type": 0x06, "access": 'rw', "pdo": False},
+                 {"name": "SYNC start value", "type": 0x05, "access": 'rw', "pdo": False}]},
+    0x1600: {"name": "Receive PDO %d Mapping[(idx)]", "struct": plurirec, "incr": 1, "nbmax": 0x200, "need": False, "values":
+                [{"name": "Number of Entries", "type": 0x05, "access": 'rw', "pdo": False},
+                 {"name": "PDO %d Mapping for an application object %d[(idx,sub)]", "type": 0x07, "access": 'rw', "pdo": False, "nbmin": 0, "nbmax": 0x40}]},
+    0x1800: {"name": "Transmit PDO %d Parameter[(idx)]", "struct": pluriarray, "incr": 1, "nbmax": 0x200, "need": False, "callback": True, "values":
+                [{"name": "Highest SubIndex Supported", "type": 0x05, "access": 'ro', "pdo": False},
+                 {"name": "COB ID used by PDO", "type": 0x07, "access": 'rw', "pdo": False, "default": "{True:\"$NODEID+0x%X80\"%(base+1),False:0x80000000}[base<4]"},
+                 {"name": "Transmission Type", "type": 0x05, "access": 'rw', "pdo": False},
+                 {"name": "Inhibit Time", "type": 0x06, "access": 'rw', "pdo": False},
+                 {"name": "Compatibility Entry", "type": 0x05, "access": 'rw', "pdo": False},
+                 {"name": "Event Timer", "type": 0x06, "access": 'rw', "pdo": False},
+                 {"name": "SYNC start value", "type": 0x05, "access": 'rw', "pdo": False}]},
+    0x1A00: {"name": "Transmit PDO %d Mapping[(idx)]", "struct": plurirec, "incr": 1, "nbmax": 0x200, "need": False, "values":
+                [{"name": "Number of Entries", "type": 0x05, "access": 'rw', "pdo": False},
+                 {"name": "PDO %d Mapping for a process data variable %d[(idx,sub)]", "type": 0x07, "access": 'rw', "pdo": False, "nbmin": 0, "nbmax": 0x40}]},
 }
 
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #                         Search in a Mapping Dictionary
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-"""
-Return the index of the typename given by searching in mappingdictionary
-"""
+
 def FindTypeIndex(typename, mappingdictionary):
+    """
+    Return the index of the typename given by searching in mappingdictionary
+    """
     testdic = {}
     for index, values in mappingdictionary.items():
         if index < 0x1000:
@@ -263,36 +265,40 @@ def FindTypeIndex(typename, mappingdictionary):
         return testdic[typename]
     return None
 
-"""
-Return the name of the type by searching in mappingdictionary
-"""
+
 def FindTypeName(typeindex, mappingdictionary):
+    """
+    Return the name of the type by searching in mappingdictionary
+    """
     if typeindex < 0x1000 and typeindex in mappingdictionary:
         return mappingdictionary[typeindex]["name"]
     return None
 
-"""
-Return the default value of the type by searching in mappingdictionary
-"""
+
 def FindTypeDefaultValue(typeindex, mappingdictionary):
+    """
+    Return the default value of the type by searching in mappingdictionary
+    """
     if typeindex < 0x1000 and typeindex in mappingdictionary:
         return mappingdictionary[typeindex]["default"]
     return None
 
-"""
-Return the list of types defined in mappingdictionary
-"""
+
 def FindTypeList(mappingdictionary):
+    """
+    Return the list of types defined in mappingdictionary
+    """
     list_ = []
     for index in mappingdictionary.keys():
         if index < 0x1000:
             list_.append(mappingdictionary[index]["name"])
     return list_
 
-"""
-Return the name of an entry by searching in mappingdictionary
-"""
+
 def FindEntryName(index, mappingdictionary, compute=True):
+    """
+    Return the name of an entry by searching in mappingdictionary
+    """
     base_index = FindIndex(index, mappingdictionary)
     if base_index:
         infos = mappingdictionary[base_index]
@@ -302,10 +308,11 @@ def FindEntryName(index, mappingdictionary, compute=True):
             return infos["name"]
     return None
 
-"""
-Return the informations of one entry by searching in mappingdictionary
-"""
+
 def FindEntryInfos(index, mappingdictionary, compute=True):
+    """
+    Return the informations of one entry by searching in mappingdictionary
+    """
     base_index = FindIndex(index, mappingdictionary)
     if base_index:
         copy = mappingdictionary[base_index].copy()
@@ -315,10 +322,11 @@ def FindEntryInfos(index, mappingdictionary, compute=True):
         return copy
     return None
 
-"""
-Return the informations of one subentry of an entry by searching in mappingdictionary
-"""
+
 def FindSubentryInfos(index, subIndex, mappingdictionary, compute=True):
+    """
+    Return the informations of one subentry of an entry by searching in mappingdictionary
+    """
     base_index = FindIndex(index, mappingdictionary)
     if base_index:
         struct = mappingdictionary[base_index]["struct"]
@@ -339,12 +347,12 @@ def FindSubentryInfos(index, subIndex, mappingdictionary, compute=True):
                     if "nbmax" in subindex_infos:
                         if idx <= subIndex < idx + subindex_infos["nbmax"]:
                             infos = subindex_infos.copy()
-                            break;
+                            break
                         idx += subindex_infos["nbmax"]
                     else:
                         if subIndex == idx:
                             infos = subindex_infos.copy()
-                            break;
+                            break
                         idx += 1
             elif subIndex == 0:
                 infos = mappingdictionary[base_index]["values"][0].copy()
@@ -353,10 +361,11 @@ def FindSubentryInfos(index, subIndex, mappingdictionary, compute=True):
             return infos
     return None
 
-"""
-Return the list of variables that can be mapped defined in mappingdictionary
-"""
+
 def FindMapVariableList(mappingdictionary, Node, compute=True):
+    """
+    Return the list of variables that can be mapped defined in mappingdictionary
+    """
     list_ = []
     for index in mappingdictionary:
         if Node.IsEntry(index):
@@ -378,21 +387,23 @@ def FindMapVariableList(mappingdictionary, Node, compute=True):
                         list_.append((index, subIndex, infos["size"], computed_name))
     return list_
 
-"""
-Return the list of mandatory indexes defined in mappingdictionary
-"""
+
 def FindMandatoryIndexes(mappingdictionary):
+    """
+    Return the list of mandatory indexes defined in mappingdictionary
+    """
     list_ = []
     for index in mappingdictionary:
         if index >= 0x1000 and mappingdictionary[index]["need"]:
             list_.append(index)
     return list_
 
-"""
-Return the index of the informations in the Object Dictionary in case of identical
-indexes
-"""
+
 def FindIndex(index, mappingdictionary):
+    """
+    Return the index of the informations in the Object Dictionary in case of identical
+    indexes
+    """
     if index in mappingdictionary:
         return index
     else:
@@ -401,42 +412,44 @@ def FindIndex(index, mappingdictionary):
         for idx in listpluri:
             nb_max = mappingdictionary[idx]["nbmax"]
             incr = mappingdictionary[idx]["incr"]
-            if idx < index < idx + incr * nb_max and (index - idx)%incr == 0:
+            if idx < index < idx + incr * nb_max and (index - idx) % incr == 0:
                 return idx
     return None
 
-#-------------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------------
 #                           Formating Name of an Entry
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-name_model = re.compile('(.*)\[(.*)\]')
+name_model = re.compile(r'(.*)\[(.*)\]')
 
-"""
-Format the text given with the index and subindex defined
-"""
+
 def StringFormat(text, idx, sub):
+    """
+    Format the text given with the index and subindex defined
+    """
     result = name_model.match(text)
     if result:
         format = result.groups()
-        dbg("EVAL in StringFormat(): '%s'" %(format[1],))
-        return format[0]%eval(format[1])
+        dbg("EVAL in StringFormat(): '%s'" % (format[1],))
+        return format[0] % eval(format[1])
     else:
         return text
 
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #                          Definition of Node Object
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
-"""
-Class recording the Object Dictionary entries. It checks at each modification
-that the structure of the Object Dictionary stay coherent
-"""
 
 class Node(object):
+    """
+    Class recording the Object Dictionary entries. It checks at each modification
+    that the structure of the Object Dictionary stay coherent
+    """
 
     DefaultStringSize = 10
 
-    def __init__(self, name = "", type = "slave", id = 0, description = "", profilename = "DS-301", profile = {}, specificmenu = []):
+    def __init__(self, name="", type="slave", id=0, description="", profilename="DS-301", profile={}, specificmenu=[]):
         self.Name = name
         self.Type = type
         self.ID = id
@@ -449,137 +462,136 @@ class Node(object):
         self.DS302 = {}
         self.UserMapping = {}
 
-    """
-    Return the node name
-    """
     def GetNodeName(self):
+        """
+        Return the node name
+        """
         return self.Name
 
-    """
-    Define the node name
-    """
     def SetNodeName(self, name):
+        """
+        Define the node name
+        """
         self.Name = name
 
-    """
-    Return the node type ("master" or "slave")
-    """
     def GetNodeType(self):
+        """
+        Return the node type ("master" or "slave")
+        """
         return self.Type
 
-    """
-    Define the node type ("master" or "slave")
-    """
     def SetNodeType(self, type):
+        """
+        Define the node type ("master" or "slave")
+        """
         self.Type = type
 
-    """
-    Return the node ID
-    """
     def GetNodeID(self):
+        """
+        Return the node ID
+        """
         return self.ID
 
-    """
-    Define the node ID
-    """
     def SetNodeID(self, id):
+        """
+        Define the node ID
+        """
         self.ID = id
 
-    """
-    Return the node description
-    """
     def GetNodeDescription(self):
+        """
+        Return the node description
+        """
         if getattr(self, "Description", False):
             return self.Description
         else:
             return ""
 
-    """
-    Define the node description
-    """
     def SetNodeDescription(self, description):
+        """
+        Define the node description
+        """
         self.Description = description
 
-    """
-    Return the Specific Profile Name
-    """
     def GetProfileName(self):
+        """
+        Return the Specific Profile Name
+        """
         return self.ProfileName
 
-    """
-    Define the Specific Profile Name
-    """
     def SetProfileName(self, profilename):
+        """
+        Define the Specific Profile Name
+        """
         self.ProfileName = profilename
 
-    """
-    Return the Specific Profile
-    """
     def GetProfile(self):
+        """
+        Return the Specific Profile
+        """
         return self.Profile
 
-    """
-    Define the Specific Profile
-    """
     def SetProfile(self, profile):
+        """
+        Define the Specific Profile
+        """
         self.Profile = profile
 
-    """
-    Return the default string size
-    """
     def GetDefaultStringSize(self):
+        """
+        Return the default string size
+        """
         return self.DefaultStringSize
 
-    """
-    Define the default string size
-    """
     def SetDefaultStringSize(self, size):
+        """
+        Define the default string size
+        """
         self.DefaultStringSize = size
 
-    """
-    Define the DS-302 Profile
-    """
     def SetDS302Profile(self, profile):
+        """
+        Define the DS-302 Profile
+        """
         self.DS302 = profile
 
-    """
-    Define the DS-302 Profile
-    """
     def GetDS302Profile(self):
+        """
+        Define the DS-302 Profile
+        """
         return self.DS302
 
-    """
-    Return the Specific Menu Entries
-    """
     def GetSpecificMenu(self):
+        """
+        Return the Specific Menu Entries
+        """
         return self.SpecificMenu
 
-    """
-    Define the Specific Menu Entries
-    """
     def SetSpecificMenu(self, specificmenu):
+        """
+        Define the Specific Menu Entries
+        """
         self.SpecificMenu = specificmenu
 
-    """
-    Extend the Specific Menu Entries
-    """
-
     def ExtendSpecificMenu(self, specificmenu):
+        """
+        Extend the Specific Menu Entries
+        """
         self.SpecificMenu.extend(specificmenu)
 
-    """
-    Function which return the different Mappings available for this node
-    """
-    def GetMappings(self, userdefinedtoo = True):
+    def GetMappings(self, userdefinedtoo=True):
+        """
+        Function which return the different Mappings available for this node
+        """
         if userdefinedtoo:
             return [self.Profile, self.DS302, self.UserMapping]
         else:
             return [self.Profile, self.DS302]
 
-    """
-    Add a new entry in the Object Dictionary
-    """
-    def AddEntry(self, index, subIndex = None, value = None):
+    def AddEntry(self, index, subIndex=None, value=None):
+        """
+        Add a new entry in the Object Dictionary
+        """
         if index not in self.Dictionary:
             if not subIndex:
                 self.Dictionary[index] = value
@@ -592,10 +604,10 @@ class Node(object):
             return True
         return False
 
-    """
-    Warning ! Modifies an existing entry in the Object Dictionary. Can't add a new one.
-    """
-    def SetEntry(self, index, subIndex = None, value = None):
+    def SetEntry(self, index, subIndex=None, value=None):
+        """
+        Warning ! Modifies an existing entry in the Object Dictionary. Can't add a new one.
+        """
         if index in self.Dictionary:
             if not subIndex:
                 if value != None:
@@ -607,7 +619,7 @@ class Node(object):
                 return True
         return False
 
-    def SetParamsEntry(self, index, subIndex = None, comment = None, buffer_size = None, save = None, callback = None):
+    def SetParamsEntry(self, index, subIndex=None, comment=None, buffer_size=None, save=None, callback=None):
         if not getattr(self, "ParamsDictionary", False):
             self.ParamsDictionary = {}
         if index in self.Dictionary:
@@ -635,12 +647,12 @@ class Node(object):
                 return True
         return False
 
-    """
-    Removes an existing entry in the Object Dictionary. If a subIndex is specified
-    it will remove this subIndex only if it's the last of the index. If no subIndex
-    is specified it removes the whole index and subIndexes from the Object Dictionary.
-    """
-    def RemoveEntry(self, index, subIndex = None):
+    def RemoveEntry(self, index, subIndex=None):
+        """
+        Removes an existing entry in the Object Dictionary. If a subIndex is specified
+        it will remove this subIndex only if it's the last of the index. If no subIndex
+        is specified it removes the whole index and subIndexes from the Object Dictionary.
+        """
         if not getattr(self, "ParamsDictionary", False):
             self.ParamsDictionary = {}
         if index in self.Dictionary:
@@ -663,21 +675,21 @@ class Node(object):
                 return True
         return False
 
-    """
-    Check if an entry exists in the Object Dictionary and returns the answer.
-    """
-    def IsEntry(self, index, subIndex = None):
+    def IsEntry(self, index, subIndex=None):
+        """
+        Check if an entry exists in the Object Dictionary and returns the answer.
+        """
         if index in self.Dictionary:
             if not subIndex:
                 return True
             return subIndex <= len(self.Dictionary[index])
         return False
 
-    """
-    Returns the value of the entry asked. If the entry has the value "count", it
-    returns the number of subIndex in the entry except the first.
-    """
-    def GetEntry(self, index, subIndex = None, compute = True):
+    def GetEntry(self, index, subIndex=None, compute=True):
+        """
+        Returns the value of the entry asked. If the entry has the value "count", it
+        returns the number of subIndex in the entry except the first.
+        """
         if index in self.Dictionary:
             if subIndex == None:
                 if isinstance(self.Dictionary[index], list):
@@ -696,11 +708,11 @@ class Node(object):
                 return self.CompileValue(self.Dictionary[index][subIndex - 1], index, compute)
         return None
 
-    """
-    Returns the value of the entry asked. If the entry has the value "count", it
-    returns the number of subIndex in the entry except the first.
-    """
-    def GetParamsEntry(self, index, subIndex = None):
+    def GetParamsEntry(self, index, subIndex=None):
+        """
+        Returns the value of the entry asked. If the entry has the value "count", it
+        returns the number of subIndex in the entry except the first.
+        """
         if not getattr(self, "ParamsDictionary", False):
             self.ParamsDictionary = {}
         if index in self.Dictionary:
@@ -744,23 +756,23 @@ class Node(object):
                 return self.ParamsDictionary[index]["callback"]
         return False
 
-    """
-    Check if an entry exists in the User Mapping Dictionary and returns the answer.
-    """
     def IsMappingEntry(self, index):
+        """
+        Check if an entry exists in the User Mapping Dictionary and returns the answer.
+        """
         if index in self.UserMapping:
             return True
         return False
 
-    """
-    Add a new entry in the User Mapping Dictionary
-    """
-    def AddMappingEntry(self, index, subIndex = None, name = "Undefined", struct = 0, size = None, nbmax = None, default = None, values = None):
+    def AddMappingEntry(self, index, subIndex=None, name="Undefined", struct=0, size=None, nbmax=None, default=None, values=None):
+        """
+        Add a new entry in the User Mapping Dictionary
+        """
         if index not in self.UserMapping:
             if values == None:
                 values = []
             if subIndex == None:
-                self.UserMapping[index] = {"name" : name, "struct" : struct, "need" : False, "values" : values}
+                self.UserMapping[index] = {"name": name, "struct": struct, "need": False, "values": values}
                 if size != None:
                     self.UserMapping[index]["size"] = size
                 if nbmax != None:
@@ -775,10 +787,10 @@ class Node(object):
             return True
         return False
 
-    """
-    Warning ! Modifies an existing entry in the User Mapping Dictionary. Can't add a new one.
-    """
-    def SetMappingEntry(self, index, subIndex = None, name = None, struct = None, size = None, nbmax = None, default = None, values = None):
+    def SetMappingEntry(self, index, subIndex=None, name=None, struct=None, size=None, nbmax=None, default=None, values=None):
+        """
+        Warning ! Modifies an existing entry in the User Mapping Dictionary. Can't add a new one.
+        """
         if index in self.UserMapping:
             if subIndex == None:
                 if name != None:
@@ -840,12 +852,12 @@ class Node(object):
                 return True
         return False
 
-    """
-    Removes an existing entry in the User Mapping Dictionary. If a subIndex is specified
-    it will remove this subIndex only if it's the last of the index. If no subIndex
-    is specified it removes the whole index and subIndexes from the User Mapping Dictionary.
-    """
-    def RemoveMappingEntry(self, index, subIndex = None):
+    def RemoveMappingEntry(self, index, subIndex=None):
+        """
+        Removes an existing entry in the User Mapping Dictionary. If a subIndex is specified
+        it will remove this subIndex only if it's the last of the index. If no subIndex
+        is specified it removes the whole index and subIndexes from the User Mapping Dictionary.
+        """
         if index in self.UserMapping:
             if subIndex == None:
                 self.UserMapping.pop(index)
@@ -855,7 +867,7 @@ class Node(object):
                 return True
         return False
 
-    def RemoveMapVariable(self, index, subIndex = None):
+    def RemoveMapVariable(self, index, subIndex=None):
         model = index << 16
         mask = 0xFFFF << 16
         if subIndex:
@@ -863,7 +875,7 @@ class Node(object):
             mask += 0xFF << 8
         for i in self.Dictionary:
             if 0x1600 <= i <= 0x17FF or 0x1A00 <= i <= 0x1BFF:
-                for j,value in enumerate(self.Dictionary[i]):
+                for j, value in enumerate(self.Dictionary[i]):
                     if (value & mask) == model:
                         self.Dictionary[i][j] = 0
 
@@ -875,11 +887,11 @@ class Node(object):
             mask = 0xFF << 8
         for i in self.Dictionary:
             if 0x1600 <= i <= 0x17FF or 0x1A00 <= i <= 0x1BFF:
-                for j,value in enumerate(self.Dictionary[i]):
+                for j, value in enumerate(self.Dictionary[i]):
                     if (value & mask) == model:
                         self.Dictionary[i][j] = model + size
 
-    def RemoveLine(self, index, max, incr = 1):
+    def RemoveLine(self, index, max, incr=1):
         i = index
         while i < max and self.IsEntry(i + incr):
             self.Dictionary[i] = self.Dictionary[i + incr]
@@ -895,24 +907,24 @@ class Node(object):
         self.RemoveMappingEntry(index)
         self.RemoveEntry(index)
 
-    """
-    Return a copy of the node
-    """
     def Copy(self):
+        """
+        Return a copy of the node
+        """
         return pickle.loads(pickle.dumps(self))
 
-    """
-    Return a sorted list of indexes in Object Dictionary
-    """
     def GetIndexes(self):
+        """
+        Return a sorted list of indexes in Object Dictionary
+        """
         listindex = list(self.Dictionary.keys())
         listindex.sort()
         return listindex
 
-    """
-    Print the Dictionary values
-    """
     def Print(self):
+        """
+        Print the Dictionary values
+        """
         print(self.PrintString())
 
     def PrintString(self):
@@ -923,51 +935,51 @@ class Node(object):
             name = self.GetEntryName(index)
             values = self.Dictionary[index]
             if isinstance(values, list):
-                result += "%04X (%s):\n"%(index, name)
+                result += "%04X (%s):\n" % (index, name)
                 for subidx, value in enumerate(values):
                     subentry_infos = self.GetSubentryInfos(index, subidx + 1)
                     if index == 0x1F22 and value:
                         nb_params = BE_to_LE(value[:4])
                         data = value[4:]
-                        value = "%d arg defined"%nb_params
+                        value = "%d arg defined" % nb_params
                         i = 0
                         count = 1
                         while i < len(data):
-                            value += "\n%04X %02X, arg %d: "%(index, subidx+1, count)
-                            value += "%04X"%BE_to_LE(data[i:i+2])
-                            value += " %02X"%BE_to_LE(data[i+2:i+3])
-                            size = BE_to_LE(data[i+3:i+7])
-                            value += " %08X"%size
-                            value += (" %0"+"%d"%(size * 2)+"X")%BE_to_LE(data[i+7:i+7+size])
+                            value += "\n%04X %02X, arg %d: " % (index, subidx + 1, count)
+                            value += "%04X" % BE_to_LE(data[i:i + 2])
+                            value += " %02X" % BE_to_LE(data[i + 2:i + 3])
+                            size = BE_to_LE(data[i + 3:i + 7])
+                            value += " %08X" % size
+                            value += (" %0" + "%d" % (size * 2) + "X") % BE_to_LE(data[i + 7:i + 7 + size])
                             i += 7 + size
                             count += 1
                     elif isinstance(value, int):
-                        value = "%X"%value
-                    result += "%04X %02X (%s): %s\n"%(index, subidx+1, subentry_infos["name"], value)
+                        value = "%X" % value
+                    result += "%04X %02X (%s): %s\n" % (index, subidx + 1, subentry_infos["name"], value)
             else:
                 if isinstance(values, int):
-                    values = "%X"%values
-                result += "%04X (%s): %s\n"%(index, name, values)
+                    values = "%X" % values
+                result += "%04X (%s): %s\n" % (index, name, values)
         return result
 
-    def CompileValue(self, value, index, compute = True):
-        if isinstance(value, (str,unicode)) and value.upper().find("$NODEID") != -1:
+    def CompileValue(self, value, index, compute=True):
+        if isinstance(value, (str, unicode)) and value.upper().find("$NODEID") != -1:
             base = self.GetBaseIndex(index)
             try:
-                dbg("EVAL in CompileValue(): '%s'" %(value,))
+                dbg("EVAL in CompileValue(): '%s'" % (value,))
                 raw = eval(value)
                 if compute:
-                    dbg("EVAL in CompileValue() #2: '%s'" %(raw.upper().replace("$NODEID","self.ID"),))
-                    return eval(raw.upper().replace("$NODEID","self.ID"))
+                    dbg("EVAL in CompileValue() #2: '%s'" % (raw.upper().replace("$NODEID", "self.ID"),))
+                    return eval(raw.upper().replace("$NODEID", "self.ID"))
                 return raw
             except:
                 return 0
         else:
             return value
 
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #                         Node Informations Functions
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
     def GetBaseIndex(self, index):
         for mapping in self.GetMappings():
@@ -1003,7 +1015,7 @@ class Node(object):
             result = FindEntryInfos(index, mappings[i], compute)
             i += 1
         r301 = FindEntryInfos(index, MappingDictionary, compute)
-        if r301 :
+        if r301:
             if result is not None:
                 r301.update(result)
             return r301
@@ -1019,7 +1031,7 @@ class Node(object):
                 result["user_defined"] = i == len(mappings) - 1 and index >= 0x1000
             i += 1
         r301 = FindSubentryInfos(index, subIndex, MappingDictionary, compute)
-        if r301 :
+        if r301:
             if result is not None:
                 r301.update(result)
             else:
@@ -1067,7 +1079,7 @@ class Node(object):
         list_.sort()
         return list_
 
-    def GetMandatoryIndexes(self, node = None):
+    def GetMandatoryIndexes(self, node=None):
         list_ = FindMandatoryIndexes(MappingDictionary)
         for mapping in self.GetMappings():
             list_.extend(FindMandatoryIndexes(mapping))
@@ -1080,9 +1092,9 @@ class Node(object):
             dic[index] = [name, valuetype]
         return dic
 
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #                            Type helper functions
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
     def IsStringType(self, index):
         if index in (0x9, 0xA, 0xB, 0xF):
@@ -1102,9 +1114,9 @@ class Node(object):
                 return True
         return False
 
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 #                            Type and Map Variable Lists
-#-------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
     def GetTypeList(self):
         list_ = FindTypeList(MappingDictionary)
@@ -1116,17 +1128,17 @@ class Node(object):
     def GenerateMapName(self, name, index, subindex):
         return "%s (0x%4.4X)" % (name, index)
 
-    """
-    Generate the list of variables that can be mapped for the current node
-    """
     def GenerateMapList(self):
+        """
+        Generate the list of variables that can be mapped for the current node
+        """
         self.MapList = "None"
-        self.NameTranslation = {"None" : "00000000"}
-        self.MapTranslation = {"00000000" : "None"}
+        self.NameTranslation = {"None": "00000000"}
+        self.MapTranslation = {"00000000": "None"}
         list_ = self.GetMapVariableList()
         for index, subIndex, size, name in list_:
-            self.MapList += ",%s"%name
-            map = "%04X%02X%02X"%(index,subIndex,size)
+            self.MapList += ",%s" % name
+            map = "%04X%02X%02X" % (index, subIndex, size)
             mapname = self.GenerateMapName(name, index, subIndex)
             self.NameTranslation[mapname] = map
             self.MapTranslation[map] = mapname
@@ -1138,24 +1150,24 @@ class Node(object):
             list_ = self.GetMapVariableList()
             for index, subIndex, size, name in list_:
                 if mapname == self.GenerateMapName(name, index, subIndex):
-                    if self.UserMapping[index]["struct"] == 7: # array type, only look at subindex 1 in UserMapping
+                    if self.UserMapping[index]["struct"] == 7:  # array type, only look at subindex 1 in UserMapping
                         if self.IsStringType(self.UserMapping[index]["values"][1]["type"]):
                             try:
                                 if int(self.ParamsDictionary[index][subIndex]["buffer_size"]) <= 8:
-                                    return (index << 16) + (subIndex << 8) + size*int(self.ParamsDictionary[index][subIndex]["buffer_size"])
+                                    return (index << 16) + (subIndex << 8) + size * int(self.ParamsDictionary[index][subIndex]["buffer_size"])
                                 else:
-                                    return None # String size is too big to fit in a PDO
+                                    return None  # String size is too big to fit in a PDO
                             except KeyError:
-                                return None # No string length found and default string size is too big to fit in a PDO
+                                return None  # No string length found and default string size is too big to fit in a PDO
                     else:
                         if self.IsStringType(self.UserMapping[index]["values"][subIndex]["type"]):
                             try:
                                 if int(self.ParamsDictionary[index][subIndex]["buffer_size"]) <= 8:
-                                    return (index << 16) + (subIndex << 8) + size*int(self.ParamsDictionary[index][subIndex]["buffer_size"])
+                                    return (index << 16) + (subIndex << 8) + size * int(self.ParamsDictionary[index][subIndex]["buffer_size"])
                                 else:
-                                    return None # String size is too big to fit in a PDO
+                                    return None  # String size is too big to fit in a PDO
                             except KeyError:
-                                return None # No string length found and default string size is too big to fit in a PDO
+                                return None  # No string length found and default string size is too big to fit in a PDO
                     return (index << 16) + (subIndex << 8) + size
             return None
 
@@ -1168,12 +1180,13 @@ class Node(object):
                 return self.GenerateMapName(result["name"], index, subindex)
         return "None"
 
-    """
-    Return the list of variables that can be mapped for the current node
-    """
     def GetMapList(self):
+        """
+        Return the list of variables that can be mapped for the current node
+        """
         list_ = ["None"] + [self.GenerateMapName(name, index, subIndex) for index, subIndex, size, name in self.GetMapVariableList()]
         return ",".join(list_)
+
 
 def BE_to_LE(value):
     """
@@ -1185,7 +1198,8 @@ def BE_to_LE(value):
 
     data = [char for char in value]
     data.reverse()
-    return int("".join(["%2.2X"%ord(char) for char in data]), 16)
+    return int("".join(["%2.2X" % ord(char) for char in data]), 16)
+
 
 def LE_to_BE(value, size):
     """
@@ -1196,7 +1210,7 @@ def LE_to_BE(value, size):
     """
 
     data = ("%" + str(size * 2) + "." + str(size * 2) + "X") % value
-    list_car = [data[i:i+2] for i in range(0, len(data), 2)]
+    list_car = [data[i:i + 2] for i in range(0, len(data), 2)]
     list_car.reverse()
     return "".join([chr(int(car, 16)) for car in list_car])
 
