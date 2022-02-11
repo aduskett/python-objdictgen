@@ -30,7 +30,7 @@ from builtins import range
 import os
 import re
 
-from .nosis.pickle import load, dump
+from nosis import pickle as nosis
 
 from .node import (
     Node,
@@ -286,7 +286,7 @@ class NodeManager(object):
         try:
             # Open and load file
             with open(filepath, "r") as f:
-                node = load(f)
+                node = nosis.xmlload(f)
             self.CurrentNode = node
             self.CurrentNode.SetNodeID(0)
             # Add a new buffer and defining current state
@@ -307,7 +307,7 @@ class NodeManager(object):
                 return False
         # Save node in file
         with open(filepath, "w") as f:
-            dump(self.CurrentNode, f)
+            nosis.xmldump(f, self.CurrentNode)
         self.SetCurrentFilePath(filepath)
         # Update saved state in buffer
         self.UndoBuffers[self.NodeIndex].CurrentSaved()

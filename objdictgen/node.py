@@ -33,7 +33,7 @@ import sys
 import re
 import pickle
 
-from .nosis.util import add_class_to_store
+from nosis import pickle as nosis
 
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
@@ -1216,4 +1216,4 @@ def LE_to_BE(value, size):
 
 
 # Register node with gnosis
-add_class_to_store('Node', Node)
+nosis.add_class_to_store('Node', Node)

@@ -1,9 +1,6 @@
+from past.builtins import long
 import sys
 import re
-
-
-class SecurityError(Exception):
-    pass
 
 
 pat_fl = r'[-+]?(((((\d+)?[.]\d+|\d+[.])|\d+)[eE][+-]?\d+)|((\d+)?[.]\d+|\d+[.]))'
@@ -35,14 +32,14 @@ def aton(s):
         return float(s)
 
     if re.match(re_long, s):
-        return int(s.rstrip('lL'))
+        return long(s.rstrip('lL'))
 
     if re.match(re_int, s):
         return int(s)
 
     m = re.match(re_hex, s)
     if m:
-        n = int(m.group(3), 16)
+        n = long(m.group(3), 16)
         if n < sys.maxsize:
             n = int(n)
         if m.group(1) == '-':
@@ -51,7 +48,7 @@ def aton(s):
 
     m = re.match(re_oct, s)
     if m:
-        n = int(m.group(3), 8)
+        n = long(m.group(3), 8)
         if n < sys.maxsize:
             n = int(n)
         if m.group(1) == '-':
@@ -65,7 +62,7 @@ def aton(s):
         r, i = s.split(':')
         return complex(float(r), float(i))
 
-    raise SecurityError("Malicious string '%s' passed to to_number()'d" % s)
+    raise ValueError("Invalid string '%s' passed to to_number()'d" % s)
 
 
 # we use ntoa() instead of repr() to ensure we have a known output format
@@ -73,6 +70,8 @@ def ntoa(n):
     "Convert a number to a string without calling repr()"
     if isinstance(n, int):
         s = "%d" % n
+    elif isinstance(n, long):
+        s = "%ldL" % n
     elif isinstance(n, float):
         s = "%.17g" % n
         # ensure a '.', adding if needed (unless in scientific notation)
@@ -87,9 +86,51 @@ def ntoa(n):
     return s
 
 
-def to_number(s):
-    "Convert a string to a number without calling eval()"
-    try:
-        return aton(s)
-    except SecurityError:
-        return None
+def safe_string(s):
+    # if isinstance(s, unicode):
+    #    raise TypeError("Unicode strings may not be stored in XML attributes")
+
+    # markup XML entities
+    s = s.replace('&', '&amp;')
+    s = s.replace('<', '&lt;')
+    s = s.replace('>', '&gt;')
+    s = s.replace('"', '&quot;')
+    s = s.replace("'", '&apos;')
+    # for others, use Python style escapes
+    s = repr(s)
+    return s[1:-1]  # without the extra single-quotes
+
+
+def unsafe_string(s):
+    # for Python escapes, exec the string
+    # (niggle w/ literalizing apostrophe)
+    s = s.replace("'", r"\047")
+    # dbg("EXEC in unsafe_string(): '%s'" % ("s='" + s + "'",))
+    exec("s='" + s + "'")
+    # XML entities (DOM does it for us)
+    return s
+
+
+def safe_content(s):
+    "Markup XML entities and strings so they're XML & unicode-safe"
+    s = s.replace('&', '&amp;')
+    s = s.replace('<', '&lt;')
+    s = s.replace('>', '&gt;')
+
+    # wrap "regular" python strings as unicode
+    if isinstance(s, str):
+        s = u"\xbb\xbb%s\xab\xab" % s
+
+    return s.encode('utf-8')
+
+
+def unsafe_content(s):
+    """Take the string returned by safe_content() and recreate the
+    original string."""
+    # don't have to "unescape" XML entities (parser does it for us)
+
+    # unwrap python strings from unicode wrapper
+    if s[:2] == chr(187) * 2 and s[-2:] == chr(171) * 2:
+        s = s[2:-2].encode('us-ascii')
+
+    return s

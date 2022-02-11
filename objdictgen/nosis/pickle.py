@@ -1,60 +1,120 @@
 from __future__ import print_function
 from __future__ import absolute_import
-from builtins import str
+# from builtins import str
 from builtins import object
 
-from .util import (
-    _klass, _module, _EmptyClass,
-    safe_string, safe_content,
-    get_class_from_stack, get_class_full_search,
-    get_class_from_store, get_class_from_vapor,
-    get_function_info
-)
-from .mutate import (
-    can_mutate, mutate,
-    can_unmutate, unmutate, get_unmutator, try_mutate
-)
-from .introspect import (
-    isinstance_any, attr_dict, isInstanceLike,
-    hasCoreData, isNewStyleClass
-)
-from .XtoY import ntoa
-
-from types import FunctionType, BuiltinFunctionType
-from io import StringIO
-
 import sys
+from io import StringIO
+from xml.dom import minidom
+from past.builtins import long
+
+from .xtoy import (
+    aton, ntoa,
+    unsafe_string, unsafe_content,
+    safe_string, safe_content,
+)
+
 if sys.version_info[0] >= 3:
-    unicode = str
-
-TYPE_IN_BODY = {}
+    unicode = str  # pylint: disable=invalid-name
 
 
-def setInBody(typename, val):
-    global TYPE_IN_BODY
-    TYPE_IN_BODY[typename] = val
+def dbg(s):
+    #pass
+    print(">> %s"% (s,))
+
+
+class _EmptyClass(object):
+    pass
+
+
+TYPE_IN_BODY = {
+    int: 0,
+    long: 0,
+    float: 0,
+    complex: 0,
+    str: 0,
+    # our unicode vs. "regular string" scheme relies on unicode
+    # strings only being in the body, so this is hardcoded.
+    unicode: 1,  # FIXME: Should probably be 0 for py3
+}
 
 
 def getInBody(typename):
     return TYPE_IN_BODY.get(typename) or 0
 
 
-# default settings
-setInBody(int, 0)
-setInBody(float, 0)
-setInBody(complex, 0)
-setInBody(str, 0)
-# our unicode vs. "regular string" scheme relies on unicode
-# strings only being in the body, so this is hardcoded.
-setInBody(unicode, 1)
-
-# Define exceptions and flags
-XMLPicklingError = "nosis.xml.pickle.XMLPicklingError"
-XMLUnpicklingError = "nosis.xml.pickle.XMLUnpicklingError"
-
 # Maintain list of object identities for multiple and cyclical references
 # (also to keep temporary objects alive)
-visited = {}
+VISITED = {}
+
+
+# entry point expected by XML_Pickle
+def thing_from_dom(filehandle):
+    global VISITED
+    VISITED = {}
+    return _thing_from_dom(minidom.parse(filehandle), None)
+
+
+def _save_obj_with_id(node, obj):
+    objid = node.getAttribute('id')
+
+    if len(objid):  # might be None, or empty - shouldn't use as key
+        VISITED[objid] = obj
+
+
+# Store the objects that can be pickled
+CLASS_STORE = {}
+
+
+def add_class_to_store(classname='', klass=None):
+    "Put the class in the store (as 'classname'), return CLASS_STORE"
+    if classname and klass:
+        CLASS_STORE[classname] = klass
+    return CLASS_STORE
+
+
+def get_class_from_name(classname):
+    """Given a classname, optional module name, return a ClassType,
+    of type module.classname, obeying the PARANOIA rules."""
+
+    klass = CLASS_STORE.get(classname, None)
+    if klass:
+        return klass
+    raise ValueError("Cannot create class '%s'" % classname)
+
+
+def obj_from_node(node):
+    """Given a <PyObject> node, return an object of that type.
+    __init__ is NOT called on the new object, since the caller may want
+    to do some additional work first.
+    """
+    classname = node.getAttribute('class')
+    # allow <PyObject> nodes w/out module name
+    # (possibly handwritten XML, XML containing "from-air" classes,
+    # or classes placed in the CLASS_STORE)
+    klass = get_class_from_name(classname)
+    return klass.__new__(klass)
+
+
+def get_node_valuetext(node):
+    "Get text from node, whether in value=, or in element body."
+
+    # we know where the text is, based on whether there is
+    # a value= attribute. ie. pickler can place it in either
+    # place (based on user preference) and unpickler doesn't care
+
+    if 'value' in node._attrs:
+        # text in tag
+        ttext = node.getAttribute('value')
+        return unsafe_string(ttext)
+    else:
+        # text in body
+        node.normalize()
+        try:
+            btext = node.childNodes[0].nodeValue
+        except Exception:
+            btext = ''
+        return unsafe_content(btext)
 
 
 # a multipurpose list-like object. it is nicer conceptually for us
@@ -126,64 +186,16 @@ def StreamReader(stream):
     return stream
 
 
-class XML_Pickler(object):
-    """Framework for 'pickle to XML'.
+def xmldump(iohandle=None, obj=None, binary=0, deepcopy=None):
+    "Create the XML representation as a string."
+    if deepcopy is None:
+        deepcopy = 0
+    return _pickle_toplevel_obj(StreamWriter(iohandle, binary), obj, deepcopy)
 
-    XML_Pickler offers a lot of flexibility in how you do your pickling.
-    See the docs for examples.
-    """
-    def __init__(self, py_obj=None):
-        if py_obj is not None:
-            if isInstanceLike(py_obj):
-                self.to_pickle = py_obj
-            else:
-                raise XMLPicklingError("XML_Pickler must be initialized with Instance (or None)")
 
-    def dump(self, iohandle, obj=None, binary=0, deepcopy=None):
-        "Write the XML representation of obj to iohandle."
-        # dumps() does all the work, but uses our filehandle
-        self.dumps(obj, binary, deepcopy, iohandle)
-
-    def load(self, fh, paranoia=None):
-        "Load pickled object from file fh."
-        global visited
-        if paranoia is None:
-            paranoia = 0
-
-        # read from a file,compressed file,string,or compressed string
-        fh = StreamReader(fh)
-
-        visited = {}
-
-        # Import parser directly
-        from .dom import thing_from_dom
-
-        parser = thing_from_dom
-        if parser:
-            return parser(fh, paranoia=paranoia)
-        else:
-            raise XMLUnpicklingError("Unknown parser")
-
-    def dumps(self, obj=None, binary=0, deepcopy=None, iohandle=None):
-        "Create the XML representation as a string."
-        if deepcopy is None:
-            deepcopy = 0
-
-        # write to a file or string, either compressed or not
-        list_ = StreamWriter(iohandle, binary)
-
-        # here are our three forms:
-        if obj is not None:  # XML_Pickler().dumps(obj)
-            return _pickle_toplevel_obj(list_, obj, deepcopy)
-        elif hasattr(self, 'to_pickle'):  # XML_Pickler(obj).dumps()
-            return _pickle_toplevel_obj(list_, self.to_pickle, deepcopy)
-        else:  # myXML_Pickler().dumps()
-            return _pickle_toplevel_obj(list_, self, deepcopy)
-
-    def loads(self, xml_str, paranoia=None):
-        "Load a pickled object from the given XML string."
-        # really just syntactic sugar for load()
-        return self.load(xml_str, paranoia)
+def xmlload(filehandle):
+    "Load pickled object from file fh."
+    return thing_from_dom(StreamReader(filehandle))
 
 
 # -- support functions
@@ -193,11 +205,11 @@ def _pickle_toplevel_obj(xml_list, py_obj, deepcopy):
     "handle the top object -- add XML header, etc."
 
     # Store the ref id to the pickling object (if not deepcopying)
-    global visited
-    visited = {}
+    global VISITED
+    VISITED = {}
     if not deepcopy:
         id_ = id(py_obj)
-        visited[id_] = py_obj
+        VISITED[id_] = py_obj
 
     # note -- setting family="obj" lets us know that a mutator was used on
     # the object. Otherwise, it's tricky to unpickle both <PyObject ...>
@@ -211,44 +223,17 @@ def _pickle_toplevel_obj(xml_list, py_obj, deepcopy):
 
     famtype = ''  # unless we have to, don't add family= and type=
 
-    # if type(py_obj) is not InstanceType:
-    if not isInstanceLike(py_obj):
-        # use our wrapper-mutator to pickle builtin types.
-        # get by name since mutator classtype is None
-        mutator = get_unmutator('builtin_wrapper', None)
-        # wrapper must not have an id (otherwise the wrapper AND the
-        # wrapper-obj would appear to have the same id)
-        if not deepcopy:
-            del visited[id_]
-        id_ = None
-        py_obj = mutator.mutate(py_obj).obj
-        famtype = famtype + 'family="obj" type="%s" ' % mutator.tag
-        # don't show module for wrapped types
-        module = None
-        # refs get funny here, but since this is a special case, and we're
-        # only pickling a single object, turning deepcopy off is easiest
-        # deepcopy = 1
-    else:
-        if can_mutate(py_obj):
-            (mtype, py_obj, in_body, extra) = mutate(py_obj)
-            # sanity check until/if we eventually support these
-            # at the toplevel
-            if in_body or extra:
-                raise XMLPicklingError("Sorry, mutators can't set in_body and/or extra at the toplevel.")
-            famtype = famtype + 'family="obj" type="%s" ' % mtype
-
-        module = _module(py_obj)
-
-    klass_tag = _klass(py_obj)
+    klass = py_obj.__class__
+    klass_tag = klass.__name__
 
     # Generate the XML string
-    if module:
-        extra = '%smodule="%s" class="%s"' % (famtype, module, klass_tag)
+    if klass not in CLASS_STORE.values():
+        extra = '%smodule="%s" class="%s"' % (famtype, klass.__module__, klass_tag)
     else:
         extra = '%s class="%s"' % (famtype, klass_tag)
 
-    xml_list.append('<?xml version="1.0"?>\n' +
-                    '<!DOCTYPE PyObject SYSTEM "PyObjects.dtd">\n')
+    xml_list.append('<?xml version="1.0"?>\n'
+                    + '<!DOCTYPE PyObject SYSTEM "PyObjects.dtd">\n')
 
     if deepcopy:
         xml_list.append('<PyObject %s>\n' % (extra))
@@ -287,41 +272,47 @@ def pickle_instance(obj, list_, level=0, deepcopy=0):
     # of the same name -- we know for sure that the object can't also have
     # data attributes of that same name
 
-    # first, get the initargs, if present
-    try:
-        args = obj.__getinitargs__()
-        try:
-            len(args)  # must be a sequence, from pickle.py
-        except:
-            raise XMLPicklingError("__getinitargs__() must return a sequence")
-    except:
-        args = None
-
-    # next, decide what the "stuff" is
-    try:
-        stuff = obj.__getstate__()
-    except:
-        # stuff = obj.__dict__
-        stuff = attr_dict(obj)
-
-    # save initargs, if we have them
-    if args is not None:
-        # put them in an <attr name="__getinitargs__" ...> container
-        list_.append(_attr_tag('__getinitargs__', args, level, deepcopy))
+    stuff = obj.__dict__
 
     # decide how to save the "stuff", depending on whether we need
     # to later grab it back as a single object
-    if not hasattr(obj, '__setstate__'):
-        if isinstance(stuff, dict):
-            # don't need it as a single object - save keys/vals as
-            # first-level attributes
-            for key, val in list_(stuff.items()):
-                list_.append(_attr_tag(key, val, level, deepcopy))
-        else:
-            raise XMLPicklingError("__getstate__ must return a DictType here")
+    if isinstance(stuff, dict):
+        # don't need it as a single object - save keys/vals as
+        # first-level attributes
+        for key, val in stuff.items():
+            list_.append(_attr_tag(key, val, level, deepcopy))
     else:
-        # else, encapsulate the "stuff" in an <attr name="__getstate__" ...>
-        list_.append(_attr_tag('__getstate__', stuff, level, deepcopy))
+        raise ValueError("__getstate__ must return a DictType here")
+
+
+def unpickle_instance(node):
+    """Take a <PyObject> or <.. type="PyObject"> DOM node and unpickle the object."""
+
+    # we must first create an empty obj of the correct	type and place
+    # it in VISITED{} (so we can handle self-refs within the object)
+    pyobj = obj_from_node(node)
+    _save_obj_with_id(node, pyobj)
+
+    # slurp raw thing into a an empty object
+    raw = _thing_from_dom(node, _EmptyClass())
+
+    # code below has same ordering as pickle.py
+
+    stuff = raw.__dict__
+
+    # finally, decide how to get the stuff into pyobj
+    if isinstance(stuff, dict):	 # must be a Dict if no __setstate__
+        for k, v in stuff.items():
+            setattr(pyobj, k, v)
+
+    else:
+        # subtle -- this can happen either because the class really
+        # does violate the pickle protocol, or because PARANOIA was
+        # set too high, and we couldn't create the real class, so
+        # __setstate__ is missing (and __stateinfo__ isn't a dict)
+        raise ValueError("Non-DictType without setstate violates pickle protocol.")
+
+    return pyobj
 
 
 # --- Functions to create XML output tags ---
@@ -346,7 +337,7 @@ def _entry_tag(key, val, level=0, deepcopy=0):
     start_val = '  ' * level + '  <val '
     close_val = '  ' * level + '  </val>\n'
     val_block = _tag_completer(start_val, val, close_val, level + 1, deepcopy)
-    return (start_tag + key_block + val_block + close_tag)
+    return start_tag + key_block + val_block + close_tag
 
 
 def _tag_compound(start_tag, family_type, thing, deepcopy, extra=''):
@@ -359,12 +350,13 @@ def _tag_compound(start_tag, family_type, thing, deepcopy, extra=''):
         start_tag = start_tag + '%s %s>\n' % (family_type, extra)
         return (start_tag, 1)
     else:
-        if visited.get(id(thing)):
+        if VISITED.get(id(thing)):
             start_tag = start_tag + '%s refid="%s" />\n' % (family_type, id(thing))
             return (start_tag, 0)
         else:
             start_tag = start_tag + '%s id="%s" %s>\n' % (family_type, id(thing), extra)
             return (start_tag, 1)
+
 
 #
 # This doesn't fit in any one place particularly well, but
@@ -391,16 +383,11 @@ def _tag_compound(start_tag, family_type, thing, deepcopy, extra=''):
 #           still accepted by the parsers for compatibility.]
 #
 
-# Temp hack
-VERBOSE_XML = 0
-
-
 def _family_type(family, typename, mtype, mextra):
     """Create a type= string for an object, including family= if necessary.
     typename is the builtin type, mtype is the mutated type (or None for
     non-mutants). mextra is mutant-specific data, or None."""
-
-    if VERBOSE_XML == 0 and mtype is None:
+    if mtype is None:
         # family tags are technically only necessary for mutated types.
         # we can intuit family for builtin types.
         return 'type="%s"' % typename
@@ -415,11 +402,44 @@ def _family_type(family, typename, mtype, mextra):
         return 'family="%s" type="%s"' % (family, typename)
 
 
+def _fix_family(family, typename):
+    """
+    If family is None or empty, guess family based on typename.
+    (We can only guess for builtins, of course.)
+    """
+    if family and len(family):
+        return family  # sometimes it's None, sometimes it's empty ...
+
+    if typename == 'None':
+        return 'none'
+    if typename == 'dict':
+        return 'map'
+    elif typename == 'list':
+        return 'seq'
+    elif typename == 'tuple':
+        return 'seq'
+    elif typename == 'numeric':
+        return 'atom'
+    elif typename == 'string':
+        return 'atom'
+    elif typename == 'PyObject':
+        return 'obj'
+    elif typename == 'function':
+        return 'lang'
+    elif typename == 'class':
+        return 'lang'
+    elif typename == 'True':
+        return 'uniq'
+    elif typename == 'False':
+        return 'uniq'
+    else:
+        raise ValueError("family= must be given for unknown type %s" % typename)
+
+
 def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
     tag_body = []
 
-    (mtag, thing, in_body, mextra) = try_mutate(orig_thing, None,
-                                             getInBody(type(orig_thing)), None)
+    (mtag, thing, in_body, mextra) = (None, orig_thing, getInBody(type(orig_thing)), None)
 
     if thing is None:
         start_tag = start_tag + "%s />\n" % (_family_type('none', 'None', None, None))
@@ -440,39 +460,7 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
             start_tag = start_tag + '%s value="%s" />\n' % (
                 _family_type('uniq', typestr, mtag, mextra), '')
             close_tag = ''
-    # ClassType will get caught by isInstanceLike(), which is not
-    # what we want. There are two cases here - the first catches
-    # old-style classes, the second catches new-style classes.
-    elif isNewStyleClass(thing):
-        module = thing.__module__
-        if module:
-            extra = 'module="%s" class="%s"' % (module, thing.__name__)
-        else:
-            extra = 'class="%s"' % _klass(thing.__name__)
-        start_tag = start_tag + '%s %s/>\n' % (
-            _family_type('lang', 'class', mtag, mextra), extra)
-
-        close_tag = ''
-    # have to check for instance-like next since ints, etc., can be
-    # instance-like in Python 2.2+. if it's really an object, we don't
-    # want to fall through to the regular int,float,etc. code, since
-    # that would skip the special handling in pickle_instance().
-    elif isInstanceLike(thing):
-        module = _module(thing)
-        if module:
-            extra = 'module="%s" class="%s"' % (module, _klass(thing))
-        else:
-            extra = 'class="%s"' % _klass(thing)
-        start_tag, do_copy = _tag_compound(
-            start_tag, _family_type('obj', 'PyObject', mtag, mextra),
-            orig_thing, deepcopy, extra)
-        # need to remember we've seen container before pickling subitems
-        visited[id(orig_thing)] = orig_thing
-        if do_copy:
-            pickle_instance(thing, tag_body, level + 1, deepcopy)
-        else:
-            close_tag = ''
-    elif isinstance_any(thing, (int, float, complex)):
+    elif isinstance(thing, (int, long, float, complex)):
         # thing_str = repr(thing)
         thing_str = ntoa(thing)
 
@@ -488,14 +476,22 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
             start_tag = start_tag + '%s value="%s" />\n' % (
                 _family_type('atom', 'numeric', mtag, mextra), thing_str)
             close_tag = ''
-    elif isinstance_any(thing, (str, unicode)):
+    elif isinstance(thing, (str, unicode)):
         # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
         # special check for now - this will be fixed in the next major
         # gnosis release, so I don't care that the code is inline & gross
         # for now
         # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
         if isinstance(thing, unicode):
-            raise Exception("Unpickleable Unicode value.")
+            # can't pickle unicode containing the special "escape" sequence
+            # we use for putting strings in the XML body (they'll be unpickled
+            # as strings, not unicode, if we do!)
+            if thing[0:2] == u'\xbb\xbb' and thing[-2:] == u'\xab\xab':
+                raise Exception("Unpickleable Unicode value")
+
+            # see if it contains any XML-illegal values
+            # if not is_legal_xml(thing):
+            #     raise Exception("Unpickleable Unicode value")
 
         if isinstance(thing, str) and getInBody(str):
             # technically, this will crash safe_content(), but I prefer to
@@ -503,9 +499,9 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
             try:
                 # safe_content assumes it can always convert the string
                 # to unicode, which isn't true (eg. pickle a UTF-8 value)
-                u = str(thing)
-            except:
-                raise Exception("Unpickleable string value (%s). To be fixed in next major Gnosis release." % repr(thing))
+                _ = unicode(thing)
+            except Exception:
+                raise Exception("Unpickleable string value (%s)" % repr(thing))
 
         # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
         # End of temporary hack code
@@ -541,7 +537,7 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
             start_tag, _family_type('seq', 'list', mtag, mextra),
             orig_thing, deepcopy)
         # need to remember we've seen container before pickling subitems
-        visited[id(orig_thing)] = orig_thing
+        VISITED[id(orig_thing)] = orig_thing
         if do_copy:
             for item in thing:
                 tag_body.append(_item_tag(item, level + 1, deepcopy))
@@ -552,38 +548,14 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
             start_tag, _family_type('map', 'dict', mtag, mextra),
             orig_thing, deepcopy)
         # need to remember we've seen container before pickling subitems
-        visited[id(orig_thing)] = orig_thing
+        VISITED[id(orig_thing)] = orig_thing
         if do_copy:
             for key, val in thing.items():
                 tag_body.append(_entry_tag(key, val, level + 1, deepcopy))
         else:
             close_tag = ''
-    elif isinstance(thing, (FunctionType, BuiltinFunctionType)):
-        info = get_function_info(thing)
-        # use module/class tags -- not perfect semantically, but better
-        # that creating new attr names
-        start_tag = start_tag + '%s module="%s" class="%s"/>\n' % (
-            _family_type('lang', 'function', mtag, mextra), info[0], info[1])
-        close_tag = ''
     else:
-        # try using pickled value as the XML value tag.
-        # rationale:  it won't be (easily) editable, but at least
-        # you'll get valid XML even if your classes happen to
-        # contain a few "foreign" types, and you don't feel like
-        # writing a helper object (see gnosis.xml.pickle.ext for
-        # how to do that)
-        try:
-            # we can't lookup the helper by type, since rawpickle can pickle
-            # any pickleable class, so lookup by tag (unmutator) instead
-            # (mutator & unmutator are always the same object)
-
-            # always put rawpickles in the element body
-            mutator = get_unmutator('rawpickle', None)
-            thing = safe_content(mutator.mutate(thing).obj)
-            start_tag = start_tag + '%s>%s' % (_family_type('atom', None, 'rawpickle', None), thing)
-            close_tag = close_tag.lstrip()
-        except:
-            raise XMLPicklingError("non-handled type %s" % type(thing))
+        raise ValueError("non-handled type %s" % type(thing))
 
     # need to keep a ref to the object for two reasons -
     #  1. we can ref it later instead of copying it into the XML stream
@@ -592,16 +564,123 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
     # if DEEPCOPY, we can skip this -- reusing ids is not an issue if we
     # never look at them
     if not deepcopy:
-        visited[id(orig_thing)] = orig_thing
+        VISITED[id(orig_thing)] = orig_thing
 
     return start_tag + ''.join(tag_body) + close_tag
 
 
-# pickle-compatible API, not exported by default (note we have to
-# reverse the args in dump() -- we can't reverse the XML_Pickler.dump()
-# args without losing functionality)
+def _thing_from_dom(dom_node, container=None):
+    "Converts an [xml_pickle] DOM tree to a 'native' Python object"
+    #for node in subnodes(dom_node):
+    for node in dom_node.childNodes:
+        if not hasattr(node, '_attrs') or not node.nodeName != '#text':
+            continue
 
-dump = lambda o, f, b=0: XML_Pickler().dump(f, o, b)
-dumps = lambda o, b=0: XML_Pickler().dumps(o, b)
-loads = XML_Pickler().loads
-load = XML_Pickler().load
+        if node.nodeName == "PyObject":
+            container = unpickle_instance(node)
+            try:
+                id_ = node.getAttribute('id')
+                VISITED[id_] = container
+            except KeyError:
+                pass
+
+        elif node.nodeName in ['attr', 'item', 'key', 'val']:
+            node_family = node.getAttribute('family')
+            node_type = node.getAttribute('type')
+            node_name = node.getAttribute('name')
+
+            # check refid first (if present, type is type of referenced object)
+            ref_id = node.getAttribute('refid')
+
+            if len(ref_id):	 # might be empty or None
+                if node.nodeName == 'attr':
+                    setattr(container, node_name, VISITED[ref_id])
+                else:
+                    container.append(VISITED[ref_id])
+
+                # done, skip rest of block
+                continue
+
+            # if we didn't find a family tag, guess (do after refid check --
+            # old pickles will set type="ref" which _fix_family can't handle)
+            node_family = _fix_family(node_family, node_type)
+
+            node_valuetext = get_node_valuetext(node)
+
+            # step 1 - set node_val to basic thing
+            if node_family == 'none':
+                node_val = None
+            elif node_family == 'atom':
+                node_val = node_valuetext
+            elif node_family == 'seq':
+                # seq must exist in VISITED{} before we unpickle subitems,
+                # in order to handle self-references
+                seq = []
+                _save_obj_with_id(node, seq)
+                node_val = _thing_from_dom(node, seq)
+            elif node_family == 'map':
+                # map must exist in VISITED{} before we unpickle subitems,
+                # in order to handle self-references
+                mapping = {}
+                _save_obj_with_id(node, mapping)
+                node_val = _thing_from_dom(node, mapping)
+            elif node_family == 'uniq':
+                # uniq is another special type that is handled here instead
+                # of below.
+                if node_type == 'True':
+                    node_val = True
+                elif node_type == 'False':
+                    node_val = False
+                else:
+                    raise ValueError("Unknown uniq type %s" % node_type)
+            else:
+                raise ValueError("UNKNOWN family %s,%s,%s" % (node_family, node_type, node_name))
+
+            # step 2 - take basic thing and make exact thing
+            # Note there are several NOPs here since node_val has been decided
+            # above for certain types. However, I left them in since I think it's
+            # clearer to show all cases being handled (easier to see the pattern
+            # when doing later maintenance).
+
+            if node_type == 'None':
+                node_val = None
+            elif node_type == 'numeric':
+                # node_val = safe_eval(node_val)
+                node_val = aton(node_val)
+            elif node_type == 'string':
+                node_val = node_val
+            elif node_type == 'list':
+                node_val = node_val
+            elif node_type == 'tuple':
+                # subtlety - if tuples could self-reference, this would be wrong
+                # since the self ref points to a list, yet we're making it into
+                # a tuple. it appears however that self-referencing tuples aren't
+                # really all that legal (regular pickle can't handle them), so
+                # this shouldn't be a practical problem.
+                node_val = tuple(node_val)
+            elif node_type == 'dict':
+                node_val = node_val
+            elif node_type == 'True':
+                node_val = node_val
+            elif node_type == 'False':
+                node_val = node_val
+            else:
+                raise ValueError("Unknown type %s,%s" % (node, node_type))
+
+            if node.nodeName == 'attr':
+                setattr(container, node_name, node_val)
+            else:
+                container.append(node_val)
+
+            _save_obj_with_id(node, node_val)
+
+        elif node.nodeName == 'entry':
+            keyval = _thing_from_dom(node, [])
+            key, val = keyval[0], keyval[1]
+            container[key] = val
+            # <entry> has no id for refchecking
+
+        else:
+            raise ValueError("element %s is not in PyObjects.dtd" % node.nodeName)
+
+    return container
