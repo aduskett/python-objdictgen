@@ -152,7 +152,7 @@ setup(
     # projects.
     extras_require={  # Optional
         'dev': ['pylint', 'flake8', 'mypy', 'black'],
-        #'test': ['pytest', 'coverage', 'pytest-cov'],
+        'test': ['pytest', 'coverage', 'pytest-cov'],
     },
 
     # If there are data files included in your packages that need to be
@@ -179,6 +179,7 @@ setup(
         'console_scripts': [
             'objdictgen=objdictgen.__main__:objdictgen_main',
             'objdictedit=objdictgen.__main__:objdictedit_main',
+            'networkedit=objdictgen.__main__:networkedit_main',
         ],
     },
 

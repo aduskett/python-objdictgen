@@ -19,8 +19,8 @@ if sys.version_info[0] >= 3:
 
 
 def dbg(s):
-    #pass
-    print(">> %s"% (s,))
+    # pass
+    print(">> %s" % (s,))
 
 
 class _EmptyClass(object):
@@ -571,7 +571,6 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
 
 def _thing_from_dom(dom_node, container=None):
     "Converts an [xml_pickle] DOM tree to a 'native' Python object"
-    #for node in subnodes(dom_node):
     for node in dom_node.childNodes:
         if not hasattr(node, '_attrs') or not node.nodeName != '#text':
             continue

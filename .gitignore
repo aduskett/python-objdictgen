@@ -2,19 +2,24 @@
 *.code-workspace
 .vscode/
 *.egg-info/
+build/
 
 htmlcov/
 .coverage
 .pylintrc
 
-Gnosis_Utils-*
 objdictgen.new
+objdictgen.mod
 objdictgen.orig
 
 *.pyc
 *.bak
-__delme*
+*.whl
+__*
 tmp/
 objdictgen2/
 mirror-canfestival-3-asc/
 od-*
+
+runall*.sh
+results-*.diff

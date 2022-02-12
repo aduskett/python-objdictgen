@@ -22,7 +22,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 from __future__ import absolute_import
-#from builtins import str
+# from builtins import str
 from builtins import range
 
 import os
@@ -30,7 +30,7 @@ import os
 import wx
 import wx.grid
 
-from .node import BE_to_LE, LE_to_BE
+from . import node as nod
 
 ScriptDirectory = os.path.split(__file__)[0]
 
@@ -113,46 +113,46 @@ class CommunicationDialog(wx.Dialog):
 
     def _init_ctrls(self, prnt):
         wx.Dialog.__init__(self, id=ID_COMMUNICATIONDIALOG,
-              name='CommunicationDialog', parent=prnt, pos=wx.Point(234, 216),
-              size=wx.Size(726, 437), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
-              title='Edit Communication Profile')
+            name='CommunicationDialog', parent=prnt, pos=wx.Point(234, 216),
+            size=wx.Size(726, 437), style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
+            title='Edit Communication Profile')
         self.SetClientSize(wx.Size(726, 437))
 
         self.staticText1 = wx.StaticText(id=ID_COMMUNICATIONDIALOGSTATICTEXT1,
-              label='Possible Profile Indexes:', name='staticText1',
-              parent=self, pos=wx.Point(0, 0), size=wx.Size(0,
-              17), style=0)
+            label='Possible Profile Indexes:', name='staticText1',
+            parent=self, pos=wx.Point(0, 0), size=wx.Size(0,
+            17), style=0)
 
         self.PossibleIndexes = wx.ListBox(choices=[],
-              id=ID_COMMUNICATIONDIALOGPOSSIBLEINDEXES,
-              name='PossibleIndexes', parent=self, pos=wx.Point(0, 0),
-              size=wx.Size(0, 0), style=wx.LB_EXTENDED)
+            id=ID_COMMUNICATIONDIALOGPOSSIBLEINDEXES,
+            name='PossibleIndexes', parent=self, pos=wx.Point(0, 0),
+            size=wx.Size(0, 0), style=wx.LB_EXTENDED)
         self.Bind(wx.EVT_LISTBOX_DCLICK, self.OnPossibleIndexesDClick,
-              id=ID_COMMUNICATIONDIALOGPOSSIBLEINDEXES)
+            id=ID_COMMUNICATIONDIALOGPOSSIBLEINDEXES)
 
         self.Select = wx.Button(id=ID_COMMUNICATIONDIALOGSELECT, label='>>',
-              name='Select', parent=self, pos=wx.Point(0, 0),
-              size=wx.Size(32, 32), style=0)
+            name='Select', parent=self, pos=wx.Point(0, 0),
+            size=wx.Size(32, 32), style=0)
         self.Select.Bind(wx.EVT_BUTTON, self.OnSelectButton,
-              id=ID_COMMUNICATIONDIALOGSELECT)
+            id=ID_COMMUNICATIONDIALOGSELECT)
 
         self.Unselect = wx.Button(id=ID_COMMUNICATIONDIALOGUNSELECT,
-              label='<<', name='Unselect', parent=self,
-              pos=wx.Point(0, 0), size=wx.Size(32, 32), style=0)
+            label='<<', name='Unselect', parent=self,
+            pos=wx.Point(0, 0), size=wx.Size(32, 32), style=0)
         self.Unselect.Bind(wx.EVT_BUTTON, self.OnUnselectButton,
-              id=ID_COMMUNICATIONDIALOGUNSELECT)
+            id=ID_COMMUNICATIONDIALOGUNSELECT)
 
         self.staticText2 = wx.StaticText(id=ID_COMMUNICATIONDIALOGSTATICTEXT2,
-              label='Current Profile Indexes:', name='staticText2',
-              parent=self, pos=wx.Point(0, 0), size=wx.Size(0,
-              17), style=0)
+            label='Current Profile Indexes:', name='staticText2',
+            parent=self, pos=wx.Point(0, 0), size=wx.Size(0,
+            17), style=0)
 
         self.CurrentIndexes = wx.ListBox(choices=[],
-              id=ID_COMMUNICATIONDIALOGCURRENTINDEXES, name='CurrentIndexes',
-              parent=self, pos=wx.Point(0, 0), size=wx.Size(0, 0),
-              style=wx.LB_EXTENDED)
+            id=ID_COMMUNICATIONDIALOGCURRENTINDEXES, name='CurrentIndexes',
+            parent=self, pos=wx.Point(0, 0), size=wx.Size(0, 0),
+            style=wx.LB_EXTENDED)
         self.Bind(wx.EVT_LISTBOX_DCLICK, self.OnCurrentIndexesDClick,
-              id=ID_COMMUNICATIONDIALOGCURRENTINDEXES)
+            id=ID_COMMUNICATIONDIALOGCURRENTINDEXES)
 
         self.ButtonSizer = self.CreateButtonSizer(wx.OK | wx.CANCEL)
 
@@ -352,16 +352,16 @@ class MapVariableDialog(wx.Dialog):
     def SetIndex(self, index):
         self.Index.SetValue("0x%04X" % index)
 
-    def OnOK(self, event):
+    def OnOK(self, event):  # pylint: disable=unused-argument
         error = []
         try:
             int(self.Index.GetValue(), 16)
-        except:
+        except Exception:
             error.append("Index")
         if self.radioButton2.GetValue() or self.radioButton3.GetValue():
             try:
                 int(self.Number.GetValue())
-            except:
+            except Exception:
                 error.append("Number")
         if len(error) > 0:
             text = ""
@@ -536,9 +536,8 @@ class UserTypeDialog(wx.Dialog):
 
         self.TypeDictionary = {}
 
-    def OnOK(self, event):
+    def OnOK(self, event):  # pylint: disable=unused-argument
         error = []
-        good = True
         message = None
         name = self.Type.GetStringSelection()
         if name != "":
@@ -546,20 +545,17 @@ class UserTypeDialog(wx.Dialog):
             if valuetype == 0:
                 try:
                     int(self.Min.GetValue(), 16)
-                except:
+                except Exception:
                     error.append("Minimum")
-                    good = False
                 try:
                     int(self.Max.GetValue(), 16)
-                except:
+                except Exception:
                     error.append("Maximum")
-                    good = False
             elif valuetype == 1:
                 try:
                     int(self.Length.GetValue(), 16)
-                except:
+                except Exception:
                     error.append("Length")
-                    good = False
             if len(error) > 0:
                 message = ""
                 for i, item in enumerate(error):
@@ -572,18 +568,18 @@ class UserTypeDialog(wx.Dialog):
         else:
             message = "A type must be selected!"
         if message is not None:
-            message = wx.MessageDialog(self, "Form isn't valid. %s" % (firstmessage, secondmessage), "Error", wx.OK | wx.ICON_ERROR)
+            message = wx.MessageDialog(self, "Form isn't valid. %s" % (message,), "Error", wx.OK | wx.ICON_ERROR)
             message.ShowModal()
             message.Destroy()
         else:
             self.EndModal(wx.ID_OK)
 
     def SetValues(self, min=None, max=None, length=None):
-        if min != None:
+        if min is not None:
             self.Min.SetValue(str(min))
-        if max != None:
+        if max is not None:
             self.Max.SetValue(str(max))
-        if length != None:
+        if length is not None:
             self.Length.SetValue(str(length))
 
     def SetTypeList(self, typedic, type_=None):
@@ -595,7 +591,7 @@ class UserTypeDialog(wx.Dialog):
         list_.sort()
         for index, name in list_:
             self.Type.Append(name)
-        if type_ != None:
+        if type_ is not None:
             self.Type.SetStringSelection(typedic[type_][0])
         self.RefreshValues()
 
@@ -631,11 +627,11 @@ class UserTypeDialog(wx.Dialog):
 
     def GetValues(self):
         name = self.Type.GetStringSelection()
-        type = self.TypeDictionary[name][0]
-        min = int(self.Min.GetValue())
-        max = int(self.Max.GetValue())
+        type_ = self.TypeDictionary[name][0]
+        min_ = int(self.Min.GetValue())
+        max_ = int(self.Max.GetValue())
         length = int(self.Length.GetValue())
-        return type, min, max, length
+        return type_, min_, max_, length
 
 
 # ------------------------------------------------------------------------------
@@ -756,7 +752,7 @@ class NodeInfosDialog(wx.Dialog):
         for node_type in GetNodeTypes():
             self.Type.Append(node_type)
 
-    def OnOK(self, event):
+    def OnOK(self, event):  # pylint: disable=unused-argument
         name = self.NodeName.GetValue()
         message = ""
         if name != "":
@@ -767,8 +763,8 @@ class NodeInfosDialog(wx.Dialog):
                 message = "Node name can't be undefined or start with a digit and must be composed of alphanumerical characters or underscore!"
         if message != "":
             try:
-                nodeid = int(self.NodeID.GetValue(), 16)
-            except:
+                _ = int(self.NodeID.GetValue(), 16)
+            except Exception:
                 message = "Node ID must be integer!"
         if message != "":
             message = wx.MessageDialog(self, message, "ERROR", wx.OK | wx.ICON_ERROR)
@@ -778,7 +774,7 @@ class NodeInfosDialog(wx.Dialog):
         else:
             self.EndModal(wx.ID_OK)
 
-    def SetValues(self, name, id, type, description, defaultstringsize):
+    def SetValues(self, name, id, type, description, defaultstringsize):  # pylint: disable=invalid-name
         self.NodeName.SetValue(name)
         self.NodeID.SetValue("0x%02X" % id)
         self.Type.SetStringSelection(type)
@@ -788,10 +784,10 @@ class NodeInfosDialog(wx.Dialog):
     def GetValues(self):
         name = self.NodeName.GetValue()
         nodeid = int(self.NodeID.GetValue(), 16)
-        type = NODE_TYPES_DICT[self.Type.GetStringSelection()]
+        type_ = NODE_TYPES_DICT[self.Type.GetStringSelection()]
         description = self.Description.GetValue()
         defaultstringsize = self.DefaultStringSize.GetValue()
-        return name, nodeid, type, description, defaultstringsize
+        return name, nodeid, type_, description, defaultstringsize
 
 
 # ------------------------------------------------------------------------------
@@ -966,7 +962,7 @@ class CreateNodeDialog(wx.Dialog):
               label='DS-302 Profile', name='DS302', parent=self,
               pos=wx.Point(0, 0), size=wx.Size(0, 24), style=0)
         self.DS302.SetValue(False)
-        #self.DS302.Enable(False)
+        # self.DS302.Enable(False)
 
         self.GenSYNC = wx.CheckBox(id=ID_CREATENODEDIALOGGENSYNC,
               label='Generate SYNC', name='GenSYNC', parent=self,
@@ -1032,7 +1028,7 @@ class CreateNodeDialog(wx.Dialog):
         self.Profile.SetStringSelection("None")
         self.NodeName.SetFocus()
 
-    def OnOK(self, event):
+    def OnOK(self, event):  # pylint: disable=unused-argument
         name = self.NodeName.GetValue()
         message = ""
         if name != "":
@@ -1043,8 +1039,8 @@ class CreateNodeDialog(wx.Dialog):
                 message = "Node name can't be undefined or start with a digit and must be composed of alphanumerical characters or underscore!"
         if message != "":
             try:
-                nodeid = int(self.NodeID.GetValue(), 16)
-            except:
+                _ = int(self.NodeID.GetValue(), 16)
+            except Exception:
                 message = "Node ID must be integer!"
         if message != "":
             message = wx.MessageDialog(self, message, "ERROR", wx.OK | wx.ICON_ERROR)
@@ -1059,9 +1055,9 @@ class CreateNodeDialog(wx.Dialog):
         nodeid = 0
         if self.NodeID.GetValue() != "":
             nodeid = int(self.NodeID.GetValue(), 16)
-        type = NODE_TYPES_DICT[self.Type.GetStringSelection()]
+        type_ = NODE_TYPES_DICT[self.Type.GetStringSelection()]
         description = self.Description.GetValue()
-        return name, nodeid, type, description
+        return name, nodeid, type_, description
 
     def GetProfile(self):
         name = self.Profile.GetStringSelection()
@@ -1206,7 +1202,7 @@ class AddSlaveDialog(wx.Dialog):
 
         self.SlaveNodeID.SetValue("0x00")
 
-    def OnOK(self, event):
+    def OnOK(self, event):  # pylint: disable=unused-argument
         error = []
         if self.SlaveName.GetValue() == "":
             error.append("Slave Name")
@@ -1233,7 +1229,7 @@ class AddSlaveDialog(wx.Dialog):
                     nodeid = int(nodeid, 16)
                 else:
                     nodeid = int(nodeid)
-            except:
+            except Exception:
                 message = wx.MessageDialog(self, "Slave Node ID must be a value in decimal or hexadecimal!", "Error", wx.OK | wx.ICON_ERROR)
                 message.ShowModal()
                 message.Destroy()
@@ -1429,7 +1425,7 @@ class DCFEntryValuesTable(wx.grid.PyGridTableBase):
 class DCFEntryValuesDialog(wx.Dialog):
 
     if wx.VERSION < (2, 6, 0):
-        def Bind(self, event, function, id=None):
+        def Bind(self, event, function, id=None):  # pylint: disable=invalid-name
             if id is not None:
                 event(self, id, function)
             else:
@@ -1529,7 +1525,7 @@ class DCFEntryValuesDialog(wx.Dialog):
         value = self.Table.GetValue(row, col)
         try:
             self.Values[row][colname] = int(value, 16)
-        except:
+        except Exception:
             message = wx.MessageDialog(self, "\"%s\" is not a valid value!" % value, "Error", wx.OK | wx.ICON_ERROR)
             message.ShowModal()
             message.Destroy()
@@ -1584,25 +1580,25 @@ class DCFEntryValuesDialog(wx.Dialog):
         if values != "":
             data = values[4:]
             current = 0
-            for i in range(BE_to_LE(values[:4])):
+            for _ in range(nod.BE_to_LE(values[:4])):
                 value = {}
-                value["Index"] = BE_to_LE(data[current:current + 2])
-                value["Subindex"] = BE_to_LE(data[current + 2:current + 3])
-                size = BE_to_LE(data[current + 3:current + 7])
+                value["Index"] = nod.BE_to_LE(data[current:current + 2])
+                value["Subindex"] = nod.BE_to_LE(data[current + 2:current + 3])
+                size = nod.BE_to_LE(data[current + 3:current + 7])
                 value["Size"] = size
-                value["Value"] = BE_to_LE(data[current + 7:current + 7 + size])
+                value["Value"] = nod.BE_to_LE(data[current + 7:current + 7 + size])
                 current += 7 + size
                 self.Values.append(value)
         self.RefreshValues()
 
     def GetValues(self):
         if len(self.Values) > 0:
-            value = LE_to_BE(len(self.Values), 4)
+            value = nod.LE_to_BE(len(self.Values), 4)
             for row in self.Values:
-                value += LE_to_BE(row["Index"], 2)
-                value += LE_to_BE(row["Subindex"], 1)
-                value += LE_to_BE(row["Size"], 4)
-                value += LE_to_BE(row["Value"], row["Size"])
+                value += nod.LE_to_BE(row["Index"], 2)
+                value += nod.LE_to_BE(row["Subindex"], 1)
+                value += nod.LE_to_BE(row["Size"], 4)
+                value += nod.LE_to_BE(row["Value"], row["Size"])
             return value
         return ""
 

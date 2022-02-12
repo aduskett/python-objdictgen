@@ -1,5 +1,5 @@
 from __future__ import absolute_import
-#from builtins import str
+# from builtins import str
 from builtins import object
 from builtins import range
 
@@ -7,8 +7,8 @@ import sys
 
 import wx
 
-from .node import OD_MultipleSubindexes, OD_IdenticalSubindexes, OD_IdenticalIndexes
-from .commondialogs import NodeInfosDialog, CommunicationDialog, MapVariableDialog, UserTypeDialog
+from . import node as nod
+from . import commondialogs as cdia
 
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
@@ -35,33 +35,33 @@ class NodeEditorTemplate(object):
     def IsClosing(self):
         return self.Closing
 
-    def OnAddSDOServerMenu(self, event):
+    def OnAddSDOServerMenu(self, event):  # pylint: disable=unused-argument
         self.Manager.AddSDOServerToCurrent()
         self.RefreshBufferState()
         self.RefreshCurrentIndexList()
 
-    def OnAddSDOClientMenu(self, event):
+    def OnAddSDOClientMenu(self, event):  # pylint: disable=unused-argument
         self.Manager.AddSDOClientToCurrent()
         self.RefreshBufferState()
         self.RefreshCurrentIndexList()
 
-    def OnAddPDOTransmitMenu(self, event):
+    def OnAddPDOTransmitMenu(self, event):  # pylint: disable=unused-argument
         self.Manager.AddPDOTransmitToCurrent()
         self.RefreshBufferState()
         self.RefreshCurrentIndexList()
 
-    def OnAddPDOReceiveMenu(self, event):
+    def OnAddPDOReceiveMenu(self, event):  # pylint: disable=unused-argument
         self.Manager.AddPDOReceiveToCurrent()
         self.RefreshBufferState()
         self.RefreshCurrentIndexList()
 
-    def OnAddMapVariableMenu(self, event):
+    def OnAddMapVariableMenu(self, event):  # pylint: disable=unused-argument
         self.AddMapVariable()
 
-    def OnAddUserTypeMenu(self, event):
+    def OnAddUserTypeMenu(self, event):  # pylint: disable=unused-argument
         self.AddUserType()
 
-    def OnRefreshMenu(self, event):
+    def OnRefreshMenu(self, event):  # pylint: disable=unused-argument
         self.RefreshCurrentIndexList()
 
     def RefreshCurrentIndexList(self):
@@ -72,10 +72,10 @@ class NodeEditorTemplate(object):
 
     def SetStatusBarText(self, selection, manager):
         if selection:
-            index, subIndex = selection
+            index, subindex = selection
             if manager.IsCurrentEntry(index):
                 self.Frame.HelpBar.SetStatusText("Index: 0x%04X" % index, 0)
-                self.Frame.HelpBar.SetStatusText("Subindex: 0x%02X" % subIndex, 1)
+                self.Frame.HelpBar.SetStatusText("Subindex: 0x%02X" % subindex, 1)
                 entryinfos = manager.GetEntryInfos(index)
                 name = entryinfos["name"]
                 category = "Optional"
@@ -83,11 +83,11 @@ class NodeEditorTemplate(object):
                     category = "Mandatory"
                 struct = "VAR"
                 number = ""
-                if entryinfos["struct"] & OD_IdenticalIndexes:
+                if entryinfos["struct"] & nod.OD_IdenticalIndexes:
                     number = " possibly defined %d times" % entryinfos["nbmax"]
-                if entryinfos["struct"] & OD_IdenticalSubindexes:
+                if entryinfos["struct"] & nod.OD_IdenticalSubindexes:
                     struct = "REC"
-                elif entryinfos["struct"] & OD_MultipleSubindexes:
+                elif entryinfos["struct"] & nod.OD_MultipleSubindexes:
                     struct = "ARRAY"
                 text = "%s: %s entry of struct %s%s." % (name, category, struct, number)
                 self.Frame.HelpBar.SetStatusText(text, 2)
@@ -104,14 +104,14 @@ class NodeEditorTemplate(object):
             edititem = self.Frame.EditMenu.FindItemById(self.EDITMENU_ID)
             if edititem:
                 length = self.Frame.AddMenu.GetMenuItemCount()
-                for i in range(length - 6):
+                for _ in range(length - 6):
                     additem = self.Frame.AddMenu.FindItemByPosition(6)
                     self.Frame.AddMenu.Delete(additem.GetId())
                 if profile not in ("None", "DS-301"):
                     edititem.SetText("%s Profile" % profile)
                     edititem.Enable(True)
                     self.Frame.AddMenu.AppendSeparator()
-                    for text, indexes in self.Manager.GetCurrentSpecificMenu():
+                    for text, _ in self.Manager.GetCurrentSpecificMenu():
                         new_id = wx.NewId()
                         self.Frame.AddMenu.Append(help='', id=new_id, kind=wx.ITEM_NORMAL, text=text)
                         self.Frame.Bind(wx.EVT_MENU, self.GetProfileCallBack(text), id=new_id)
@@ -126,12 +126,12 @@ class NodeEditorTemplate(object):
     def RefreshBufferState(self):
         pass
 
-    def OnUndoMenu(self, event):
+    def OnUndoMenu(self, event):  # pylint: disable=unused-argument
         self.Manager.LoadCurrentPrevious()
         self.RefreshCurrentIndexList()
         self.RefreshBufferState()
 
-    def OnRedoMenu(self, event):
+    def OnRedoMenu(self, event):  # pylint: disable=unused-argument
         self.Manager.LoadCurrentNext()
         self.RefreshCurrentIndexList()
         self.RefreshBufferState()
@@ -140,21 +140,21 @@ class NodeEditorTemplate(object):
 #                          Editing Profiles functions
 # ------------------------------------------------------------------------------
 
-    def OnCommunicationMenu(self, event):
+    def OnCommunicationMenu(self, event):  # pylint: disable=unused-argument
         dictionary, current = self.Manager.GetCurrentCommunicationLists()
         self.EditProfile("Edit DS-301 Profile", dictionary, current)
 
-    def OnOtherCommunicationMenu(self, event):
+    def OnOtherCommunicationMenu(self, event):  # pylint: disable=unused-argument
         dictionary, current = self.Manager.GetCurrentDS302Lists()
         self.EditProfile("Edit DS-302 Profile", dictionary, current)
 
-    def OnEditProfileMenu(self, event):
+    def OnEditProfileMenu(self, event):  # pylint: disable=unused-argument
         title = "Edit %s Profile" % self.Manager.GetCurrentProfileName()
         dictionary, current = self.Manager.GetCurrentProfileLists()
         self.EditProfile(title, dictionary, current)
 
     def EditProfile(self, title, dictionary, current):
-        dialog = CommunicationDialog(self.Frame)
+        dialog = cdia.CommunicationDialog(self.Frame)
         dialog.SetTitle(title)
         dialog.SetIndexDictionary(dictionary)
         dialog.SetCurrentList(current)
@@ -176,7 +176,7 @@ class NodeEditorTemplate(object):
         dialog.Destroy()
 
     def GetProfileCallBack(self, text):
-        def ProfileCallBack(event):
+        def ProfileCallBack(event):  # pylint: disable=unused-argument
             self.Manager.AddSpecificEntryToCurrent(text)
             self.RefreshBufferState()
             self.RefreshCurrentIndexList()
@@ -186,14 +186,14 @@ class NodeEditorTemplate(object):
 #                         Edit Node informations function
 # ------------------------------------------------------------------------------
 
-    def OnNodeInfosMenu(self, event):
-        dialog = NodeInfosDialog(self.Frame)
-        name, id, type, description = self.Manager.GetCurrentNodeInfos()
+    def OnNodeInfosMenu(self, event):  # pylint: disable=unused-argument
+        dialog = cdia.NodeInfosDialog(self.Frame)
+        name, id_, type_, description = self.Manager.GetCurrentNodeInfos()
         defaultstringsize = self.Manager.GetCurrentNodeDefaultStringSize()
-        dialog.SetValues(name, id, type, description, defaultstringsize)
+        dialog.SetValues(name, id_, type_, description, defaultstringsize)
         if dialog.ShowModal() == wx.ID_OK:
-            name, id, type, description, defaultstringsize = dialog.GetValues()
-            self.Manager.SetCurrentNodeInfos(name, id, type, description)
+            name, id_, type_, description, defaultstringsize = dialog.GetValues()
+            self.Manager.SetCurrentNodeInfos(name, id_, type_, description)
             self.Manager.SetCurrentNodeDefaultStringSize(defaultstringsize)
             self.RefreshBufferState()
             self.RefreshCurrentIndexList()
@@ -206,7 +206,7 @@ class NodeEditorTemplate(object):
     def AddMapVariable(self):
         index = self.Manager.GetCurrentNextMapIndex()
         if index:
-            dialog = MapVariableDialog(self.Frame)
+            dialog = cdia.MapVariableDialog(self.Frame)
             dialog.SetIndex(index)
             if dialog.ShowModal() == wx.ID_OK:
                 result = self.Manager.AddMapVariableToCurrent(*dialog.GetValues())
@@ -220,7 +220,7 @@ class NodeEditorTemplate(object):
             self.ShowErrorMessage("No map variable index left!")
 
     def AddUserType(self):
-        dialog = UserTypeDialog(self)
+        dialog = cdia.UserTypeDialog(self)
         dialog.SetTypeList(self.Manager.GetCustomisableTypes())
         if dialog.ShowModal() == wx.ID_OK:
             result = self.Manager.AddUserTypeToCurrent(*dialog.GetValues())

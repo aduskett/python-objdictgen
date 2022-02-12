@@ -23,7 +23,7 @@
 
 from __future__ import print_function
 from __future__ import absolute_import
-#from builtins import str
+# from builtins import str
 from builtins import range
 
 import os
@@ -35,115 +35,22 @@ import getopt
 
 import wx
 
+from .nodelist import NodeList
+from .nodemanager import NodeManager
+from .networkeditortemplate import NetworkEditorTemplate
+
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
 
 __version__ = "$Revision: 1.27 $"
 
-if __name__ == '__main__':
-    def usage():
-        print("\nUsage of networkedit.py :")
-        print("\n   %s [Projectpath]\n" % sys.argv[0])
-
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], "h", ["help"])
-    except getopt.GetoptError:
-        # print help information and exit:
-        usage()
-        sys.exit(2)
-
-    for o, a in opts:
-        if o in ("-h", "--help"):
-            usage()
-            sys.exit()
-
-    if len(args) == 0:
-        projectOpen = None
-    elif len(args) == 1:
-        projectOpen = args[0]
-    else:
-        usage()
-        sys.exit(2)
-
-    app = wx.PySimpleApp()
-
 ScriptDirectory = os.path.split(os.path.realpath(__file__))[0]
 
-from .nodelist import NodeList
-from .nodemanager import NodeManager
-from .networkeditortemplate import NetworkEditorTemplate
-from .doc_index.DS301_index import OpenPDFDocIndex, get_acroversion
 
-try:
-    import wx.html
+def usage():
+    print("\nUsage of networkedit.py :")
+    print("\n   %s [Projectpath]\n" % sys.argv[0])
 
-    EVT_HTML_URL_CLICK = wx.NewId()
-
-    class HtmlWindowUrlClick(wx.PyEvent):
-        def __init__(self, linkinfo):
-            wx.PyEvent.__init__(self)
-            self.SetEventType(EVT_HTML_URL_CLICK)
-            self.linkinfo = (linkinfo.GetHref(), linkinfo.GetTarget())
-
-    class UrlClickHtmlWindow(wx.html.HtmlWindow):
-        """ HTML window that generates and OnLinkClicked event.
-
-        Use this to avoid having to override HTMLWindow
-        """
-        def OnLinkClicked(self, linkinfo):
-            wx.PostEvent(self, HtmlWindowUrlClick(linkinfo))
-
-        def Bind(self, event, handler, source=None, id=wx.ID_ANY, id2=wx.ID_ANY):
-            if event == HtmlWindowUrlClick:
-                self.Connect(-1, -1, EVT_HTML_URL_CLICK, handler)
-            else:
-                wx.html.HtmlWindow.Bind(event, handler, source=source, id=id, id2=id2)
-
-# ------------------------------------------------------------------------------
-#                                Html Frame
-# ------------------------------------------------------------------------------
-
-    [ID_HTMLFRAME, ID_HTMLFRAMEHTMLCONTENT] = [wx.NewId() for _init_ctrls in range(2)]
-
-    class HtmlFrame(wx.Frame):
-        def _init_ctrls(self, prnt):
-            # generated method, don't edit
-            wx.Frame.__init__(self, id=ID_HTMLFRAME, name='HtmlFrame',
-                  parent=prnt, pos=wx.Point(320, 231), size=wx.Size(853, 616),
-                  style=wx.DEFAULT_FRAME_STYLE, title='')
-            self.Bind(wx.EVT_CLOSE, self.OnCloseFrame)
-
-            self.HtmlContent = UrlClickHtmlWindow(id=ID_HTMLFRAMEHTMLCONTENT,
-                  name='HtmlContent', parent=self, pos=wx.Point(0, 0),
-                  size=wx.Size(-1, -1), style=wx.html.HW_SCROLLBAR_AUTO | wx.html.HW_NO_SELECTION)
-            self.HtmlContent.Bind(HtmlWindowUrlClick, self.OnLinkClick)
-
-        def __init__(self, parent, opened):
-            self._init_ctrls(parent)
-            self.HtmlFrameOpened = opened
-
-        def SetHtmlCode(self, htmlcode):
-            self.HtmlContent.SetPage(htmlcode)
-
-        def SetHtmlPage(self, htmlpage):
-            self.HtmlContent.LoadPage(htmlpage)
-
-        def OnCloseFrame(self, event):
-            self.HtmlFrameOpened.remove(self.GetTitle())
-            event.Skip()
-
-        def OnLinkClick(self, event):
-            url = event.linkinfo[0]
-            try:
-                import webbrowser
-            except ImportError:
-                wx.MessageBox('Please point your browser at: %s' % url)
-            else:
-                webbrowser.open(url)
-
-    Html_Window = True
-except:
-    Html_Window = False
 
 [
     ID_NETWORKEDIT, ID_NETWORKEDITNETWORKNODES,
@@ -166,7 +73,7 @@ except:
 ] = [wx.NewId() for _init_coll_AddMenu_Items in range(6)]
 
 
-class networkedit(wx.Frame, NetworkEditorTemplate):
+class NetworkEdit(wx.Frame, NetworkEditorTemplate):
 
     EDITMENU_ID = ID_NETWORKEDITEDITMENUOTHERPROFILE
 
@@ -176,7 +83,6 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
         parent.Append(menu=self.NetworkMenu, title='Network')
         parent.Append(menu=self.EditMenu, title='Edit')
         parent.Append(menu=self.AddMenu, title='Add')
-        parent.Append(menu=self.HelpMenu, title='Help')
 
     def _init_coll_FileMenu_Items(self, parent):
         parent.Append(help='', id=wx.ID_NEW,
@@ -265,18 +171,6 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
         self.Bind(wx.EVT_MENU, self.OnAddUserTypeMenu,
               id=ID_NETWORKEDITADDMENUUSERTYPE)
 
-    def _init_coll_HelpMenu_Items(self, parent):
-        parent.Append(help='', id=wx.ID_HELP,
-              kind=wx.ITEM_NORMAL, text='DS-301 Standard\tF1')
-        self.Bind(wx.EVT_MENU, self.OnHelpDS301Menu, id=wx.ID_HELP)
-        parent.Append(help='', id=wx.ID_HELP_CONTEXT,
-              kind=wx.ITEM_NORMAL, text='CAN Festival Docs\tF2')
-        self.Bind(wx.EVT_MENU, self.OnHelpCANFestivalMenu, id=wx.ID_HELP_CONTEXT)
-        if Html_Window and self.ModeSolo:
-            parent.Append(help='', id=wx.ID_ABOUT,
-                  kind=wx.ITEM_NORMAL, text='About')
-            self.Bind(wx.EVT_MENU, self.OnAboutMenu, id=wx.ID_ABOUT)
-
     def _init_coll_HelpBar_Fields(self, parent):
         parent.SetFieldsCount(3)
 
@@ -303,7 +197,6 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
         self._init_coll_NetworkMenu_Items(self.NetworkMenu)
         self._init_coll_EditMenu_Items(self.EditMenu)
         self._init_coll_AddMenu_Items(self.AddMenu)
-        self._init_coll_HelpMenu_Items(self.HelpMenu)
 
     def _init_ctrls(self, prnt):
         wx.Frame.__init__(self, id=ID_NETWORKEDIT, name='networkedit',
@@ -357,23 +250,23 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
 
     def OnCloseFrame(self, event):
         self.Closing = True
-        if not self.ModeSolo and getattr(self, "_onclose", None) != None:
+        if not self.ModeSolo and getattr(self, "_onclose", None) is not None:
             self._onclose()
         event.Skip()
 
     def OnChar(self, event):
-        if event.ControlDown() and event.GetKeyCode() == 83 and getattr(self, "_onsave", None) != None:
+        if event.ControlDown() and event.GetKeyCode() == 83 and getattr(self, "_onsave", None) is not None:
             self._onsave()
-        #event.Skip()
+        # event.Skip()
 
-    def OnQuitMenu(self, event):
+    def OnQuitMenu(self, event):  # pylint: disable=unused-argument
         self.Close()
 
 # ------------------------------------------------------------------------------
 #                         Load and Save Funtions
 # ------------------------------------------------------------------------------
 
-    def OnNewProjectMenu(self, event):
+    def OnNewProjectMenu(self, event):  # pylint: disable=unused-argument
         if self.NodeList:
             defaultpath = os.path.dirname(self.NodeList.GetRoot())
         else:
@@ -400,7 +293,7 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
                     message.ShowModal()
                     message.Destroy()
 
-    def OnOpenProjectMenu(self, event):
+    def OnOpenProjectMenu(self, event):  # pylint: disable=unused-argument
         if self.NodeList:
             defaultpath = os.path.dirname(self.NodeList.GetRoot())
         else:
@@ -428,8 +321,8 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
                     message.Destroy()
         dialog.Destroy()
 
-    def OnSaveProjectMenu(self, event):
-        if not self.ModeSolo and getattr(self, "_onsave", None) != None:
+    def OnSaveProjectMenu(self, event):  # pylint: disable=unused-argument
+        if not self.ModeSolo and getattr(self, "_onsave", None) is not None:
             self._onsave()
         else:
             result = self.NodeList.SaveProject()
@@ -438,7 +331,7 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
                 message.ShowModal()
                 message.Destroy()
 
-    def OnCloseProjectMenu(self, event):
+    def OnCloseProjectMenu(self, event):  # pylint: disable=unused-argument
         if self.NodeList:
             if self.NodeList.HasChanged():
                 dialog = wx.MessageDialog(self, "There are changes, do you want to save?", "Close Project", wx.YES_NO | wx.CANCEL | wx.ICON_QUESTION)
@@ -464,7 +357,7 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
 # ------------------------------------------------------------------------------
 
     def RefreshTitle(self):
-        if self.NodeList != None:
+        if self.NodeList is not None:
             self.SetTitle("Networkedit - %s" % self.NodeList.GetNetworkName())
         else:
             self.SetTitle("Networkedit")
@@ -477,7 +370,7 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
 
     def RefreshMainMenu(self):
         self.NetworkMenu.Enable(ID_NETWORKEDITNETWORKMENUBUILDMASTER, False)
-        if self.NodeList == None:
+        if self.NodeList is None:
             if self.ModeSolo:
                 self.MenuBar.EnableTop(1, False)
                 self.MenuBar.EnableTop(2, False)
@@ -519,53 +412,6 @@ class networkedit(wx.Frame, NetworkEditorTemplate):
         if self.NodeList is not None:
             self.RefreshTitle()
 
-# ------------------------------------------------------------------------------
-#                                Help Method
-# ------------------------------------------------------------------------------
-
-    def OnHelpDS301Menu(self, event):
-        find_index = False
-        selected = self.NetworkNodes.GetSelection()
-        if selected >= 0:
-            window = self.NetworkNodes.GetPage(selected)
-            result = window.GetSelection()
-            if result:
-                find_index = True
-                index, subIndex = result
-                result = OpenPDFDocIndex(index, ScriptDirectory)
-                if isinstance(result, (str, unicode)):
-                    message = wx.MessageDialog(self, result, "ERROR", wx.OK | wx.ICON_ERROR)
-                    message.ShowModal()
-                    message.Destroy()
-        if not find_index:
-            result = OpenPDFDocIndex(None, ScriptDirectory)
-            if isinstance(result, (str, unicode)):
-                message = wx.MessageDialog(self, result, "ERROR", wx.OK | wx.ICON_ERROR)
-                message.ShowModal()
-                message.Destroy()
-
-    def OnHelpCANFestivalMenu(self, event):
-        #self.OpenHtmlFrame("CAN Festival Reference", os.path.join(ScriptDirectory, "doc/canfestival.html"), wx.Size(1000, 600))
-        if wx.Platform == '__WXMSW__':
-            readerpath = get_acroversion()
-            readerexepath = os.path.join(readerpath, "AcroRd32.exe")
-            if os.path.isfile(readerexepath):
-                os.spawnl(os.P_DETACH, readerexepath, "AcroRd32.exe", '"%s"' % os.path.join(ScriptDirectory, "doc", "manual_en.pdf"))
-        else:
-            os.system("xpdf -remote CANFESTIVAL %s %d &" % (os.path.join(ScriptDirectory, "doc/manual_en.pdf"), 16))
-
-    def OnAboutMenu(self, event):
-        self.OpenHtmlFrame("About CAN Festival", os.path.join(ScriptDirectory, "doc/about.html"), wx.Size(500, 450))
-
-    def OpenHtmlFrame(self, title, file, size):
-        if title not in self.HtmlFrameOpened:
-            self.HtmlFrameOpened.append(title)
-            window = HtmlFrame(self, self.HtmlFrameOpened)
-            window.SetTitle(title)
-            window.SetHtmlPage(file)
-            window.SetClientSize(size)
-            window.Show()
-
 
 # ------------------------------------------------------------------------------
 #                               Exception Handler
@@ -591,7 +437,7 @@ def Display_Exception_Dialog(e_type, e_value, e_tb):
         cap.ReleaseMouse()
 
     dlg = wx.SingleChoiceDialog(None,
-        """
+        ("""
 An error happens.
 
 Click on OK for saving an error report.
@@ -601,8 +447,8 @@ edouard.tisserant@gmail.com
 
 
 Error:
-""" +
-        str(e_type) + " : " + str(e_value),
+"""
+        + str(e_type) + " : " + str(e_value)),
         "Error",
         trcbck_lst)
     try:
@@ -625,8 +471,8 @@ def get_last_traceback(tb):
     return tb
 
 
-def format_namespace(d, indent='    '):
-    return '\n'.join(['%s%s: %s' % (indent, k, repr(v)[:10000]) for k, v in d.items()])
+def format_namespace(dic, indent='    '):
+    return '\n'.join(['%s%s: %s' % (indent, k, repr(v)[:10000]) for k, v in dic.items()])
 
 
 ignored_exceptions = []  # a problem with a line in a module is only reported once per session
@@ -670,17 +516,43 @@ def AddExceptHook(path, app_version='[No version]'):  # , ignored_exceptions=[])
                     for a in lst:
                         output.write(a + ":\n" + str(info[a]) + "\n\n")
 
-    #sys.excepthook = lambda *args: wx.CallAfter(handle_exception, *args)
+    # sys.excepthook = lambda *args: wx.CallAfter(handle_exception, *args)
     sys.excepthook = handle_exception
 
 
-if __name__ == '__main__':
+def main():
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "h", ["help"])
+    except getopt.GetoptError:
+        # print help information and exit:
+        usage()
+        sys.exit(2)
+
+    for opt, _ in opts:
+        if opt in ("-h", "--help"):
+            usage()
+            sys.exit()
+
+    if len(args) == 0:
+        project = None
+    elif len(args) == 1:
+        project = args[0]
+    else:
+        usage()
+        sys.exit(2)
+
+    app = wx.PySimpleApp()
+
     wx.InitAllImageHandlers()
 
     # Install a exception handle for bug reports
     AddExceptHook(os.getcwd(), __version__)
 
-    frame = networkedit(None, projectOpen=projectOpen)
+    frame = NetworkEdit(None, projectOpen=project)
 
     frame.Show()
     app.MainLoop()
+
+
+if __name__ == '__main__':
+    main()

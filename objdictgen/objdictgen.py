@@ -25,13 +25,13 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import unicode_literals
-#from builtins import str
+# from builtins import str
 
 import getopt
 import sys
 import os
 
-from .nodemanager import NodeManager
+from . import nodemanager as nman
 
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
@@ -50,35 +50,35 @@ def main():
         usage()
         sys.exit(2)
 
-    for o, a in opts:
-        if o in ("-h", "--help"):
+    for opt, _ in opts:
+        if opt in ("-h", "--help"):
             usage()
             sys.exit()
 
-    fileIn = ""
-    fileOut = ""
+    filein = ""
+    fileout = ""
     if len(args) == 2:
-        fileIn = args[0]
-        fileOut = args[1]
+        filein = args[0]
+        fileout = args[1]
     else:
         usage()
         sys.exit()
 
-    if fileIn != "" and fileOut != "":
-        manager = NodeManager()
-        if os.path.isfile(fileIn):
+    if filein != "" and fileout != "":
+        manager = nman.NodeManager()
+        if os.path.isfile(filein):
             print("Parsing input file")
-            result = manager.OpenFileInCurrent(fileIn)
+            result = manager.OpenFileInCurrent(filein)
             if not isinstance(result, (str, unicode)):
-                Node = result
+                _ = result
             else:
                 print(result)
                 sys.exit(-1)
         else:
-            print("%s is not a valid file!" % fileIn)
+            print("%s is not a valid file!" % filein)
             sys.exit(-1)
         print("Writing output file")
-        result = manager.ExportCurrentToCFile(fileOut)
+        result = manager.ExportCurrentToCFile(fileout)
         if isinstance(result, (str, unicode)):
             print(result)
             sys.exit(-1)

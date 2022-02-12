@@ -23,7 +23,7 @@
 
 from __future__ import print_function
 from __future__ import absolute_import
-#from builtins import str
+# from builtins import str
 from builtins import range
 
 import os
@@ -35,10 +35,10 @@ import getopt
 
 import wx
 
-from .nodemanager import NodeManager
-from .nodeeditortemplate import NodeEditorTemplate
-from .subindextable import EditingPanel
-from .commondialogs import CreateNodeDialog
+from . import nodemanager as nman
+from . import nodeeditortemplate as net
+from . import subindextable as sit
+from . import commondialogs as cdia
 
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
@@ -75,7 +75,7 @@ ScriptDirectory = os.path.split(os.path.realpath(__file__))[0]
 ] = [wx.NewId() for _init_coll_AddMenu_Items in range(6)]
 
 
-class objdictedit(wx.Frame, NodeEditorTemplate):
+class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
 
     EDITMENU_ID = ID_OBJDICTEDITEDITMENUOTHERPROFILE
 
@@ -192,7 +192,6 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
             self.FileMenu = wx.Menu(title='')
         self.EditMenu = wx.Menu(title='')
         self.AddMenu = wx.Menu(title='')
-        self.HelpMenu = wx.Menu(title='')
 
         self._init_coll_MenuBar_Menus(self.MenuBar)
         if self.ModeSolo:
@@ -224,26 +223,27 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
         self._init_coll_HelpBar_Fields(self.HelpBar)
         self.SetStatusBar(self.HelpBar)
 
-    def __init__(self, parent, manager=None, filesOpen=[]):
+    def __init__(self, parent, manager=None, filesopen=None):
+        filesopen = filesopen or []
         if manager is None:
-            NodeEditorTemplate.__init__(self, NodeManager(), self, True)
+            net.NodeEditorTemplate.__init__(self, nman.NodeManager(), self, True)
         else:
-            NodeEditorTemplate.__init__(self, manager, self, False)
+            net.NodeEditorTemplate.__init__(self, manager, self, False)
         self._init_ctrls(parent)
 
         icon = wx.Icon(os.path.join(ScriptDirectory, "networkedit.ico"), wx.BITMAP_TYPE_ICO)
         self.SetIcon(icon)
 
         if self.ModeSolo:
-            for filepath in filesOpen:
+            for filepath in filesopen:
                 result = self.Manager.OpenFileInCurrent(os.path.abspath(filepath))
                 if isinstance(result, int):
-                    new_editingpanel = EditingPanel(self.FileOpened, self, self.Manager)
+                    new_editingpanel = sit.EditingPanel(self.FileOpened, self, self.Manager)
                     new_editingpanel.SetIndex(result)
                     self.FileOpened.AddPage(new_editingpanel, "")
         else:
             for index in self.Manager.GetBufferIndexes():
-                new_editingpanel = EditingPanel(self.FileOpened, self, self.Manager)
+                new_editingpanel = sit.EditingPanel(self.FileOpened, self, self.Manager)
                 new_editingpanel.SetIndex(index)
                 self.FileOpened.AddPage(new_editingpanel, "")
 
@@ -276,13 +276,13 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
                     self.RefreshProfileMenu()
         event.Skip()
 
-    def OnQuitMenu(self, event):
+    def OnQuitMenu(self, event):  # pylint: disable=unused-argument
         self.Close()
 
     def OnCloseFrame(self, event):
         self.Closing = True
         if not self.ModeSolo:
-            if getattr(self, "_onclose", None) != None:
+            if getattr(self, "_onclose", None) is not None:
                 self._onclose()
             event.Skip()
         elif self.Manager.OneFileHasChanged():
@@ -290,7 +290,7 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
             answer = dialog.ShowModal()
             dialog.Destroy()
             if answer == wx.ID_YES:
-                for i in range(self.Manager.GetBufferNumber()):
+                for _ in range(self.Manager.GetBufferNumber()):
                     if self.Manager.CurrentIsSaved():
                         self.Manager.CloseCurrent()
                     else:
@@ -375,17 +375,17 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
 #                         Load and Save Funtions
 # ------------------------------------------------------------------------------
 
-    def OnNewMenu(self, event):
+    def OnNewMenu(self, event):  # pylint: disable=unused-argument
         self.FilePath = ""
-        dialog = CreateNodeDialog(self)
+        dialog = cdia.CreateNodeDialog(self)
         if dialog.ShowModal() == wx.ID_OK:
-            name, id, nodetype, description = dialog.GetValues()
+            name, id_, nodetype, description = dialog.GetValues()
             profile, filepath = dialog.GetProfile()
-            NMT = dialog.GetNMTManagement()
+            nmt = dialog.GetNMTManagement()
             options = dialog.GetOptions()
-            result = self.Manager.CreateNewNode(name, id, nodetype, description, profile, filepath, NMT, options)
+            result = self.Manager.CreateNewNode(name, id_, nodetype, description, profile, filepath, nmt, options)
             if isinstance(result, int):
-                new_editingpanel = EditingPanel(self.FileOpened, self, self.Manager)
+                new_editingpanel = sit.EditingPanel(self.FileOpened, self, self.Manager)
                 new_editingpanel.SetIndex(result)
                 self.FileOpened.AddPage(new_editingpanel, "")
                 self.FileOpened.SetSelection(self.FileOpened.GetPageCount() - 1)
@@ -401,7 +401,7 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
                 message.Destroy()
         dialog.Destroy()
 
-    def OnOpenMenu(self, event):
+    def OnOpenMenu(self, event):  # pylint: disable=unused-argument
         filepath = self.Manager.GetCurrentFilePath()
         if filepath != "":
             directory = os.path.dirname(filepath)
@@ -413,7 +413,7 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
             if os.path.isfile(filepath):
                 result = self.Manager.OpenFileInCurrent(filepath)
                 if isinstance(result, int):
-                    new_editingpanel = EditingPanel(self.FileOpened, self, self.Manager)
+                    new_editingpanel = sit.EditingPanel(self.FileOpened, self, self.Manager)
                     new_editingpanel.SetIndex(result)
                     self.FileOpened.AddPage(new_editingpanel, "")
                     self.FileOpened.SetSelection(self.FileOpened.GetPageCount() - 1)
@@ -431,14 +431,14 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
                     message.Destroy()
         dialog.Destroy()
 
-    def OnSaveMenu(self, event):
-        if not self.ModeSolo and getattr(self, "_onsave", None) != None:
+    def OnSaveMenu(self, event):  # pylint: disable=unused-argument
+        if not self.ModeSolo and getattr(self, "_onsave", None) is not None:
             self._onsave()
             self.RefreshBufferState()
         else:
             self.Save()
 
-    def OnSaveAsMenu(self, event):
+    def OnSaveAsMenu(self, event):  # pylint: disable=unused-argument
         self.SaveAs()
 
     def Save(self):
@@ -500,14 +500,14 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
     #                     Import and Export Functions
     # --------------------------------------------------------------------------
 
-    def OnImportEDSMenu(self, event):
+    def OnImportEDSMenu(self, event):  # pylint: disable=unused-argument
         dialog = wx.FileDialog(self, "Choose a file", os.getcwd(), "", "EDS files (*.eds)|*.eds|All files|*.*", wx.OPEN | wx.CHANGE_DIR)
         if dialog.ShowModal() == wx.ID_OK:
             filepath = dialog.GetPath()
             if os.path.isfile(filepath):
                 result = self.Manager.ImportCurrentFromEDSFile(filepath)
                 if isinstance(result, int):
-                    new_editingpanel = EditingPanel(self.FileOpened, self, self.Manager)
+                    new_editingpanel = sit.EditingPanel(self.FileOpened, self, self.Manager)
                     new_editingpanel.SetIndex(result)
                     self.FileOpened.AddPage(new_editingpanel, "")
                     self.FileOpened.SetSelection(self.FileOpened.GetPageCount() - 1)
@@ -528,7 +528,7 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
                 message.Destroy()
         dialog.Destroy()
 
-    def OnExportEDSMenu(self, event):
+    def OnExportEDSMenu(self, event):  # pylint: disable=unused-argument
         dialog = wx.FileDialog(self, "Choose a file", os.getcwd(), self.Manager.GetCurrentNodeInfos()[0], "EDS files (*.eds)|*.eds|All files|*.*", wx.SAVE | wx.OVERWRITE_PROMPT | wx.CHANGE_DIR)
         if dialog.ShowModal() == wx.ID_OK:
             filepath = dialog.GetPath()
@@ -551,7 +551,7 @@ class objdictedit(wx.Frame, NodeEditorTemplate):
                 message.Destroy()
         dialog.Destroy()
 
-    def OnExportCMenu(self, event):
+    def OnExportCMenu(self, event):  # pylint: disable=unused-argument
         dialog = wx.FileDialog(self, "Choose a file", os.getcwd(), self.Manager.GetCurrentNodeInfos()[0], "CANFestival C files (*.c)|*.c|All files|*.*", wx.SAVE | wx.OVERWRITE_PROMPT | wx.CHANGE_DIR)
         if dialog.ShowModal() == wx.ID_OK:
             filepath = dialog.GetPath()
@@ -599,7 +599,7 @@ def Display_Exception_Dialog(e_type, e_value, e_tb):
         cap.ReleaseMouse()
 
     dlg = wx.SingleChoiceDialog(None,
-        """
+        ("""
 An error happens.
 
 Click on OK for saving an error report.
@@ -609,8 +609,8 @@ edouard.tisserant@gmail.com
 
 
 Error:
-""" +
-        str(e_type) + " : " + str(e_value),
+"""
+        + str(e_type) + " : " + str(e_value)),
         "Error",
         trcbck_lst)
     try:
@@ -633,8 +633,8 @@ def get_last_traceback(tb):
     return tb
 
 
-def format_namespace(d, indent='    '):
-    return '\n'.join(['%s%s: %s' % (indent, k, repr(v)[:10000]) for k, v in d.items()])
+def format_namespace(dic, indent='    '):
+    return '\n'.join(['%s%s: %s' % (indent, k, repr(v)[:10000]) for k, v in dic.items()])
 
 
 ignored_exceptions = []  # a problem with a line in a module is only reported once per session
@@ -678,7 +678,7 @@ def AddExceptHook(path, app_version='[No version]'):  # , ignored_exceptions=[])
                     for a in lst:
                         output.write(a + ":\n" + str(info[a]) + "\n\n")
 
-    #sys.excepthook = lambda *args: wx.CallAfter(handle_exception, *args)
+    # sys.excepthook = lambda *args: wx.CallAfter(handle_exception, *args)
     sys.excepthook = handle_exception
 
 
@@ -690,8 +690,8 @@ def main():
         usage()
         sys.exit(2)
 
-    for o, a in opts:
-        if o in ("-h", "--help"):
+    for opt, _ in opts:
+        if opt in ("-h", "--help"):
             usage()
             sys.exit()
 
@@ -702,7 +702,7 @@ def main():
     # Install a exception handle for bug reports
     AddExceptHook(os.getcwd(), __version__)
 
-    frame = objdictedit(None, filesOpen=args)
+    frame = ObjdictEdit(None, filesopen=args)
 
     frame.Show()
     app.MainLoop()
