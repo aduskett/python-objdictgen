@@ -16,6 +16,7 @@ objdictgen.orig
 *.bak
 *.whl
 __*
+!__*__.py
 tmp/
 objdictgen2/
 mirror-canfestival-3-asc/
