@@ -32,16 +32,14 @@ from builtins import range
 import sys
 import re
 import pickle
+from collections import OrderedDict
+from future.utils import raise_from
 
 from .nosis import pickle as nosis
+from . import dbg
 
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
-
-
-def dbg(s):  # pylint: disable=unused-argument
-    pass
-    # print(">> %s"% (s,))
 
 
 #
@@ -431,7 +429,7 @@ def StringFormat(text, idx, sub):  # pylint: disable=unused-argument
     result = name_model.match(text)
     if result:
         fmt = result.groups()
-        # FIXME: Using eval is not good
+        # FIXME: Using eval is not safe
         dbg("EVAL in StringFormat(): '%s'" % (fmt[1],))
         return fmt[0] % eval(fmt[1])
     else:
@@ -761,9 +759,7 @@ class Node(object):
         """
         Check if an entry exists in the User Mapping Dictionary and returns the answer.
         """
-        if index in self.UserMapping:
-            return True
-        return False
+        return index in self.UserMapping
 
     def AddMappingEntry(self, index, subindex=None, name="Undefined", struct=0, size=None, nbmax=None, default=None, values=None):
         """
@@ -967,7 +963,7 @@ class Node(object):
         if isinstance(value, (str, unicode)) and value.upper().find("$NODEID") != -1:
             base = self.GetBaseIndex(index)  # NOTE: Don't change this, as the eval() below depend on it
             try:
-                # FIXME: Using eval is not good
+                # FIXME: Using eval is not safe
                 dbg("EVAL in CompileValue(): '%s'" % (value,))
                 raw = eval(value)
                 if compute:

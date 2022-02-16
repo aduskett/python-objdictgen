@@ -39,6 +39,7 @@ from . import nodemanager as nman
 from . import nodeeditortemplate as net
 from . import subindextable as sit
 from . import commondialogs as cdia
+from . import dbg
 
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
@@ -523,7 +524,7 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
                     message.ShowModal()
                     message.Destroy()
             else:
-                message = wx.MessageDialog(self, "\"%s\" is not a valid file!" % filepath, "Error", wx.OK | wx.ICON_ERROR)
+                message = wx.MessageDialog(self, "'%s' is not a valid file!" % filepath, "Error", wx.OK | wx.ICON_ERROR)
                 message.ShowModal()
                 message.Destroy()
         dialog.Destroy()
@@ -546,7 +547,7 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
                     message.ShowModal()
                     message.Destroy()
             else:
-                message = wx.MessageDialog(self, "\"%s\" is not a valid folder!" % os.path.dirname(filepath), "Error", wx.OK | wx.ICON_ERROR)
+                message = wx.MessageDialog(self, "'%s' is not a valid folder!" % os.path.dirname(filepath), "Error", wx.OK | wx.ICON_ERROR)
                 message.ShowModal()
                 message.Destroy()
         dialog.Destroy()
@@ -569,7 +570,7 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
                     message.ShowModal()
                     message.Destroy()
             else:
-                message = wx.MessageDialog(self, "\"%s\" is not a valid folder!" % os.path.dirname(filepath), "Error", wx.OK | wx.ICON_ERROR)
+                message = wx.MessageDialog(self, "'%s' is not a valid folder!" % os.path.dirname(filepath), "Error", wx.OK | wx.ICON_ERROR)
                 message.ShowModal()
                 message.Destroy()
         dialog.Destroy()

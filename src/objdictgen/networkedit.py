@@ -38,9 +38,8 @@ import wx
 from .nodelist import NodeList
 from .nodemanager import NodeManager
 from .networkeditortemplate import NetworkEditorTemplate
+from . import dbg
 
-if sys.version_info[0] >= 3:
-    unicode = str  # pylint: disable=invalid-name
 
 __version__ = "$Revision: 1.27 $"
 

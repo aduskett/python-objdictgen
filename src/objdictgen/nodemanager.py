@@ -29,10 +29,14 @@ from builtins import range
 
 import os
 import re
+import json
+import errno
+from future.utils import raise_from
 
 from .nosis import pickle as nosis
 from . import node as nod
 from . import eds_utils, gen_cfile
+from . import dbg
 
 UndoBufferLength = 20
 
@@ -133,7 +137,7 @@ class UndoBuffer(object):
 
     def CurrentSaved(self):
         """
-        Note that current state is saved
+        Save current state
         """
         self.LastSave = self.CurrentIndex
 
@@ -170,7 +174,6 @@ class NodeManager(object):
         """
         if self.CurrentNode:
             return self.CurrentNode.GetTypeList()
-        else:
             return ""
 
     def GetCurrentMapList(self):
@@ -179,7 +182,6 @@ class NodeManager(object):
         """
         if self.CurrentNode:
             return self.CurrentNode.GetMapList()
-        else:
             return ""
 
 # ------------------------------------------------------------------------------
@@ -214,7 +216,6 @@ class NodeManager(object):
                     if os.path.isfile(ds302path):
                         try:
                             # Import profile
-                            # FIXME: Find all the variable the profile depend on
                             # Mapping and AddMenuEntries are expected to be defined by the execfile
                             # The profiles requires some vars to be set
                             # pylint: disable=unused-variable
@@ -223,7 +224,8 @@ class NodeManager(object):
                             var = nod.var  # noqa: F841
                             plurirec = nod.plurirec  # noqa: F841
                             pluriarray = nod.pluriarray  # noqa: F841
-                            execfile(ds302path)  # FIXME: Using execfile
+                    dbg("EXECFILE %s" % (ds302path,))
+                            execfile(ds302path)  # FIXME: Using execfile is unsafe
                             # pylint: disable=undefined-variable
                             self.CurrentNode.SetDS302Profile(Mapping)  # noqa: F821
                             self.CurrentNode.ExtendSpecificMenu(AddMenuEntries)  # noqa: F821
@@ -269,7 +271,6 @@ class NodeManager(object):
             # Try to charge the profile given
             try:
                 # Import profile
-                # FIXME: Find all the variable the profile depend on
                 # Mapping and AddMenuEntries are expected to be defined by the execfile
                 # The profiles requires some vars to be set
                 # pylint: disable=unused-variable
@@ -278,14 +279,15 @@ class NodeManager(object):
                 var = nod.var  # noqa: F841
                 plurirec = nod.plurirec  # noqa: F841
                 pluriarray = nod.pluriarray  # noqa: F841
-                execfile(filepath)  # FIXME: Using execfile
+                dbg("EXECFILE %s" % (filepath,))
+                execfile(filepath)  # FIXME: Using execfile is unsafe
                 # pylint: disable=undefined-variable
                 node.SetProfileName(profile)
                 node.SetProfile(Mapping)  # noqa: F821, pylint: disable=undefined-variable
                 node.SetSpecificMenu(AddMenuEntries)  # noqa: F821, pylint: disable=undefined-variable
                 return None
             except Exception:
-                return "Syntax Error\nBad OD Profile file!"
+                return "Syntax Error: Bad OD Profile file!"
         else:
             # Default profile
             node.SetProfileName("None")
@@ -707,12 +709,12 @@ class NodeManager(object):
                 elif editor == "number":
                     try:
                         node.SetEntry(index, subindex, int(value))
-                    except Exception:
+                    except ValueError:
                         pass
                 elif editor == "float":
                     try:
                         node.SetEntry(index, subindex, float(value))
-                    except Exception:
+                    except ValueError:
                         pass
                 elif editor == "domain":
                     try:

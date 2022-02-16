@@ -3,6 +3,10 @@ import sys
 import re
 
 
+def dbg(msg):  # pylint: disable=unused-argument
+    print(">> %s" % (msg,))
+
+
 pat_fl = r'[-+]?(((((\d+)?[.]\d+|\d+[.])|\d+)[eE][+-]?\d+)|((\d+)?[.]\d+|\d+[.]))'
 re_float = re.compile(pat_fl + r'$')
 re_zero = r'[+-]?0$'
@@ -104,9 +108,11 @@ def safe_string(s):
 def unsafe_string(s):
     # for Python escapes, exec the string
     # (niggle w/ literalizing apostrophe)
-    s = s.replace("'", r"\047")
+    _s = s = s.replace("'", r"\047")
     # dbg("EXEC in unsafe_string(): '%s'" % ("s='" + s + "'",))
     exec("s='" + s + "'")
+    if s != _s:
+        dbg("EXEC in unsafe_string(): '%s' -> '%s'" % (_s, s))
     # XML entities (DOM does it for us)
     return s
 
@@ -117,11 +123,13 @@ def safe_content(s):
     s = s.replace('<', '&lt;')
     s = s.replace('>', '&gt;')
 
-    # wrap "regular" python strings as unicode
-    if isinstance(s, str):
-        s = u"\xbb\xbb%s\xab\xab" % s
+    return s  # To be able to be used with py3
 
-    return s.encode('utf-8')
+    # # wrap "regular" python strings as unicode
+    # if isinstance(s, str):
+    #     s = u"\xbb\xbb%s\xab\xab" % s
+
+    # return s.encode('utf-8')
 
 
 def unsafe_content(s):
@@ -129,8 +137,8 @@ def unsafe_content(s):
     original string."""
     # don't have to "unescape" XML entities (parser does it for us)
 
-    # unwrap python strings from unicode wrapper
-    if s[:2] == chr(187) * 2 and s[-2:] == chr(171) * 2:
-        s = s[2:-2].encode('us-ascii')
+    # # unwrap python strings from unicode wrapper
+    # if s[:2] == chr(187) * 2 and s[-2:] == chr(171) * 2:
+    #     s = s[2:-2].encode('us-ascii')
 
     return s

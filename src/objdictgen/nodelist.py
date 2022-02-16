@@ -27,8 +27,9 @@ from builtins import object
 
 import os
 import shutil
+import errno
+from future.utils import raise_from
 
-from .node import Node
 from . import eds_utils
 
 
@@ -112,12 +113,12 @@ class NodeList(object):
 
         self.Root = root
         if not os.path.exists(self.Root):
-            return "\"%s\" folder doesn't exist" % self.Root
+            return "'%s' folder doesn't exist" % self.Root
 
         eds_folder = self.GetEDSFolder()
         if not os.path.exists(eds_folder):
             os.mkdir(eds_folder)
-            # return "\"%s\" folder doesn't contain a \"eds\" folder"%self.Root
+            # return "'%s' folder doesn't contain a 'eds' folder"%self.Root
 
         files = os.listdir(eds_folder)
         for file in files:
@@ -172,7 +173,7 @@ class NodeList(object):
             self.Changed = True
             return None
         else:
-            return "\"%s\" EDS file is not available" % eds
+            return "'%s' EDS file is not available" % eds
 
     def RemoveSlaveNode(self, index):
         if index in self.SlaveNodes:
@@ -180,7 +181,7 @@ class NodeList(object):
             self.Changed = True
             return None
         else:
-            return "Node with \"0x%2.2X\" ID doesn't exist"
+            return "Node with '0x%2.2X' ID doesn't exist"
 
     def LoadMasterNode(self, netname=None):
         if netname:
@@ -227,7 +228,7 @@ class NodeList(object):
                                 return result
                 self.Changed = False
             except SyntaxError as message:
-                return "Unable to load CPJ file\n%s" % message
+                return "Unable to load CPJ file: %s" % message
         return None
 
     def SaveNodeList(self, netname=None):

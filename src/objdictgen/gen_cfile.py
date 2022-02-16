@@ -89,19 +89,19 @@ def GetValidTypeInfos(typename, items=None):
             elif values[0] == "BOOLEAN":
                 typeinfos = ("UNS8", None, "boolean", False)
             else:
-                raise ValueError("""!!! %s isn't a valid type for CanFestival.""" % typename)
+                raise ValueError("""!!! '%s' isn't a valid type for CanFestival.""" % typename)
             if typeinfos[2] not in ["visible_string", "domain"]:
                 internal_types[typename] = typeinfos
         else:
-            raise ValueError("""!!! %s isn't a valid type for CanFestival.""" % typename)
+            raise ValueError("""!!! '%s' isn't a valid type for CanFestival.""" % typename)
     return typeinfos
 
 
 def ComputeValue(type_, value):
     if type_ == "visible_string":
-        return "\"%s\"" % value, ""
+        return '"%s"' % value, ""
     elif type_ == "domain":
-        return "\"%s\"" % ''.join(["\\x%2.2x" % ord(char) for char in value]), ""
+        return '"%s"' % ''.join(["\\x%2.2x" % ord(char) for char in value]), ""
     elif type_.startswith("real"):
         return "%f" % value, ""
     else:  # value is integer; make sure to handle negative numbers correctly
@@ -119,7 +119,7 @@ def WriteFile(filepath, content):
 def GetTypeName(node, typenumber):
     typename = node.GetTypeName(typenumber)
     if typename is None:
-        raise ValueError("""!!! Datatype with value "0x%4.4X" isn't defined in CanFestival.""" % typenumber)
+        raise ValueError("""!!! Datatype with value '0x%4.4X' isn't defined in CanFestival.""" % typenumber)
     return typename
 
 
@@ -220,7 +220,7 @@ def GenerateFileContent(node, headerfilepath, pointers_dict=None):
             typeinfos = GetValidTypeInfos(typename, [values])
             if typename == "DOMAIN" and index in variablelist:
                 if not typeinfos[1]:
-                    raise ValueError("\nDomain variable not initialized\nindex : 0x%04X\nsubindex : 0x00" % index)
+                    raise ValueError("Domain variable not initialized, index: 0x%04X, subindex: 0x00" % index)
             texts["subIndexType"] = typeinfos[0]
             if typeinfos[1] is not None:
                 if params_infos["buffer_size"] != "":
@@ -273,7 +273,7 @@ def GenerateFileContent(node, headerfilepath, pointers_dict=None):
                                 sep = ""
                             value, comment = ComputeValue(typeinfos[2], value)
                             if len(value) == 2 and typename == "DOMAIN":
-                                raise ValueError("\nDomain variable not initialized\nindex : 0x%04X\nsubindex : 0x%02X" % (index, subindex))
+                                raise ValueError("Domain variable not initialized, index : 0x%04X, subindex : 0x%02X" % (index, subindex))
                             mappedVariableContent += "    %s%s%s\n" % (value, sep, comment)
                     mappedVariableContent += "  };\n"
                 else:
@@ -671,4 +671,4 @@ def GenerateFile(filepath, node, pointers_dict=None):
         WriteFile(objectdefinitionheaderpath, header_defs)
         return None
     except ValueError as message:
-        return "Unable to Generate C File\n%s" % message
+        return "Unable to Generate C File: %s" % message

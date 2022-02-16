@@ -31,6 +31,8 @@ import wx.grid
 
 from . import commondialogs as cdia
 from . import node as nod
+from . import dbg
+
 
 ColSizes = [75, 250, 150, 125, 100, 60, 250, 60]
 ColAlignements = [wx.ALIGN_CENTER, wx.ALIGN_LEFT, wx.ALIGN_CENTER, wx.ALIGN_RIGHT, wx.ALIGN_CENTER, wx.ALIGN_CENTER, wx.ALIGN_LEFT, wx.ALIGN_LEFT]
@@ -146,7 +148,7 @@ class SubindexTable(wx.grid.PyGridTableBase):
         self.colnames = colnames
         self.Parent = parent
         self.Editable = True
-        # XXX
+        # NOTE
         # we need to store the row length and collength to
         # see if the table has changed size
         self._rows = self.GetNumberRows()

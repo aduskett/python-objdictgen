@@ -39,8 +39,6 @@ class NetworkEditorTemplate(net.NodeEditorTemplate):
         if selected == 0:
             window = self.NetworkNodes.GetPage(selected)
             window.RefreshIndexList()
-        else:
-            pass
 
     def RefreshNetworkNodes(self):
         if self.NetworkNodes.GetPageCount() > 0:
@@ -61,7 +59,7 @@ class NetworkEditorTemplate(net.NodeEditorTemplate):
             if selected >= 0:
                 window = self.NetworkNodes.GetPage(selected)
                 self.NodeList.SetCurrentSelected(window.GetIndex())
-            wx.CallAfter(self.RefreshMainMenu)  # FIXME: Missing. Should be from where?
+            wx.CallAfter(self.RefreshMainMenu)  # FIXME: Missing symbol. From where?
             wx.CallAfter(self.RefreshStatusBar)
         event.Skip()
 

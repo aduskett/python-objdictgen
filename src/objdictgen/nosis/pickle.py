@@ -5,11 +5,13 @@ from builtins import object
 
 import sys
 from io import StringIO
+from collections import OrderedDict
 from xml.dom import minidom
 from past.builtins import long
+from future.utils import raise_from
 
 from .xtoy import (
-    aton, ntoa,
+    aton, ntoa, dbg,
     unsafe_string, unsafe_content,
     safe_string, safe_content,
 )
@@ -18,13 +20,8 @@ if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
 
 
-def dbg(s):
-    # pass
-    print(">> %s" % (s,))
-
-
 class _EmptyClass(object):
-    pass
+    """ Do-nohting empty class """
 
 
 TYPE_IN_BODY = {
@@ -33,10 +30,16 @@ TYPE_IN_BODY = {
     float: 0,
     complex: 0,
     str: 0,
+}
+
+if sys.version_info[0] < 3:
     # our unicode vs. "regular string" scheme relies on unicode
     # strings only being in the body, so this is hardcoded.
-    unicode: 1,  # FIXME: Should probably be 0 for py3
-}
+    TYPE_IN_BODY[unicode] = 1
+else:
+    # py3 doesn't have unicode, and unicode here is str. This implies that
+    # on py3 all strings will be added as body elements instead of tag value="..."
+    TYPE_IN_BODY[unicode] = 1
 
 
 def getInBody(typename):
@@ -110,11 +113,9 @@ def get_node_valuetext(node):
     else:
         # text in body
         node.normalize()
-        try:
-            btext = node.childNodes[0].nodeValue
-        except Exception:
-            btext = ''
-        return unsafe_content(btext)
+        if node.childNodes:
+            return unsafe_content(node.childNodes[0].nodeValue)
+        return ''
 
 
 # a multipurpose list-like object. it is nicer conceptually for us
@@ -255,22 +256,13 @@ def pickle_instance(obj, list_, level=0, deepcopy=0):
 
     Add XML tags to list. Level is indentation (for aesthetic reasons)
     """
-    # concept: to pickle an object, we pickle two things:
+    # concept: to pickle an object:
     #
     #   1. the object attributes (the "stuff")
-    #   2. initargs, if defined
     #
     # There is a twist to this -- instead of always putting the "stuff"
     # into a container, we can make the elements of "stuff" first-level attributes,
     # which gives a more natural-looking XML representation of the object.
-    #
-    # We only put the "stuff" into a container if we'll need to pass it
-    # later as an object to __setstate__.
-
-    # tests below are in same order as pickle.py, in case someone depends on that.
-    # note we save the special __getstate__ and __getinitargs__ objects in containers
-    # of the same name -- we know for sure that the object can't also have
-    # data attributes of that same name
 
     stuff = obj.__dict__
 
@@ -282,7 +274,7 @@ def pickle_instance(obj, list_, level=0, deepcopy=0):
         for key, val in stuff.items():
             list_.append(_attr_tag(key, val, level, deepcopy))
     else:
-        raise ValueError("__getstate__ must return a DictType here")
+        raise ValueError("'%s.__dict__' is not a dict" % (obj))
 
 
 def unpickle_instance(node):
@@ -301,16 +293,14 @@ def unpickle_instance(node):
     stuff = raw.__dict__
 
     # finally, decide how to get the stuff into pyobj
-    if isinstance(stuff, dict):	 # must be a Dict if no __setstate__
+    if isinstance(stuff, dict):
         for k, v in stuff.items():
             setattr(pyobj, k, v)
 
     else:
         # subtle -- this can happen either because the class really
-        # does violate the pickle protocol, or because PARANOIA was
-        # set too high, and we couldn't create the real class, so
-        # __setstate__ is missing (and __stateinfo__ isn't a dict)
-        raise ValueError("Non-DictType without setstate violates pickle protocol.")
+        # does violate the pickle protocol
+        raise ValueError("Non-dict violates pickle protocol")
 
     return pyobj
 
@@ -371,7 +361,7 @@ def _tag_compound(start_tag, family_type, thing, deepcopy, extra=''):
 #
 #   seq - thing that holds a series of objects
 #
-#         XXX - Py2.3 maybe the new 'Set' type should go here?
+#         Note - Py2.3 maybe the new 'Set' type should go here?
 #
 #   atom - non-unique thing without attributes (e.g. only coredata)
 #
@@ -433,7 +423,7 @@ def _fix_family(family, typename):
     elif typename == 'False':
         return 'uniq'
     else:
-        raise ValueError("family= must be given for unknown type %s" % typename)
+        raise ValueError("family= must be given for unknown type '%s'" % typename)
 
 
 def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
@@ -482,16 +472,16 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
         # gnosis release, so I don't care that the code is inline & gross
         # for now
         # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-        if isinstance(thing, unicode):
+        if sys.version_info[0] < 3 and isinstance(thing, unicode):
             # can't pickle unicode containing the special "escape" sequence
             # we use for putting strings in the XML body (they'll be unpickled
             # as strings, not unicode, if we do!)
             if thing[0:2] == u'\xbb\xbb' and thing[-2:] == u'\xab\xab':
-                raise Exception("Unpickleable Unicode value")
+                raise ValueError("Unpickleable Unicode value")
 
             # see if it contains any XML-illegal values
             # if not is_legal_xml(thing):
-            #     raise Exception("Unpickleable Unicode value")
+            #     raise ValueError("Unpickleable Unicode value")
 
         if isinstance(thing, str) and getInBody(str):
             # technically, this will crash safe_content(), but I prefer to
@@ -500,8 +490,8 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
                 # safe_content assumes it can always convert the string
                 # to unicode, which isn't true (eg. pickle a UTF-8 value)
                 _ = unicode(thing)
-            except Exception:
-                raise Exception("Unpickleable string value (%s)" % repr(thing))
+            except ValueError as exc:
+                raise_from(ValueError("Unpickleable string value (%s): %s" % (repr(thing), exc)), None)
 
         # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
         # End of temporary hack code
@@ -555,7 +545,7 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
         else:
             close_tag = ''
     else:
-        raise ValueError("non-handled type %s" % type(thing))
+        raise ValueError("Non-handled type %s" % type(thing))
 
     # need to keep a ref to the object for two reasons -
     #  1. we can ref it later instead of copying it into the XML stream
@@ -581,7 +571,7 @@ def _thing_from_dom(dom_node, container=None):
                 id_ = node.getAttribute('id')
                 VISITED[id_] = container
             except KeyError:
-                pass
+                pass  # Accepable, not having id only affects caching
 
         elif node.nodeName in ['attr', 'item', 'key', 'val']:
             node_family = node.getAttribute('family')
@@ -620,7 +610,7 @@ def _thing_from_dom(dom_node, container=None):
             elif node_family == 'map':
                 # map must exist in VISITED{} before we unpickle subitems,
                 # in order to handle self-references
-                mapping = {}
+                mapping = OrderedDict()
                 _save_obj_with_id(node, mapping)
                 node_val = _thing_from_dom(node, mapping)
             elif node_family == 'uniq':
@@ -633,7 +623,7 @@ def _thing_from_dom(dom_node, container=None):
                 else:
                     raise ValueError("Unknown uniq type %s" % node_type)
             else:
-                raise ValueError("UNKNOWN family %s,%s,%s" % (node_family, node_type, node_name))
+                raise ValueError("Unknown family %s,%s,%s" % (node_family, node_type, node_name))
 
             # step 2 - take basic thing and make exact thing
             # Note there are several NOPs here since node_val has been decided
@@ -680,6 +670,6 @@ def _thing_from_dom(dom_node, container=None):
             # <entry> has no id for refchecking
 
         else:
-            raise ValueError("element %s is not in PyObjects.dtd" % node.nodeName)
+            raise ValueError("Element %s is not in PyObjects.dtd" % node.nodeName)
 
     return container

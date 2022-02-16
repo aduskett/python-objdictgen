@@ -2,25 +2,23 @@
 *.code-workspace
 .vscode/
 *.egg-info/
+.pytest_cache/
 build/
-
 htmlcov/
 .coverage
 .pylintrc
-
-objdictgen.new
-objdictgen.mod
-objdictgen.orig
+tmp/
 
 *.pyc
 *.bak
 *.whl
 __*
 !__*__.py
-tmp/
-objdictgen2/
-mirror-canfestival-3-asc/
-od-*
 
+objdictgen.new
+objdictgen.mod
+objdictgen.orig
+mirror-canfestival-3-asc/
+od-*/
 runall*.sh
 results-*.diff

@@ -31,6 +31,7 @@ import wx
 import wx.grid
 
 from . import node as nod
+from . import dbg
 
 ScriptDirectory = os.path.split(__file__)[0]
 
@@ -356,12 +357,12 @@ class MapVariableDialog(wx.Dialog):
         error = []
         try:
             int(self.Index.GetValue(), 16)
-        except Exception:
+        except ValueError:
             error.append("Index")
         if self.radioButton2.GetValue() or self.radioButton3.GetValue():
             try:
                 int(self.Number.GetValue())
-            except Exception:
+            except ValueError:
                 error.append("Number")
         if len(error) > 0:
             text = ""
@@ -545,16 +546,16 @@ class UserTypeDialog(wx.Dialog):
             if valuetype == 0:
                 try:
                     int(self.Min.GetValue(), 16)
-                except Exception:
+                except ValueError:
                     error.append("Minimum")
                 try:
                     int(self.Max.GetValue(), 16)
-                except Exception:
+                except ValueError:
                     error.append("Maximum")
             elif valuetype == 1:
                 try:
                     int(self.Length.GetValue(), 16)
-                except Exception:
+                except ValueError:
                     error.append("Length")
             if len(error) > 0:
                 message = ""
@@ -764,7 +765,7 @@ class NodeInfosDialog(wx.Dialog):
         if message != "":
             try:
                 _ = int(self.NodeID.GetValue(), 16)
-            except Exception:
+            except ValueError:
                 message = "Node ID must be integer!"
         if message != "":
             message = wx.MessageDialog(self, message, "ERROR", wx.OK | wx.ICON_ERROR)
@@ -1040,7 +1041,7 @@ class CreateNodeDialog(wx.Dialog):
         if message != "":
             try:
                 _ = int(self.NodeID.GetValue(), 16)
-            except Exception:
+            except ValueError:
                 message = "Node ID must be integer!"
         if message != "":
             message = wx.MessageDialog(self, message, "ERROR", wx.OK | wx.ICON_ERROR)
@@ -1229,7 +1230,7 @@ class AddSlaveDialog(wx.Dialog):
                     nodeid = int(nodeid, 16)
                 else:
                     nodeid = int(nodeid)
-            except Exception:
+            except ValueError:
                 message = wx.MessageDialog(self, "Slave Node ID must be a value in decimal or hexadecimal!", "Error", wx.OK | wx.ICON_ERROR)
                 message.ShowModal()
                 message.Destroy()
@@ -1314,7 +1315,7 @@ class DCFEntryValuesTable(wx.grid.PyGridTableBase):
         self.data = data
         self.colnames = colnames
         self.Parent = parent
-        # XXX
+        # NOTE
         # we need to store the row length and col length to
         # see if the table has changed size
         self._rows = self.GetNumberRows()
@@ -1525,8 +1526,8 @@ class DCFEntryValuesDialog(wx.Dialog):
         value = self.Table.GetValue(row, col)
         try:
             self.Values[row][colname] = int(value, 16)
-        except Exception:
-            message = wx.MessageDialog(self, "\"%s\" is not a valid value!" % value, "Error", wx.OK | wx.ICON_ERROR)
+        except ValueError:
+            message = wx.MessageDialog(self, "'%s' is not a valid value!" % value, "Error", wx.OK | wx.ICON_ERROR)
             message.ShowModal()
             message.Destroy()
         wx.CallAfter(self.RefreshValues)
