@@ -357,12 +357,14 @@ class MapVariableDialog(wx.Dialog):
         error = []
         try:
             int(self.Index.GetValue(), 16)
-        except ValueError:
+        except ValueError as exc:
+            dbg("ValueError: '%s': %s" % (self.Index.GetValue(), exc))
             error.append("Index")
         if self.radioButton2.GetValue() or self.radioButton3.GetValue():
             try:
                 int(self.Number.GetValue())
-            except ValueError:
+            except ValueError as exc:
+                dbg("ValueError: '%s': %s" % (self.Index.GetValue(), exc))
                 error.append("Number")
         if len(error) > 0:
             text = ""
@@ -546,16 +548,19 @@ class UserTypeDialog(wx.Dialog):
             if valuetype == 0:
                 try:
                     int(self.Min.GetValue(), 16)
-                except ValueError:
+                except ValueError as exc:
+                    dbg("ValueError: '%s': %s" % (self.Index.GetValue(), exc))
                     error.append("Minimum")
                 try:
                     int(self.Max.GetValue(), 16)
-                except ValueError:
+                except ValueError as exc:
+                    dbg("ValueError: '%s': %s" % (self.Index.GetValue(), exc))
                     error.append("Maximum")
             elif valuetype == 1:
                 try:
                     int(self.Length.GetValue(), 16)
-                except ValueError:
+                except ValueError as exc:
+                    dbg("ValueError: '%s': %s" % (self.Index.GetValue(), exc))
                     error.append("Length")
             if len(error) > 0:
                 message = ""
@@ -589,8 +594,7 @@ class UserTypeDialog(wx.Dialog):
         for index, (name, valuetype) in typedic.items():
             self.TypeDictionary[name] = (index, valuetype)
             list_.append((index, name))
-        list_.sort()
-        for index, name in list_:
+        for index, name in sorted(list_):
             self.Type.Append(name)
         if type_ is not None:
             self.Type.SetStringSelection(typedic[type_][0])
@@ -654,7 +658,7 @@ def GetNodeTypes():
     return ["master", "slave"]
 
 
-NODE_TYPES_DICT = dict([(node_type, node_type) for node_type in GetNodeTypes()])
+NODE_TYPES_DICT = {node_type: node_type for node_type in GetNodeTypes()}
 
 
 class NodeInfosDialog(wx.Dialog):
@@ -765,7 +769,8 @@ class NodeInfosDialog(wx.Dialog):
         if message != "":
             try:
                 _ = int(self.NodeID.GetValue(), 16)
-            except ValueError:
+            except ValueError as exc:
+                dbg("ValueError: '%s': %s" % (self.NodeID.GetValue(), exc))
                 message = "Node ID must be integer!"
         if message != "":
             message = wx.MessageDialog(self, message, "ERROR", wx.OK | wx.ICON_ERROR)
@@ -1018,9 +1023,7 @@ class CreateNodeDialog(wx.Dialog):
         self.ListProfile = {"None": ""}
         self.Profile.Append("None")
         self.Directory = os.path.join(ScriptDirectory, "config")
-        listfiles = os.listdir(self.Directory)
-        listfiles.sort()
-        for item in listfiles:
+        for item in sorted(os.listdir(self.Directory)):
             name, extend = os.path.splitext(item)
             if os.path.isfile(os.path.join(self.Directory, item)) and extend == ".prf" and name != "DS-302":
                 self.ListProfile[name] = os.path.join(self.Directory, item)
@@ -1035,13 +1038,14 @@ class CreateNodeDialog(wx.Dialog):
         if name != "":
             good = not name[0].isdigit()
             for item in name.split("_"):
-                good &= item.isalnum()
+                good &= item.isalnum()  # FIXME using all()
             if not good:
                 message = "Node name can't be undefined or start with a digit and must be composed of alphanumerical characters or underscore!"
         if message != "":
             try:
                 _ = int(self.NodeID.GetValue(), 16)
-            except ValueError:
+            except ValueError as exc:
+                dbg("ValueError: '%s': %s" % (self.NodeID.GetValue(), exc))
                 message = "Node ID must be integer!"
         if message != "":
             message = wx.MessageDialog(self, message, "ERROR", wx.OK | wx.ICON_ERROR)
@@ -1226,11 +1230,12 @@ class AddSlaveDialog(wx.Dialog):
         else:
             try:
                 nodeid = self.SlaveNodeID.GetValue()
-                if nodeid.find("x") != -1:
+                if "x" in nodeid:
                     nodeid = int(nodeid, 16)
                 else:
                     nodeid = int(nodeid)
-            except ValueError:
+            except ValueError as exc:
+                dbg("ValueError: '%s': %s" % (self.SlaveNodeID.GetValue(), exc))
                 message = wx.MessageDialog(self, "Slave Node ID must be a value in decimal or hexadecimal!", "Error", wx.OK | wx.ICON_ERROR)
                 message.ShowModal()
                 message.Destroy()
@@ -1259,15 +1264,16 @@ class AddSlaveDialog(wx.Dialog):
             filepath = ""
         dialog.Destroy()
         if os.path.isfile(filepath):
-            result, question = self.NodeList.ImportEDSFile(filepath)
-            if result is not None and question:
-                dialog = wx.MessageDialog(self, "%s\nWould you like to replace it ?" % result, "Question", wx.YES_NO | wx.ICON_QUESTION)
+            edsfile = self.NodeList.GetEDSFilePath(filepath)
+            if os.path.isfile(edsfile):
+                dialog = wx.MessageDialog(self, "EDS file already imported\nWould you like to replace it ?", "Question", wx.YES_NO | wx.ICON_QUESTION)
                 if dialog.ShowModal() == wx.ID_YES:
-                    result, question = self.NodeList.ImportEDSFile(filepath, True)
-                dialog.Destroy()
-            if result is not None and not question:
-                dialog = wx.MessageDialog(self, result, "Error", wx.OK | wx.ICON_ERROR)
-                dialog.ShowModal()
+                    try:
+                        self.NodeList.ImportEDSFile(filepath)
+                    except Exception as exc:  # pylint: disable=broad-except
+                        dialog = wx.MessageDialog(self, exc, "Error", wx.OK | wx.ICON_ERROR)
+                        dialog.ShowModal()
+                        dialog.Destroy()
                 dialog.Destroy()
         self.RefreshEDSFile()
         event.Skip()
@@ -1275,7 +1281,7 @@ class AddSlaveDialog(wx.Dialog):
     def RefreshEDSFile(self):
         selection = self.EDSFile.GetStringSelection()
         self.EDSFile.Clear()
-        for option in list(self.NodeList.EDSNodes.keys()):
+        for option in self.NodeList.EDSNodes:
             self.EDSFile.Append(option)
         if self.EDSFile.FindString(selection) != wx.NOT_FOUND:
             self.EDSFile.SetStringSelection(selection)
@@ -1288,7 +1294,7 @@ class AddSlaveDialog(wx.Dialog):
         values = {}
         values["slaveName"] = self.SlaveName.GetValue()
         nodeid = self.SlaveNodeID.GetValue()
-        if nodeid.find("x") != -1:
+        if "x" in nodeid:
             values["slaveNodeID"] = int(nodeid, 16)
         else:
             values["slaveNodeID"] = int(nodeid)
@@ -1593,15 +1599,15 @@ class DCFEntryValuesDialog(wx.Dialog):
         self.RefreshValues()
 
     def GetValues(self):
-        if len(self.Values) > 0:
-            value = nod.LE_to_BE(len(self.Values), 4)
-            for row in self.Values:
-                value += nod.LE_to_BE(row["Index"], 2)
-                value += nod.LE_to_BE(row["Subindex"], 1)
-                value += nod.LE_to_BE(row["Size"], 4)
-                value += nod.LE_to_BE(row["Value"], row["Size"])
-            return value
-        return ""
+        if len(self.Values) <= 0:
+            return ""
+        value = nod.LE_to_BE(len(self.Values), 4)
+        for row in self.Values:
+            value += nod.LE_to_BE(row["Index"], 2)
+            value += nod.LE_to_BE(row["Subindex"], 1)
+            value += nod.LE_to_BE(row["Size"], 4)
+            value += nod.LE_to_BE(row["Value"], row["Size"])
+        return value
 
     def RefreshValues(self):
         if len(self.Table.data) > 0:

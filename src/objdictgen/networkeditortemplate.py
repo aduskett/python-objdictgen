@@ -87,8 +87,8 @@ class NetworkEditorTemplate(net.NodeEditorTemplate):
         dialog.SetNodeList(self.NodeList)
         if dialog.ShowModal() == wx.ID_OK:
             values = dialog.GetValues()
-            result = self.NodeList.AddSlaveNode(values["slaveName"], values["slaveNodeID"], values["edsFile"])
-            if not result:
+            try:
+                self.NodeList.AddSlaveNode(values["slaveName"], values["slaveNodeID"], values["edsFile"])
                 new_editingpanel = sit.EditingPanel(self.NetworkNodes, self, self.NodeList, False)
                 new_editingpanel.SetIndex(values["slaveNodeID"])
                 idx = self.NodeList.GetOrderNumber(values["slaveNodeID"])
@@ -96,8 +96,8 @@ class NetworkEditorTemplate(net.NodeEditorTemplate):
                 self.NodeList.SetCurrentSelected(idx)
                 self.NetworkNodes.SetSelection(idx)
                 self.RefreshBufferState()
-            else:
-                self.ShowErrorMessage(result)
+            except Exception as exc:  # pylint: disable=broad-except
+                self.ShowErrorMessage(exc)
         dialog.Destroy()
 
     def OnRemoveSlaveMenu(self, event):  # pylint: disable=unused-argument
@@ -106,8 +106,8 @@ class NetworkEditorTemplate(net.NodeEditorTemplate):
         dialog = wx.SingleChoiceDialog(self.Frame, "Choose a slave to remove", "Remove slave", slavenames)
         if dialog.ShowModal() == wx.ID_OK:
             choice = dialog.GetSelection()
-            result = self.NodeList.RemoveSlaveNode(slaveids[choice])
-            if not result:
+            try:
+                self.NodeList.RemoveSlaveNode(slaveids[choice])
                 slaveids.pop(choice)
                 current = self.NetworkNodes.GetSelection()
                 self.NetworkNodes.DeletePage(choice + 1)
@@ -117,8 +117,8 @@ class NetworkEditorTemplate(net.NodeEditorTemplate):
                     if new_selection > 0:
                         self.NodeList.SetCurrentSelected(slaveids[new_selection - 1])
                 self.RefreshBufferState()
-            else:
-                self.ShowErrorMessage(result)
+            except Exception as exc:  # pylint: disable=broad-except
+                self.ShowErrorMessage(exc)
         dialog.Destroy()
 
     def OpenMasterDCFDialog(self, node_id):

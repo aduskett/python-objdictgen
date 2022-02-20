@@ -237,11 +237,14 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
 
         if self.ModeSolo:
             for filepath in filesopen:
-                result = self.Manager.OpenFileInCurrent(os.path.abspath(filepath))
-                if isinstance(result, int):
+                try:
+                    index = self.Manager.OpenFileInCurrent(os.path.abspath(filepath))
                     new_editingpanel = sit.EditingPanel(self.FileOpened, self, self.Manager)
-                    new_editingpanel.SetIndex(result)
+                    new_editingpanel.SetIndex(index)
                     self.FileOpened.AddPage(new_editingpanel, "")
+                except Exception as exc:  # Need this broad exception?
+                    dbg("Swallowed Exception: %s" % (exc, ))
+                    raise  # FIXME: Originial code swallows exception
         else:
             for index in self.Manager.GetBufferIndexes():
                 new_editingpanel = sit.EditingPanel(self.FileOpened, self, self.Manager)
@@ -384,22 +387,23 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
             profile, filepath = dialog.GetProfile()
             nmt = dialog.GetNMTManagement()
             options = dialog.GetOptions()
-            result = self.Manager.CreateNewNode(name, id_, nodetype, description, profile, filepath, nmt, options)
-            if isinstance(result, int):
-                new_editingpanel = sit.EditingPanel(self.FileOpened, self, self.Manager)
-                new_editingpanel.SetIndex(result)
-                self.FileOpened.AddPage(new_editingpanel, "")
-                self.FileOpened.SetSelection(self.FileOpened.GetPageCount() - 1)
-                self.EditMenu.Enable(ID_OBJDICTEDITEDITMENUDS302PROFILE, False)
-                if "DS302" in options:
-                    self.EditMenu.Enable(ID_OBJDICTEDITEDITMENUDS302PROFILE, True)
-                self.RefreshBufferState()
-                self.RefreshProfileMenu()
-                self.RefreshMainMenu()
-            else:
-                message = wx.MessageDialog(self, result, "ERROR", wx.OK | wx.ICON_ERROR)
+            try:
+                index = self.Manager.CreateNewNode(name, id_, nodetype, description, profile, filepath, nmt, options)
+            except Exception as exc:  # pylint: disable=broad-except
+                message = wx.MessageDialog(self, exc, "ERROR", wx.OK | wx.ICON_ERROR)
                 message.ShowModal()
                 message.Destroy()
+
+            new_editingpanel = sit.EditingPanel(self.FileOpened, self, self.Manager)
+            new_editingpanel.SetIndex(index)
+            self.FileOpened.AddPage(new_editingpanel, "")
+            self.FileOpened.SetSelection(self.FileOpened.GetPageCount() - 1)
+            self.EditMenu.Enable(ID_OBJDICTEDITEDITMENUDS302PROFILE, False)
+            if "DS302" in options:
+                self.EditMenu.Enable(ID_OBJDICTEDITEDITMENUDS302PROFILE, True)
+            self.RefreshBufferState()
+            self.RefreshProfileMenu()
+            self.RefreshMainMenu()
         dialog.Destroy()
 
     def OnOpenMenu(self, event):  # pylint: disable=unused-argument
@@ -412,10 +416,10 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
         if dialog.ShowModal() == wx.ID_OK:
             filepath = dialog.GetPath()
             if os.path.isfile(filepath):
-                result = self.Manager.OpenFileInCurrent(filepath)
-                if isinstance(result, int):
+                try:
+                    index = self.Manager.OpenFileInCurrent(filepath)
                     new_editingpanel = sit.EditingPanel(self.FileOpened, self, self.Manager)
-                    new_editingpanel.SetIndex(result)
+                    new_editingpanel.SetIndex(index)
                     self.FileOpened.AddPage(new_editingpanel, "")
                     self.FileOpened.SetSelection(self.FileOpened.GetPageCount() - 1)
                     if self.Manager.CurrentDS302Defined():
@@ -426,8 +430,8 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
                     self.RefreshBufferState()
                     self.RefreshProfileMenu()
                     self.RefreshMainMenu()
-                else:
-                    message = wx.MessageDialog(self, result, "Error", wx.OK | wx.ICON_ERROR)
+                except Exception as exc:  # pylint: disable=broad-except
+                    message = wx.MessageDialog(self, exc, "Error", wx.OK | wx.ICON_ERROR)
                     message.ShowModal()
                     message.Destroy()
         dialog.Destroy()
@@ -443,13 +447,14 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
         self.SaveAs()
 
     def Save(self):
-        result = self.Manager.SaveCurrentInFile()
-        if not result:
-            self.SaveAs()
-        elif not isinstance(result, (str, unicode)):
-            self.RefreshBufferState()
-        else:
-            message = wx.MessageDialog(self, result, "Error", wx.OK | wx.ICON_ERROR)
+        try:
+            result = self.Manager.SaveCurrentInFile()
+            if not result:
+                self.SaveAs()
+            else:
+                self.RefreshBufferState()
+        except Exception as exc:  # pylint: disable=broad-except
+            message = wx.MessageDialog(self, exc, "Error", wx.OK | wx.ICON_ERROR)
             message.ShowModal()
             message.Destroy()
 
@@ -462,18 +467,18 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
         dialog = wx.FileDialog(self, "Choose a file", directory, filename, "OD files (*.od)|*.od|All files|*.*", wx.SAVE | wx.OVERWRITE_PROMPT | wx.CHANGE_DIR)
         if dialog.ShowModal() == wx.ID_OK:
             filepath = dialog.GetPath()
-            if os.path.isdir(os.path.dirname(filepath)):
-                result = self.Manager.SaveCurrentInFile(filepath)
-                if not isinstance(result, (str, unicode)):
-                    self.RefreshBufferState()
-                else:
-                    message = wx.MessageDialog(self, result, "Error", wx.OK | wx.ICON_ERROR)
-                    message.ShowModal()
-                    message.Destroy()
-            else:
+            if not os.path.isdir(os.path.dirname(filepath)):
                 message = wx.MessageDialog(self, "%s is not a valid folder!" % os.path.dirname(filepath), "Error", wx.OK | wx.ICON_ERROR)
                 message.ShowModal()
                 message.Destroy()
+            else:
+                try:
+                    self.Manager.SaveCurrentInFile(filepath)
+                    self.RefreshBufferState()
+                except Exception as exc:  # pylint: disable=broad-except
+                    message = wx.MessageDialog(self, exc, "Error", wx.OK | wx.ICON_ERROR)
+                    message.ShowModal()
+                    message.Destroy()
         dialog.Destroy()
 
     def OnCloseMenu(self, event):
@@ -506,10 +511,10 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
         if dialog.ShowModal() == wx.ID_OK:
             filepath = dialog.GetPath()
             if os.path.isfile(filepath):
-                result = self.Manager.ImportCurrentFromEDSFile(filepath)
-                if isinstance(result, int):
+                try:
+                    index = self.Manager.ImportCurrentFromEDSFile(filepath)
                     new_editingpanel = sit.EditingPanel(self.FileOpened, self, self.Manager)
-                    new_editingpanel.SetIndex(result)
+                    new_editingpanel.SetIndex(index)
                     self.FileOpened.AddPage(new_editingpanel, "")
                     self.FileOpened.SetSelection(self.FileOpened.GetPageCount() - 1)
                     self.RefreshBufferState()
@@ -519,8 +524,8 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
                     message = wx.MessageDialog(self, "Import successful", "Information", wx.OK | wx.ICON_INFORMATION)
                     message.ShowModal()
                     message.Destroy()
-                else:
-                    message = wx.MessageDialog(self, result, "Error", wx.OK | wx.ICON_ERROR)
+                except Exception as exc:  # pylint: disable=broad-except
+                    message = wx.MessageDialog(self, exc, "Error", wx.OK | wx.ICON_ERROR)
                     message.ShowModal()
                     message.Destroy()
             else:
@@ -533,46 +538,46 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
         dialog = wx.FileDialog(self, "Choose a file", os.getcwd(), self.Manager.GetCurrentNodeInfos()[0], "EDS files (*.eds)|*.eds|All files|*.*", wx.SAVE | wx.OVERWRITE_PROMPT | wx.CHANGE_DIR)
         if dialog.ShowModal() == wx.ID_OK:
             filepath = dialog.GetPath()
-            if os.path.isdir(os.path.dirname(filepath)):
-                path, extend = os.path.splitext(filepath)
-                if extend in ("", "."):
-                    filepath = path + ".eds"
-                result = self.Manager.ExportCurrentToEDSFile(filepath)
-                if not result:
-                    message = wx.MessageDialog(self, "Export successful", "Information", wx.OK | wx.ICON_INFORMATION)
-                    message.ShowModal()
-                    message.Destroy()
-                else:
-                    message = wx.MessageDialog(self, result, "Error", wx.OK | wx.ICON_ERROR)
-                    message.ShowModal()
-                    message.Destroy()
-            else:
+            if not os.path.isdir(os.path.dirname(filepath)):
                 message = wx.MessageDialog(self, "'%s' is not a valid folder!" % os.path.dirname(filepath), "Error", wx.OK | wx.ICON_ERROR)
                 message.ShowModal()
                 message.Destroy()
+            else:
+                path, extend = os.path.splitext(filepath)
+                if extend in ("", "."):
+                    filepath = path + ".eds"
+                try:
+                    self.Manager.ExportCurrentToEDSFile(filepath)
+                    message = wx.MessageDialog(self, "Export successful", "Information", wx.OK | wx.ICON_INFORMATION)
+                    message.ShowModal()
+                    message.Destroy()
+                except Exception as exc:  # pylint: disable=broad-except
+                    message = wx.MessageDialog(self, exc, "Error", wx.OK | wx.ICON_ERROR)
+                    message.ShowModal()
+                    message.Destroy()
         dialog.Destroy()
 
     def OnExportCMenu(self, event):  # pylint: disable=unused-argument
         dialog = wx.FileDialog(self, "Choose a file", os.getcwd(), self.Manager.GetCurrentNodeInfos()[0], "CANFestival C files (*.c)|*.c|All files|*.*", wx.SAVE | wx.OVERWRITE_PROMPT | wx.CHANGE_DIR)
         if dialog.ShowModal() == wx.ID_OK:
             filepath = dialog.GetPath()
-            if os.path.isdir(os.path.dirname(filepath)):
-                path, extend = os.path.splitext(filepath)
-                if extend in ("", "."):
-                    filepath = path + ".c"
-                result = self.Manager.ExportCurrentToCFile(filepath)
-                if not result:
-                    message = wx.MessageDialog(self, "Export successful", "Information", wx.OK | wx.ICON_INFORMATION)
-                    message.ShowModal()
-                    message.Destroy()
-                else:
-                    message = wx.MessageDialog(self, result, "Error", wx.OK | wx.ICON_ERROR)
-                    message.ShowModal()
-                    message.Destroy()
-            else:
+            if not os.path.isdir(os.path.dirname(filepath)):
                 message = wx.MessageDialog(self, "'%s' is not a valid folder!" % os.path.dirname(filepath), "Error", wx.OK | wx.ICON_ERROR)
                 message.ShowModal()
                 message.Destroy()
+            else:
+                path, extend = os.path.splitext(filepath)
+                if extend in ("", "."):
+                    filepath = path + ".c"
+                try:
+                    self.Manager.ExportCurrentToCFile(filepath)
+                    message = wx.MessageDialog(self, "Export successful", "Information", wx.OK | wx.ICON_INFORMATION)
+                    message.ShowModal()
+                    message.Destroy()
+                except Exception as exc:  # pylint: disable=broad-except
+                    message = wx.MessageDialog(self, exc, "Error", wx.OK | wx.ICON_ERROR)
+                    message.ShowModal()
+                    message.Destroy()
         dialog.Destroy()
 
 
@@ -587,7 +592,7 @@ def Display_Exception_Dialog(e_type, e_value, e_tb):
     trcbck_lst = []
     for i, line in enumerate(traceback.extract_tb(e_tb)):
         trcbck = " " + str(i + 1) + ". "
-        if line[0].find(os.getcwd()) == -1:
+        if os.getcwd() not in line[0]:
             trcbck += "file : " + str(line[0]) + ",   "
         else:
             trcbck += "file : " + str(line[0][len(os.getcwd()):]) + ",   "
@@ -647,7 +652,7 @@ def AddExceptHook(path, app_version='[No version]'):  # , ignored_exceptions=[])
         traceback.print_exception(e_type, e_value, e_traceback)  # this is very helpful when there's an exception in the rest of this func
         last_tb = get_last_traceback(e_traceback)
         ex = (last_tb.tb_frame.f_code.co_filename, last_tb.tb_frame.f_lineno)
-        if str(e_value).startswith("!!!"):
+        if str(e_value).startswith("!!!"):  # FIXME: Special exception handling
             Display_Error_Dialog(e_value)
         elif ex not in ignored_exceptions:
             ignored_exceptions.append(ex)
@@ -674,9 +679,7 @@ def AddExceptHook(path, app_version='[No version]'):  # , ignored_exceptions=[])
                         info['self'] = format_namespace(exception_locals['self'].__dict__)
 
                 with open(path + os.sep + "bug_report_" + info['date'].replace(':', '-').replace(' ', '_') + ".txt", 'w') as output:
-                    lst = list(info.keys())
-                    lst.sort()
-                    for a in lst:
+                    for a in sorted(info):
                         output.write(a + ":\n" + str(info[a]) + "\n\n")
 
     # sys.excepthook = lambda *args: wx.CallAfter(handle_exception, *args)

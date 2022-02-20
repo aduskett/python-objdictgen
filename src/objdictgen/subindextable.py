@@ -31,7 +31,6 @@ import wx.grid
 
 from . import commondialogs as cdia
 from . import node as nod
-from . import dbg
 
 
 ColSizes = [75, 250, 150, 125, 100, 60, 250, 60]
@@ -46,7 +45,7 @@ def GetAccessList(write=True):
 
 AccessList = ",".join(GetAccessList())
 RAccessList = ",".join(GetAccessList(False))
-ACCESS_LIST_DICT = dict([(access, access) for access in GetAccessList()])
+ACCESS_LIST_DICT = {access: access for access in GetAccessList()}
 
 
 def GetBoolList():
@@ -54,7 +53,7 @@ def GetBoolList():
 
 
 BoolList = ",".join(GetBoolList())
-BOOL_LIST_DICT = dict([(b, b) for b in GetBoolList()])
+BOOL_LIST_DICT = {b: b for b in GetBoolList()}
 
 
 def GetOptionList():
@@ -62,7 +61,7 @@ def GetOptionList():
 
 
 OptionList = ",".join(GetOptionList())
-OPTION_LIST_DICT = dict([(option, option) for option in GetOptionList()])
+OPTION_LIST_DICT = {option: option for option in GetOptionList()}
 
 (USER_TYPE, SDO_SERVER, SDO_CLIENT,
  PDO_TRANSMIT, PDO_RECEIVE, MAP_VARIABLE) = range(6)
@@ -76,7 +75,7 @@ INDEXCHOICE_OPTIONS = {
     MAP_VARIABLE: ("Map Variable", 0, "AddMapVariable")
 }
 
-INDEXCHOICE_OPTIONS_DICT = dict([(translation, option) for option, (translation, object, function) in list(INDEXCHOICE_OPTIONS.items())])
+INDEXCHOICE_OPTIONS_DICT = {translation: option for option, (translation, object, function) in INDEXCHOICE_OPTIONS.items()}
 
 INDEXCHOICE_SECTIONS = {
     0: [USER_TYPE],
@@ -912,7 +911,7 @@ class EditingPanel(wx.SplitterWindow):
                             self.Manager.AddSubentriesToCurrent(index, number)
                             self.ParentWindow.RefreshBufferState()
                             self.RefreshIndexList()
-                        except Exception:
+                        except ValueError:
                             message = wx.MessageDialog(self, "An integer is required!", "ERROR", wx.OK | wx.ICON_ERROR)
                             message.ShowModal()
                             message.Destroy()
@@ -932,7 +931,7 @@ class EditingPanel(wx.SplitterWindow):
                             self.Manager.RemoveSubentriesFromCurrent(index, number)
                             self.ParentWindow.RefreshBufferState()
                             self.RefreshIndexList()
-                        except Exception:
+                        except ValueError:
                             message = wx.MessageDialog(self, "An integer is required!", "ERROR", wx.OK | wx.ICON_ERROR)
                             message.ShowModal()
                             message.Destroy()

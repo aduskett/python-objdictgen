@@ -31,7 +31,6 @@ import os
 import re
 import sys
 from time import localtime, strftime
-from past.builtins import execfile
 from past.builtins import long
 
 from . import node as nod
@@ -176,7 +175,7 @@ def ParseCPJFile(filepath):
                 if assignment.startswith(";"):
                     pass
                 # Verify that line is a valid assignment
-                elif assignment.find('=') > 0:
+                elif "=" in assignment:
                     # Split assignment into the two values keyname and value
                     keyname, value = assignment.split("=", 1)
 
@@ -303,7 +302,7 @@ def ParseEDSFile(filepath):
             if index not in eds_dict:
                 eds_dict[index] = values
                 eds_dict[index]["subindexes"] = {}
-            elif list(eds_dict[index].keys()) == ["subindexes"]:
+            elif list(eds_dict[index]) == ["subindexes"]:
                 values["subindexes"] = eds_dict[index]["subindexes"]
                 eds_dict[index] = values
             else:
@@ -334,7 +333,7 @@ def ParseEDSFile(filepath):
             if assignment.startswith(";"):
                 pass
             # Verify that line is a valid assignment
-            elif assignment.find('=') > 0:
+            elif "=" in assignment:
                 # Split assignment into the two values keyname and value
                 keyname, value = assignment.split("=", 1)
 
@@ -390,7 +389,7 @@ def ParseEDSFile(filepath):
             # Verify that entry has an ObjectType
             values["OBJECTTYPE"] = values.get("OBJECTTYPE", 7)
             # Extract parameters defined
-            keys = set(values.keys())
+            keys = set(values)
             keys.discard("subindexes")
             # Extract possible parameters and parameters required
             possible = set(ENTRY_TYPES[values["OBJECTTYPE"]]["require"]
@@ -420,15 +419,16 @@ def ParseEDSFile(filepath):
 
 
 def VerifyValue(values, section_name, param):
-    if param.upper() in values:
+    uparam = param.upper()
+    if uparam in values:
         try:
             if values["DATATYPE"] in (0x09, 0x0A, 0x0B, 0x0F):
-                values[param.upper()] = str(values[param.upper()])
+                values[uparam] = str(values[uparam])
             elif values["DATATYPE"] in (0x08, 0x11):
-                values[param.upper()] = float(values[param.upper()])
+                values[uparam] = float(values[uparam])
             elif values["DATATYPE"] == 0x01:
-                values[param.upper()] = {0: False, 1: True}[values[param.upper()]]
-            elif not isinstance(values[param.upper()], INT_TYPES) and values[param.upper()].upper().find("$NODEID") == -1:
+                values[uparam] = {0: False, 1: True}[values[uparam]]
+            elif not isinstance(values[uparam], INT_TYPES) and "$NODEID" not in values[uparam].upper():
                 raise ValueError()
         except ValueError:
             raise_from(ValueError("Error on section '[%s]': '%s' incompatible with DataType" % (section_name, param)), None)
@@ -648,29 +648,22 @@ def GenerateFileContent(node, filepath):
 
 # Function that generates EDS file from current node edited
 def GenerateEDSFile(filepath, node):
-    try:
-        # Generate file content
-        content = GenerateFileContent(node, filepath)
-        # Write file
-        WriteFile(filepath, content)
-        return None
-    except ValueError as message:
-        return "Unable to generate EDS file\n%s" % message
+    content = GenerateFileContent(node, filepath)
+    WriteFile(filepath, content)
 
 
 # Function that generate the CPJ file content for the nodelist
 def GenerateCPJContent(nodelist):
-    nodes = list(nodelist.SlaveNodes.keys())
-    nodes.sort()
+    nodes = nodelist.SlaveNodes
 
     filecontent = "[TOPOLOGY]\n"
     filecontent += "NetName=%s\n" % nodelist.GetNetworkName()
     filecontent += "Nodes=0x%2.2X\n" % len(nodes)
 
-    for nodeid in nodes:
+    for nodeid in sorted(nodes):
         filecontent += "Node%dPresent=0x01\n" % nodeid
-        filecontent += "Node%dName=%s\n" % (nodeid, nodelist.SlaveNodes[nodeid]["Name"])
-        filecontent += "Node%dDCFName=%s\n" % (nodeid, nodelist.SlaveNodes[nodeid]["EDS"])
+        filecontent += "Node%dName=%s\n" % (nodeid, nodes[nodeid]["Name"])
+        filecontent += "Node%dDCFName=%s\n" % (nodeid, nodes[nodeid]["EDS"])
 
     filecontent += "EDSBaseName=eds\n"
     return filecontent
@@ -680,157 +673,142 @@ def GenerateCPJContent(nodelist):
 def GenerateNode(filepath, nodeid=0):
     # Create a new node
     node = nod.Node(id=nodeid)
-    try:
-        # Parse file and extract dictionary of EDS entry
-        eds_dict = ParseEDSFile(filepath)
-        # Extract Profile Number from Device Type entry
-        profilenb = eds_dict[0x1000].get("DEFAULTVALUE", 0) & 0x0000ffff
-        # If profile is not DS-301 or DS-302
-        if profilenb not in [0, 301, 302]:
-            # Compile Profile name and path to .prf file
-            profilename = "DS-%d" % profilenb
-            profilepath = os.path.join(os.path.split(__file__)[0], "config/%s.prf" % profilename)
-            # Verify that profile is available
-            if os.path.isfile(profilepath):
-                try:
-                    # Import profile
-                    # FIXME: Find all the variable the profile depend on
-                    # Mapping and AddMenuEntries are expected to be defined by the execfile
-                    # The profiles requires some vars to be set
-                    # pylint: disable=unused-variable
-                    rec = nod.rec  # noqa: F841
-                    array = nod.array  # noqa: F841
-                    var = nod.var  # noqa: F841
-                    plurirec = nod.plurirec  # noqa: F841
-                    pluriarray = nod.pluriarray  # noqa: F841
-                    dbg("EXECFILE %s" % (profilepath,))
-                    execfile(profilepath)  # FIXME: Using execfile
-                    # pylint: disable=undefined-variable
-                    node.SetProfileName(profilename)
-                    node.SetProfile(Mapping)  # noqa: F821
-                    node.SetSpecificMenu(AddMenuEntries)  # noqa: F821
-                except Exception:
-                    pass
-        # Read all entries in the EDS dictionary
-        for entry, values in list(eds_dict.items()):
-            # All sections with a name in keynames are escaped
-            if entry in SECTION_KEYNAMES:
-                pass
-            else:
-                # Extract informations for the entry
-                entry_infos = node.GetEntryInfos(entry)
 
-                # If no informations are available, then we write them
-                if not entry_infos:
-                    # First case, entry is a DOMAIN or VAR
-                    if values["OBJECTTYPE"] in [2, 7]:
-                        if values["OBJECTTYPE"] == 2:
-                            values["DATATYPE"] = values.get("DATATYPE", 0xF)
-                            if values["DATATYPE"] != 0xF:
-                            raise ValueError("Domain entry 0x%4.4X DataType must be 0xF(DOMAIN) if defined" % entry)
-                        # Add mapping for entry
-                        node.AddMappingEntry(entry, name=values["PARAMETERNAME"], struct=1)
-                        # Add mapping for first subindex
-                        node.AddMappingEntry(entry, 0, values={
-                            "name": values["PARAMETERNAME"],
-                            "type": values["DATATYPE"],
-                            "access": ACCESS_TRANSLATE[values["ACCESSTYPE"].upper()],
-                            "pdo": values.get("PDOMAPPING", 0) == 1,
-                        })
-                    # Second case, entry is an ARRAY or RECORD
-                    elif values["OBJECTTYPE"] in [8, 9]:
-                        # Extract maximum subindex number defined
-                        max_subindex = max(values["subindexes"].keys())
-                        # Add mapping for entry
-                        node.AddMappingEntry(entry, name=values["PARAMETERNAME"], struct=3)
-                        # Add mapping for first subindex
-                        node.AddMappingEntry(entry, 0, values={
-                            "name": "Number of Entries",
-                            "type": 0x05,
-                            "access": "ro",
-                            "pdo": False,
-                        })
-                        # Add mapping for other subindexes
-                        for subindex in range(1, int(max_subindex) + 1):
-                            # if subindex is defined
-                            if subindex in values["subindexes"]:
-                                node.AddMappingEntry(entry, subindex, values={
-                                    "name": values["subindexes"][subindex]["PARAMETERNAME"],
-                                    "type": values["subindexes"][subindex]["DATATYPE"],
-                                    "access": ACCESS_TRANSLATE[values["subindexes"][subindex]["ACCESSTYPE"].upper()],
-                                    "pdo": values["subindexes"][subindex].get("PDOMAPPING", 0) == 1,
-                                })
-                            # if not, we add a mapping for compatibility
-                            else:
-                                node.AddMappingEntry(entry, subindex, values={
-                                    "name": "Compatibility Entry",
-                                    "type": 0x05,
-                                    "access": "rw",
-                                    "pdo": False,
-                                })
+    # Parse file and extract dictionary of EDS entry
+    eds_dict = ParseEDSFile(filepath)
+    # Extract Profile Number from Device Type entry
+    profilenb = eds_dict[0x1000].get("DEFAULTVALUE", 0) & 0x0000ffff
+    # If profile is not DS-301 or DS-302
+    if profilenb not in [0, 301, 302]:
+        # Compile Profile name and path to .prf file
+        profilename = "DS-%d" % profilenb
+        profilepath = os.path.join(os.path.split(__file__)[0], "config/%s.prf" % profilename)
+        # Verify that profile is available
+        if os.path.isfile(profilepath):
+            # Import profile
+            mapping, menuentries = nod.ImportProfile(profilepath)
+            node.SetProfileName(profilename)
+            node.SetProfile(mapping)
+            node.SetSpecificMenu(menuentries)
 
-                    # # Third case, entry is an RECORD
-                    # elif values["OBJECTTYPE"] == 9:
-                    #     # Verify that the first subindex is defined
-                    #     if 0 not in values["subindexes"]:
-                #         raise ValueError("Error on entry 0x%4.4X: Subindex 0 must be defined for a RECORD entry" % entry)
-                    #     # Add mapping for entry
-                    #     node.AddMappingEntry(entry, name=values["PARAMETERNAME"], struct=7)
-                    #     # Add mapping for first subindex
-                    #     node.AddMappingEntry(entry, 0, values={
-                    #         "name": "Number of Entries",
-                    #         "type": 0x05,
-                    #         "access": "ro",
-                    #         "pdo": False,
-                    #     })
-                    #     # Verify that second subindex is defined
-                    #     if 1 in values["subindexes"]:
-                    #         node.AddMappingEntry(entry, 1, values={
-                    #             "name": values["PARAMETERNAME"] + " %d[(sub)]",
-                    #             "type": values["subindexes"][1]["DATATYPE"],
-                    #             "access": ACCESS_TRANSLATE[values["subindexes"][1]["ACCESSTYPE"].upper()],
-                    #             "pdo": values["subindexes"][1].get("PDOMAPPING", 0) == 1,
-                    #             "nbmax": 0xFE,
-                    #         })
-                    #     else:
-                #         raise ValueError("Error on entry 0x%4.4X: A RECORD entry must have at least 2 subindexes" % entry)
+    # Read all entries in the EDS dictionary
+    for entry, values in eds_dict.items():
+        # All sections with a name in keynames are escaped
+        if entry in SECTION_KEYNAMES:
+            pass
+        else:
+            # Extract informations for the entry
+            entry_infos = node.GetEntryInfos(entry)
 
-                # Define entry for the new node
-
+            # If no informations are available, then we write them
+            if not entry_infos:
                 # First case, entry is a DOMAIN or VAR
                 if values["OBJECTTYPE"] in [2, 7]:
-                    # Take default value if it is defined
-                    if "PARAMETERVALUE" in values:
-                        value = values["PARAMETERVALUE"]
-                    elif "DEFAULTVALUE" in values:
-                        value = values["DEFAULTVALUE"]
-                    # Find default value for value type of the entry
-                    else:
-                        value = GetDefaultValue(node, entry)
-                    node.AddEntry(entry, 0, value)
-                # Second case, entry is an ARRAY or a RECORD
+                    if values["OBJECTTYPE"] == 2:
+                        values["DATATYPE"] = values.get("DATATYPE", 0xF)
+                        if values["DATATYPE"] != 0xF:
+                            raise ValueError("Domain entry 0x%4.4X DataType must be 0xF(DOMAIN) if defined" % entry)
+                    # Add mapping for entry
+                    node.AddMappingEntry(entry, name=values["PARAMETERNAME"], struct=1)
+                    # Add mapping for first subindex
+                    node.AddMappingEntry(entry, 0, values={
+                        "name": values["PARAMETERNAME"],
+                        "type": values["DATATYPE"],
+                        "access": ACCESS_TRANSLATE[values["ACCESSTYPE"].upper()],
+                        "pdo": values.get("PDOMAPPING", 0) == 1,
+                    })
+                # Second case, entry is an ARRAY or RECORD
                 elif values["OBJECTTYPE"] in [8, 9]:
-                    # Verify that "Subnumber" attribute is defined and has a valid value
-                    if "SUBNUMBER" in values and values["SUBNUMBER"] > 0:
-                        # Extract maximum subindex number defined
-                        max_subindex = max(values["subindexes"].keys())
-                        node.AddEntry(entry, value=[])
-                        # Define value for all subindexes except the first
-                        for subindex in range(1, int(max_subindex) + 1):
-                            # Take default value if it is defined and entry is defined
-                            if subindex in values["subindexes"] and "PARAMETERVALUE" in values["subindexes"][subindex]:
-                                value = values["subindexes"][subindex]["PARAMETERVALUE"]
-                            elif subindex in values["subindexes"] and "DEFAULTVALUE" in values["subindexes"][subindex]:
-                                value = values["subindexes"][subindex]["DEFAULTVALUE"]
-                            # Find default value for value type of the subindex
-                            else:
-                                value = GetDefaultValue(node, entry, subindex)
-                            node.AddEntry(entry, subindex, value)
-                    else:
-                        raise ValueError("Array or Record entry 0x%4.4X must have a 'SubNumber' attribute" % entry)
-        return node
-    except SyntaxError as message:
-        return "Unable to import EDS file: %s" % message
+                    # Extract maximum subindex number defined
+                    max_subindex = max(values["subindexes"])
+                    # Add mapping for entry
+                    node.AddMappingEntry(entry, name=values["PARAMETERNAME"], struct=3)
+                    # Add mapping for first subindex
+                    node.AddMappingEntry(entry, 0, values={
+                        "name": "Number of Entries",
+                        "type": 0x05,
+                        "access": "ro",
+                        "pdo": False,
+                    })
+                    # Add mapping for other subindexes
+                    for subindex in range(1, int(max_subindex) + 1):
+                        # if subindex is defined
+                        if subindex in values["subindexes"]:
+                            node.AddMappingEntry(entry, subindex, values={
+                                "name": values["subindexes"][subindex]["PARAMETERNAME"],
+                                "type": values["subindexes"][subindex]["DATATYPE"],
+                                "access": ACCESS_TRANSLATE[values["subindexes"][subindex]["ACCESSTYPE"].upper()],
+                                "pdo": values["subindexes"][subindex].get("PDOMAPPING", 0) == 1,
+                            })
+                        # if not, we add a mapping for compatibility
+                        else:
+                            node.AddMappingEntry(entry, subindex, values={
+                                "name": "Compatibility Entry",
+                                "type": 0x05,
+                                "access": "rw",
+                                "pdo": False,
+                            })
+
+                # # Third case, entry is an RECORD
+                # elif values["OBJECTTYPE"] == 9:
+                #     # Verify that the first subindex is defined
+                #     if 0 not in values["subindexes"]:
+                #         raise ValueError("Error on entry 0x%4.4X: Subindex 0 must be defined for a RECORD entry" % entry)
+                #     # Add mapping for entry
+                #     node.AddMappingEntry(entry, name=values["PARAMETERNAME"], struct=7)
+                #     # Add mapping for first subindex
+                #     node.AddMappingEntry(entry, 0, values={
+                #         "name": "Number of Entries",
+                #         "type": 0x05,
+                #         "access": "ro",
+                #         "pdo": False,
+                #     })
+                #     # Verify that second subindex is defined
+                #     if 1 in values["subindexes"]:
+                #         node.AddMappingEntry(entry, 1, values={
+                #             "name": values["PARAMETERNAME"] + " %d[(sub)]",
+                #             "type": values["subindexes"][1]["DATATYPE"],
+                #             "access": ACCESS_TRANSLATE[values["subindexes"][1]["ACCESSTYPE"].upper()],
+                #             "pdo": values["subindexes"][1].get("PDOMAPPING", 0) == 1,
+                #             "nbmax": 0xFE,
+                #         })
+                #     else:
+                #         raise ValueError("Error on entry 0x%4.4X: A RECORD entry must have at least 2 subindexes" % entry)
+
+            # Define entry for the new node
+
+            # First case, entry is a DOMAIN or VAR
+            if values["OBJECTTYPE"] in [2, 7]:
+                # Take default value if it is defined
+                if "PARAMETERVALUE" in values:
+                    value = values["PARAMETERVALUE"]
+                elif "DEFAULTVALUE" in values:
+                    value = values["DEFAULTVALUE"]
+                # Find default value for value type of the entry
+                else:
+                    value = GetDefaultValue(node, entry)
+                node.AddEntry(entry, 0, value)
+            # Second case, entry is an ARRAY or a RECORD
+            elif values["OBJECTTYPE"] in [8, 9]:
+                # Verify that "Subnumber" attribute is defined and has a valid value
+                if "SUBNUMBER" in values and values["SUBNUMBER"] > 0:
+                    # Extract maximum subindex number defined
+                    max_subindex = max(values["subindexes"])
+                    node.AddEntry(entry, value=[])
+                    # Define value for all subindexes except the first
+                    for subindex in range(1, int(max_subindex) + 1):
+                        # Take default value if it is defined and entry is defined
+                        if subindex in values["subindexes"] and "PARAMETERVALUE" in values["subindexes"][subindex]:
+                            value = values["subindexes"][subindex]["PARAMETERVALUE"]
+                        elif subindex in values["subindexes"] and "DEFAULTVALUE" in values["subindexes"][subindex]:
+                            value = values["subindexes"][subindex]["DEFAULTVALUE"]
+                        # Find default value for value type of the subindex
+                        else:
+                            value = GetDefaultValue(node, entry, subindex)
+                        node.AddEntry(entry, subindex, value)
+                else:
+                    raise ValueError("Array or Record entry 0x%4.4X must have a 'SubNumber' attribute" % entry)
+    return node
 
 
 # ------------------------------------------------------------------------------

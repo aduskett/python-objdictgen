@@ -66,22 +66,10 @@ def main():
 
     if filein != "" and fileout != "":
         manager = nman.NodeManager()
-        if os.path.isfile(filein):
-            print("Parsing input file")
-            result = manager.OpenFileInCurrent(filein)
-            if not isinstance(result, (str, unicode)):
-                _ = result
-            else:
-                print(result)
-                sys.exit(-1)
-        else:
-            print("%s is not a valid file!" % filein)
-            sys.exit(-1)
+        print("Parsing input file")
+        manager.OpenFileInCurrent(filein)
         print("Writing output file")
-        result = manager.ExportCurrentToCFile(fileout)
-        if isinstance(result, (str, unicode)):
-            print(result)
-            sys.exit(-1)
+        manager.ExportCurrentToCFile(fileout)
         print("All done")
 
 

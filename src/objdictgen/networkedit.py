@@ -230,11 +230,14 @@ class NetworkEdit(wx.Frame, NetworkEditorTemplate):
 
         if self.ModeSolo:
             if projectOpen:
-                result = self.NodeList.LoadProject(projectOpen)
-                if not result:
+                try:
+                    self.NodeList.LoadProject(projectOpen)
                     self.NodeList.SetCurrentSelected(0)
                     self.RefreshNetworkNodes()
                     self.RefreshProfileMenu()
+                except Exception as exc:
+                    dbg("Exception: %s" % exc)
+                    raise  # FIXME: Temporary. Orginal code swallows exception
             else:
                 self.NodeList = None
         else:
@@ -276,8 +279,9 @@ class NetworkEdit(wx.Frame, NetworkEditorTemplate):
             if os.path.isdir(projectpath) and len(os.listdir(projectpath)) == 0:
                 manager = NodeManager()
                 nodelist = NodeList(manager)
-                result = nodelist.LoadProject(projectpath)
-                if not result:
+                try:
+                    nodelist.LoadProject(projectpath)
+
                     self.Manager = manager
                     self.NodeList = nodelist
                     self.NodeList.SetCurrentSelected(0)
@@ -287,8 +291,8 @@ class NetworkEdit(wx.Frame, NetworkEditorTemplate):
                     self.RefreshTitle()
                     self.RefreshProfileMenu()
                     self.RefreshMainMenu()
-                else:
-                    message = wx.MessageDialog(self, result, "ERROR", wx.OK | wx.ICON_ERROR)
+                except Exception as exc:  # pylint: disable=broad-except
+                    message = wx.MessageDialog(self, exc, "ERROR", wx.OK | wx.ICON_ERROR)
                     message.ShowModal()
                     message.Destroy()
 
@@ -303,8 +307,9 @@ class NetworkEdit(wx.Frame, NetworkEditorTemplate):
             if os.path.isdir(projectpath):
                 manager = NodeManager()
                 nodelist = NodeList(manager)
-                result = nodelist.LoadProject(projectpath)
-                if not result:
+                try:
+                    nodelist.LoadProject(projectpath)
+
                     self.Manager = manager
                     self.NodeList = nodelist
                     self.NodeList.SetCurrentSelected(0)
@@ -314,8 +319,8 @@ class NetworkEdit(wx.Frame, NetworkEditorTemplate):
                     self.RefreshTitle()
                     self.RefreshProfileMenu()
                     self.RefreshMainMenu()
-                else:
-                    message = wx.MessageDialog(self, result, "Error", wx.OK | wx.ICON_ERROR)
+                except Exception as exc:  # pylint: disable=broad-except
+                    message = wx.MessageDialog(self, exc, "Error", wx.OK | wx.ICON_ERROR)
                     message.ShowModal()
                     message.Destroy()
         dialog.Destroy()
@@ -324,9 +329,10 @@ class NetworkEdit(wx.Frame, NetworkEditorTemplate):
         if not self.ModeSolo and getattr(self, "_onsave", None) is not None:
             self._onsave()
         else:
-            result = self.NodeList.SaveProject()
-            if result:
-                message = wx.MessageDialog(self, result, "Error", wx.OK | wx.ICON_ERROR)
+            try:
+                self.NodeList.SaveProject()
+            except Exception as exc:  # pylint: disable=broad-except
+                message = wx.MessageDialog(self, exc, "Error", wx.OK | wx.ICON_ERROR)
                 message.ShowModal()
                 message.Destroy()
 
@@ -337,9 +343,10 @@ class NetworkEdit(wx.Frame, NetworkEditorTemplate):
                 answer = dialog.ShowModal()
                 dialog.Destroy()
                 if answer == wx.ID_YES:
-                    result = self.NodeList.SaveProject()
-                    if result:
-                        message = wx.MessageDialog(self, result, "Error", wx.OK | wx.ICON_ERROR)
+                    try:
+                        self.NodeList.SaveProject()
+                    except Exception as exc:  # pylint: disable=broad-except
+                        message = wx.MessageDialog(self, exc, "Error", wx.OK | wx.ICON_ERROR)
                         message.ShowModal()
                         message.Destroy()
                 elif answer == wx.ID_NO:
@@ -423,7 +430,7 @@ def Display_Exception_Dialog(e_type, e_value, e_tb):
     trcbck_lst = []
     for i, line in enumerate(traceback.extract_tb(e_tb)):
         trcbck = " " + str(i + 1) + ". "
-        if line[0].find(os.getcwd()) == -1:
+        if os.getcwd() not in line[0]:
             trcbck += "file : " + str(line[0]) + ",   "
         else:
             trcbck += "file : " + str(line[0][len(os.getcwd()):]) + ",   "
@@ -483,7 +490,7 @@ def AddExceptHook(path, app_version='[No version]'):  # , ignored_exceptions=[])
         traceback.print_exception(e_type, e_value, e_traceback)  # this is very helpful when there's an exception in the rest of this func
         last_tb = get_last_traceback(e_traceback)
         ex = (last_tb.tb_frame.f_code.co_filename, last_tb.tb_frame.f_lineno)
-        if str(e_value).startswith("!!!"):
+        if str(e_value).startswith("!!!"):  # FIXME: Special exception handling
             Display_Error_Dialog(e_value)
         elif ex not in ignored_exceptions:
             ignored_exceptions.append(ex)
@@ -510,9 +517,7 @@ def AddExceptHook(path, app_version='[No version]'):  # , ignored_exceptions=[])
                         info['self'] = format_namespace(exception_locals['self'].__dict__)
 
                 with open(path + os.sep + "bug_report_" + info['date'].replace(':', '-').replace(' ', '_') + ".txt", 'w') as output:
-                    lst = list(info.keys())
-                    lst.sort()
-                    for a in lst:
+                    for a in sorted(info):
                         output.write(a + ":\n" + str(info[a]) + "\n\n")
 
     # sys.excepthook = lambda *args: wx.CallAfter(handle_exception, *args)

@@ -12,8 +12,10 @@ REF = os.path.join(HERE, '..', 'examples')
 REF = 'od-ref'
 if sys.version_info[0] >= 3:
     DUT = 'od-test3'
+    OPOSITE = 'od-test2'
 else:
     DUT = 'od-test2'
+    OPOSITE = 'od-test3'
 
 for f in glob.glob(os.path.join(DUT, '*')):
     os.remove(f)
@@ -50,6 +52,7 @@ def diff_ref(a, b=None, **kw):
 class Helpers:
     DUT = DUT
     REF = REF
+    OPOSITE = OPOSITE
     @staticmethod
     def diff(*a, **kw):
         return diff(*a, **kw)

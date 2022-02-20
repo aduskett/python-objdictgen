@@ -209,12 +209,12 @@ class NodeEditorTemplate(object):
             dialog = cdia.MapVariableDialog(self.Frame)
             dialog.SetIndex(index)
             if dialog.ShowModal() == wx.ID_OK:
-                result = self.Manager.AddMapVariableToCurrent(*dialog.GetValues())
-                if not isinstance(result, (str, unicode)):
+                try:
+                    self.Manager.AddMapVariableToCurrent(*dialog.GetValues())
                     self.RefreshBufferState()
                     self.RefreshCurrentIndexList()
-                else:
-                    self.ShowErrorMessage(result)
+                except Exception as exc:  # pylint: disable=broad-except
+                    self.ShowErrorMessage(exc)
             dialog.Destroy()
         else:
             self.ShowErrorMessage("No map variable index left!")
@@ -223,12 +223,12 @@ class NodeEditorTemplate(object):
         dialog = cdia.UserTypeDialog(self)
         dialog.SetTypeList(self.Manager.GetCustomisableTypes())
         if dialog.ShowModal() == wx.ID_OK:
-            result = self.Manager.AddUserTypeToCurrent(*dialog.GetValues())
-            if not isinstance(result, (str, unicode)):
+            try:
+                self.Manager.AddUserTypeToCurrent(*dialog.GetValues())
                 self.RefreshBufferState()
                 self.RefreshCurrentIndexList()
-            else:
-                self.ShowErrorMessage(result)
+            except Exception as exc:  # pylint: disable=broad-except
+                self.ShowErrorMessage(exc)
         dialog.Destroy()
 
     def ShowErrorMessage(self, message):

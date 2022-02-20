@@ -33,6 +33,7 @@ import sys
 import re
 import pickle
 from collections import OrderedDict
+from past.builtins import execfile
 from future.utils import raise_from
 
 from .nosis import pickle as nosis
@@ -74,13 +75,13 @@ Structures of entry in the Object Dictionary, sum of the properties described ab
 for all sorts of entries use in CAN Open specification
 """
 nosub = 0  # Entry without subindex (only for type declaration)
-var = OD_Subindex
-array = OD_Subindex | OD_MultipleSubindexes
-rec = OD_Subindex | OD_MultipleSubindexes | OD_IdenticalSubindexes
+var = OD_Subindex  # 1
+array = OD_Subindex | OD_MultipleSubindexes  # 3
+rec = OD_Subindex | OD_MultipleSubindexes | OD_IdenticalSubindexes  # 7
 # Entries identical on multiple indexes
-plurivar = OD_Subindex | OD_IdenticalIndexes
-pluriarray = OD_Subindex | OD_MultipleSubindexes | OD_IdenticalIndexes  # Example : PDO Parameters
-plurirec = OD_Subindex | OD_MultipleSubindexes | OD_IdenticalSubindexes | OD_IdenticalIndexes  # Example : PDO Mapping
+plurivar = OD_Subindex | OD_IdenticalIndexes  # 9
+pluriarray = OD_Subindex | OD_MultipleSubindexes | OD_IdenticalIndexes  # 11, Example : PDO Parameters
+plurirec = OD_Subindex | OD_MultipleSubindexes | OD_IdenticalSubindexes | OD_IdenticalIndexes  # 15, Example : PDO Mapping
 
 """
 MappingDictionary is the structure used for writing a good organised Object
@@ -90,6 +91,7 @@ organisation of this object, it will involve in a malfunction of the application
 """
 
 MappingDictionary = {
+    # -- Static Data Types
     0x0001: {"name": "BOOLEAN", "struct": nosub, "size": 1, "default": False, "values": []},
     0x0002: {"name": "INTEGER8", "struct": nosub, "size": 8, "default": 0, "values": []},
     0x0003: {"name": "INTEGER16", "struct": nosub, "size": 16, "default": 0, "values": []},
@@ -103,6 +105,7 @@ MappingDictionary = {
     0x000B: {"name": "UNICODE_STRING", "struct": nosub, "size": 16, "default": "", "values": []},
     # 0x000C: {"name": "TIME_OF_DAY", "struct": nosub, "size": 48, "default": 0, "values": []},
     # 0x000D: {"name": "TIME_DIFFERENCE", "struct": nosub, "size": 48, "default": 0, "values": []},
+    # 0x000E: RESERVED
     0x000F: {"name": "DOMAIN", "struct": nosub, "size": 0, "default": "", "values": []},
     0x0010: {"name": "INTEGER24", "struct": nosub, "size": 24, "default": 0, "values": []},
     0x0011: {"name": "REAL64", "struct": nosub, "size": 64, "default": 0.0, "values": []},
@@ -111,10 +114,14 @@ MappingDictionary = {
     0x0014: {"name": "INTEGER56", "struct": nosub, "size": 56, "default": 0, "values": []},
     0x0015: {"name": "INTEGER64", "struct": nosub, "size": 64, "default": 0, "values": []},
     0x0016: {"name": "UNSIGNED24", "struct": nosub, "size": 24, "default": 0, "values": []},
+    # 0x0017: RESERVED
     0x0018: {"name": "UNSIGNED40", "struct": nosub, "size": 40, "default": 0, "values": []},
     0x0019: {"name": "UNSIGNED48", "struct": nosub, "size": 48, "default": 0, "values": []},
     0x001A: {"name": "UNSIGNED56", "struct": nosub, "size": 56, "default": 0, "values": []},
     0x001B: {"name": "UNSIGNED64", "struct": nosub, "size": 64, "default": 0, "values": []},
+    # 0x001C-0x001F: RESERVED
+
+    # -- Communication Profile Area
     0x1000: {"name": "Device Type", "struct": var, "need": True, "values":
              [{"name": "Device Type", "type": 0x07, "access": 'ro', "pdo": False}]},
     0x1001: {"name": "Error Register", "struct": var, "need": True, "values":
@@ -208,6 +215,8 @@ MappingDictionary = {
              [{"name": "Number of Error Classes", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "Communication Error", "type": 0x05, "access": 'rw', "pdo": False},
               {"name": "Device Profile", "type": 0x05, "access": 'rw', "pdo": False, "nbmax": 0xFE}]},
+
+    # -- Server SDO Parameters
     0x1200: {"name": "Server SDO Parameter", "struct": array, "need": False, "values":
              [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "COB ID Client to Server (Receive SDO)", "type": 0x07, "access": 'ro', "pdo": False, "default": "\"$NODEID+0x600\""},
@@ -217,11 +226,15 @@ MappingDictionary = {
               {"name": "COB ID Client to Server (Receive SDO)", "type": 0x07, "access": 'ro', "pdo": False},
               {"name": "COB ID Server to Client (Transmit SDO)", "type": 0x07, "access": 'ro', "pdo": False},
               {"name": "Node ID of the SDO Client", "type": 0x05, "access": 'ro', "pdo": False}]},
+
+    # -- Client SDO Parameters
     0x1280: {"name": "Client SDO %d Parameter[(idx)]", "struct": pluriarray, "incr": 1, "nbmax": 0x100, "need": False, "values":
              [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "COB ID Client to Server (Transmit SDO)", "type": 0x07, "access": 'rw', "pdo": False},
               {"name": "COB ID Server to Client (Receive SDO)", "type": 0x07, "access": 'rw', "pdo": False},
               {"name": "Node ID of the SDO Server", "type": 0x05, "access": 'rw', "pdo": False}]},
+
+    # -- Receive PDO Communication Parameters
     0x1400: {"name": "Receive PDO %d Parameter[(idx)]", "struct": pluriarray, "incr": 1, "nbmax": 0x200, "need": False, "values":
              [{"name": "Highest SubIndex Supported", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "COB ID used by PDO", "type": 0x07, "access": 'rw', "pdo": False, "default": "{True:\"$NODEID+0x%X00\"%(base+2),False:0x80000000}[base<4]"},
@@ -230,9 +243,13 @@ MappingDictionary = {
               {"name": "Compatibility Entry", "type": 0x05, "access": 'rw', "pdo": False},
               {"name": "Event Timer", "type": 0x06, "access": 'rw', "pdo": False},
               {"name": "SYNC start value", "type": 0x05, "access": 'rw', "pdo": False}]},
+
+    # -- Receive PDO Mapping Parameters
     0x1600: {"name": "Receive PDO %d Mapping[(idx)]", "struct": plurirec, "incr": 1, "nbmax": 0x200, "need": False, "values":
              [{"name": "Number of Entries", "type": 0x05, "access": 'rw', "pdo": False},
               {"name": "PDO %d Mapping for an application object %d[(idx,sub)]", "type": 0x07, "access": 'rw', "pdo": False, "nbmin": 0, "nbmax": 0x40}]},
+
+    # -- Transmit PDO Communication Parameters
     0x1800: {"name": "Transmit PDO %d Parameter[(idx)]", "struct": pluriarray, "incr": 1, "nbmax": 0x200, "need": False, "callback": True, "values":
              [{"name": "Highest SubIndex Supported", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "COB ID used by PDO", "type": 0x07, "access": 'rw', "pdo": False, "default": "{True:\"$NODEID+0x%X80\"%(base+1),False:0x80000000}[base<4]"},
@@ -241,15 +258,36 @@ MappingDictionary = {
               {"name": "Compatibility Entry", "type": 0x05, "access": 'rw', "pdo": False},
               {"name": "Event Timer", "type": 0x06, "access": 'rw', "pdo": False},
               {"name": "SYNC start value", "type": 0x05, "access": 'rw', "pdo": False}]},
+
+    # -- Transmit PDO Mapping Parameters
     0x1A00: {"name": "Transmit PDO %d Mapping[(idx)]", "struct": plurirec, "incr": 1, "nbmax": 0x200, "need": False, "values":
              [{"name": "Number of Entries", "type": 0x05, "access": 'rw', "pdo": False},
               {"name": "PDO %d Mapping for a process data variable %d[(idx,sub)]", "type": 0x07, "access": 'rw', "pdo": False, "nbmin": 0, "nbmax": 0x40}]},
 }
 
+
+# ------------------------------------------------------------------------------
+#                         Load mapping
+# ------------------------------------------------------------------------------
+def ImportProfile(filepath):
+    # Import profile
+    # Mapping and AddMenuEntries are expected to be defined by the execfile
+    # The profiles requires some vars to be set
+    # pylint: disable=unused-variable
+    try:
+        dbg("EXECFILE %s" % (filepath,))
+        execfile(filepath)  # FIXME: Using execfile is unsafe
+        # pylint: disable=undefined-variable
+        return Mapping, AddMenuEntries
+    except Exception as exc:  # pylint: disable=broad-except
+        dbg("EXECFILE FAILED: %s" % exc)
+        raise_from(ValueError("Loading profile '%s' failed: %s" % (filepath, exc)), exc)
+        return None  # To satisfy linter only
+
+
 # ------------------------------------------------------------------------------
 #                         Search in a Mapping Dictionary
 # ------------------------------------------------------------------------------
-
 
 def FindTypeIndex(typename, mappingdictionary):
     """
@@ -259,9 +297,7 @@ def FindTypeIndex(typename, mappingdictionary):
     for index, values in mappingdictionary.items():
         if index < 0x1000:
             testdic[values["name"]] = index
-    if typename in testdic:
-        return testdic[typename]
-    return None
+    return testdic.get(typename)
 
 
 def FindTypeName(typeindex, mappingdictionary):
@@ -286,11 +322,11 @@ def FindTypeList(mappingdictionary):
     """
     Return the list of types defined in mappingdictionary
     """
-    list_ = []
-    for index in mappingdictionary.keys():
-        if index < 0x1000:
-            list_.append(mappingdictionary[index]["name"])
-    return list_
+    return [
+        mappingdictionary[index]["name"]
+        for index in mappingdictionary
+        if index < 0x1000
+    ]
 
 
 def FindEntryName(index, mappingdictionary, compute=True):
@@ -390,11 +426,11 @@ def FindMandatoryIndexes(mappingdictionary):
     """
     Return the list of mandatory indexes defined in mappingdictionary
     """
-    list_ = []
-    for index in mappingdictionary:
-        if index >= 0x1000 and mappingdictionary[index]["need"]:
-            list_.append(index)
-    return list_
+    return [
+        index
+        for index in mappingdictionary
+        if index >= 0x1000 and mappingdictionary[index]["need"]
+    ]
 
 
 def FindIndex(index, mappingdictionary):
@@ -405,9 +441,11 @@ def FindIndex(index, mappingdictionary):
     if index in mappingdictionary:
         return index
     else:
-        listpluri = [idx for idx in mappingdictionary.keys() if mappingdictionary[idx]["struct"] & OD_IdenticalIndexes]
-        listpluri.sort()
-        for idx in listpluri:
+        listpluri = [
+            idx for idx, mapping in mappingdictionary.items()
+            if mapping["struct"] & OD_IdenticalIndexes
+        ]
+        for idx in sorted(listpluri):
             nb_max = mappingdictionary[idx]["nbmax"]
             incr = mappingdictionary[idx]["incr"]
             if idx < index < idx + incr * nb_max and (index - idx) % incr == 0:
@@ -429,9 +467,12 @@ def StringFormat(text, idx, sub):  # pylint: disable=unused-argument
     result = name_model.match(text)
     if result:
         fmt = result.groups()
-        # FIXME: Using eval is not safe
-        dbg("EVAL in StringFormat(): '%s'" % (fmt[1],))
-        return fmt[0] % eval(fmt[1])
+        try:
+            # dbg("EVAL StringFormat(): '%s'" % (fmt[1],))
+            return fmt[0] % eval(fmt[1])  # FIXME: Using eval is not safe
+        except Exception as exc:
+            dbg("EVAL FAILED: %s" % (exc, ))
+            raise
     else:
         return text
 
@@ -454,12 +495,12 @@ class Node(object):
         self.ID = id
         self.Description = description
         self.ProfileName = profilename
-        self.Profile = profile or {}
+        self.Profile = profile or OrderedDict()
         self.SpecificMenu = specificmenu or []
-        self.Dictionary = {}
-        self.ParamsDictionary = {}
-        self.DS302 = {}
-        self.UserMapping = {}
+        self.Dictionary = OrderedDict()
+        self.ParamsDictionary = OrderedDict()
+        self.DS302 = OrderedDict()
+        self.UserMapping = OrderedDict()
 
     def GetNodeName(self):
         """
@@ -501,10 +542,7 @@ class Node(object):
         """
         Return the node description
         """
-        if getattr(self, "Description", False):
-            return self.Description
-        else:
-            return ""
+        return getattr(self, "Description", "")
 
     def SetNodeDescription(self, description):
         """
@@ -692,10 +730,10 @@ class Node(object):
         if index in self.Dictionary:
             if subindex is None:
                 if isinstance(self.Dictionary[index], list):
-                    values = [len(self.Dictionary[index])]
-                    for value in self.Dictionary[index]:
-                        values.append(self.CompileValue(value, index, compute))
-                    return values
+                    return [len(self.Dictionary[index])] + [
+                        self.CompileValue(value, index, compute)
+                        for value in self.Dictionary[index]
+                    ]
                 else:
                     return self.CompileValue(self.Dictionary[index], index, compute)
             elif subindex == 0:
@@ -914,9 +952,7 @@ class Node(object):
         """
         Return a sorted list of indexes in Object Dictionary
         """
-        listindex = list(self.Dictionary.keys())
-        listindex.sort()
-        return listindex
+        return list(sorted(self.Dictionary))
 
     def Print(self):
         """
@@ -926,9 +962,7 @@ class Node(object):
 
     def PrintString(self):
         result = ""
-        listindex = list(self.Dictionary.keys())
-        listindex.sort()
-        for index in listindex:
+        for index in sorted(self.Dictionary):
             name = self.GetEntryName(index)
             values = self.Dictionary[index]
             if isinstance(values, list):
@@ -960,18 +994,20 @@ class Node(object):
         return result
 
     def CompileValue(self, value, index, compute=True):
-        if isinstance(value, (str, unicode)) and value.upper().find("$NODEID") != -1:
+        if isinstance(value, (str, unicode)) and '$NODEID' in value.upper():
             base = self.GetBaseIndex(index)  # NOTE: Don't change this, as the eval() below depend on it
             try:
-                # FIXME: Using eval is not safe
-                dbg("EVAL in CompileValue(): '%s'" % (value,))
-                raw = eval(value)
-                if compute:
-                    dbg("EVAL in CompileValue() #2: '%s'" % (raw.upper().replace("$NODEID", "self.ID"),))
-                    return eval(raw.upper().replace("$NODEID", "self.ID"))
+                dbg("EVAL CompileValue(): '%s'" % (value,))
+                raw = eval(value)  # FIXME: Using eval is not safe
+                if compute and isinstance(raw, (str, unicode)):
+                    raw = raw.upper().replace("$NODEID", "self.ID")
+                    dbg("EVAL CompileValue() #2: '%s'" % (raw,))
+                    return eval(raw)  # FIXME: Using eval is not safe
                 return raw
-            except Exception:
-                return 0
+            except Exception as exc:
+                dbg("EVAL FAILED: %s" % exc)
+                raise_from(ValueError("CompileValue failed for '%s'" % (value,)), exc)
+                return 0  # FIXME: Why ignore this exception?
         else:
             return value
 
@@ -1120,8 +1156,7 @@ class Node(object):
         list_ = FindTypeList(MappingDictionary)
         for mapping in self.GetMappings():
             list_.extend(FindTypeList(mapping))
-        list_.sort()
-        return ",".join(list_)
+        return ",".join(sorted(list_))
 
     def GenerateMapName(self, name, index, subindex):  # pylint: disable=unused-argument
         return "%s (0x%4.4X)" % (name, index)
@@ -1155,7 +1190,9 @@ class Node(object):
                                     return (index << 16) + (subindex << 8) + size * int(self.ParamsDictionary[index][subindex]["buffer_size"])
                                 else:
                                     return None  # String size is too big to fit in a PDO
-                            except KeyError:
+                            except KeyError as exc:
+                                dbg("KeyError: %s" % exc)
+                                raise  # FIXME: Original code swallows the exception
                                 return None  # No string length found and default string size is too big to fit in a PDO
                     else:
                         if self.IsStringType(self.UserMapping[index]["values"][subindex]["type"]):
@@ -1164,7 +1201,9 @@ class Node(object):
                                     return (index << 16) + (subindex << 8) + size * int(self.ParamsDictionary[index][subindex]["buffer_size"])
                                 else:
                                     return None  # String size is too big to fit in a PDO
-                            except KeyError:
+                            except KeyError as exc:
+                                dbg("KeyError: %s" % exc)
+                                raise   # FIXME: Original code swallows the exception
                                 return None  # No string length found and default string size is too big to fit in a PDO
                     return (index << 16) + (subindex << 8) + size
             return None
@@ -1194,9 +1233,7 @@ def BE_to_LE(value):
     @return: a string containing the value converted
     """
 
-    data = [char for char in value]
-    data.reverse()
-    return int("".join(["%2.2X" % ord(char) for char in data]), 16)
+    return int("".join(["%2.2X" % ord(char) for char in reversed(value)]), 16)
 
 
 def LE_to_BE(value, size):

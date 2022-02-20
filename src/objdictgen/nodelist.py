@@ -92,14 +92,13 @@ class NodeList(object):
         return self.SlaveNodes[idx]["Name"]
 
     def GetSlaveNames(self):
-        nodes = list(self.SlaveNodes.keys())
-        nodes.sort()
-        return ["0x%2.2X %s" % (idx, self.SlaveNodes[idx]["Name"]) for idx in nodes]
+        return [
+            "0x%2.2X %s" % (idx, self.SlaveNodes[idx]["Name"])
+            for idx in sorted(self.SlaveNodes)
+        ]
 
     def GetSlaveIDs(self):
-        nodes = list(self.SlaveNodes.keys())
-        nodes.sort()
-        return nodes
+        return list(sorted(self.SlaveNodes))
 
     def SetCurrentSelected(self, selected):
         self.CurrentSelected = selected
@@ -113,75 +112,54 @@ class NodeList(object):
 
         self.Root = root
         if not os.path.exists(self.Root):
-            return "'%s' folder doesn't exist" % self.Root
+            raise OSError(errno.ENOTDIR, os.strerror(errno.ENOTDIR), self.Root)
 
         eds_folder = self.GetEDSFolder()
         if not os.path.exists(eds_folder):
             os.mkdir(eds_folder)
-            # return "'%s' folder doesn't contain a 'eds' folder"%self.Root
+            # raise ValueError("'%s' folder doesn't contain a 'eds' folder" % self.Root)
 
         files = os.listdir(eds_folder)
         for file in files:
             filepath = os.path.join(eds_folder, file)
             if os.path.isfile(filepath) and os.path.splitext(filepath)[-1] == ".eds":
-                result = self.LoadEDS(file)
-                if result is not None:
-                    return result
+                self.LoadEDS(file)
 
-        result = self.LoadMasterNode(netname)
-        if result is not None:
-            return result
-
-        result = self.LoadSlaveNodes(netname)
-        if result is not None:
-            return result
-
+        self.LoadMasterNode(netname)
+        self.LoadSlaveNodes(netname)
         self.NetworkName = netname
 
     def SaveProject(self, netname=None):
-        result = self.SaveMasterNode(netname)
-        if result is not None:
-            return result
+        self.SaveMasterNode(netname)
+        self.SaveNodeList(netname)
 
-        result = self.SaveNodeList(netname)
-        if result is not None:
-            return result
-
-    def ImportEDSFile(self, edspath, force=False):
+    def GetEDSFilePath(self, edspath):
         _, file = os.path.split(edspath)
         eds_folder = self.GetEDSFolder()
-        eds = os.path.join(eds_folder, file)
-        if not force and os.path.isfile(eds):
-            return "EDS file already imported", True
-        else:
-            shutil.copy(edspath, eds_folder)
-            return self.LoadEDS(file), False
+        return os.path.join(eds_folder, file)
+
+    def ImportEDSFile(self, edspath):
+        _, file = os.path.split(edspath)
+        shutil.copy(edspath, self.GetEDSFolder())
+        self.LoadEDS(file)
 
     def LoadEDS(self, eds):
         edspath = os.path.join(self.GetEDSFolder(), eds)
         node = eds_utils.GenerateNode(edspath)
-        if isinstance(node, Node):
-            self.EDSNodes[eds] = node
-            return None
-        else:
-            return node
+        self.EDSNodes[eds] = node
 
     def AddSlaveNode(self, nodename, nodeid, eds):
-        if eds in self.EDSNodes:
-            slave = {"Name": nodename, "EDS": eds, "Node": self.EDSNodes[eds]}
-            self.SlaveNodes[nodeid] = slave
-            self.Changed = True
-            return None
-        else:
-            return "'%s' EDS file is not available" % eds
+        if eds not in self.EDSNodes:
+            raise ValueError("'%s' EDS file is not available" % eds)
+        slave = {"Name": nodename, "EDS": eds, "Node": self.EDSNodes[eds]}
+        self.SlaveNodes[nodeid] = slave
+        self.Changed = True
 
     def RemoveSlaveNode(self, index):
-        if index in self.SlaveNodes:
-            self.SlaveNodes.pop(index)
-            self.Changed = True
-            return None
-        else:
-            return "Node with '0x%2.2X' ID doesn't exist"
+        if index not in self.SlaveNodes:
+            raise ValueError("Node with '0x%2.2X' ID doesn't exist" % (index))
+        self.SlaveNodes.pop(index)
+        self.Changed = True
 
     def LoadMasterNode(self, netname=None):
         if netname:
@@ -189,22 +167,20 @@ class NodeList(object):
         else:
             masterpath = os.path.join(self.Root, "master.od")
         if os.path.isfile(masterpath):
-            result = self.Manager.OpenFileInCurrent(masterpath)
+            index = self.Manager.OpenFileInCurrent(masterpath)
         else:
-            result = self.Manager.CreateNewNode("MasterNode", 0x00, "master", "", "None", "", "heartbeat", ["DS302"])
-        if not isinstance(result, int):
-            return result
-        return None
+            index = self.Manager.CreateNewNode("MasterNode", 0x00, "master", "", "None", "", "Heartbeat", ["DS302"])
+        return index
 
     def SaveMasterNode(self, netname=None):
         if netname:
             masterpath = os.path.join(self.Root, "%s_master.od" % netname)
         else:
             masterpath = os.path.join(self.Root, "master.od")
-        if self.Manager.SaveCurrentInFile(masterpath):
-            return None
-        else:
-            return "Fail to save Master Node"
+        try:
+            self.Manager.SaveCurrentInFile(masterpath)
+        except Exception as exc:  # pylint: disable=broad-except
+            raise_from(ValueError("Fail to save master node in '%s'" % (masterpath, )), exc)
 
     def LoadSlaveNodes(self, netname=None):
         cpjpath = os.path.join(self.Root, "nodelist.cpj")
@@ -221,14 +197,12 @@ class NodeList(object):
                     network = networks[0]
                     self.NetworkName = network["Name"]
                 if network:
-                    for nodeid, node in list(network["Nodes"].items()):
+                    for nodeid, node in network["Nodes"].items():
                         if node["Present"] == 1:
-                            result = self.AddSlaveNode(node["Name"], nodeid, node["DCFName"])
-                            if result is not None:
-                                return result
+                            self.AddSlaveNode(node["Name"], nodeid, node["DCFName"])
                 self.Changed = False
-            except SyntaxError as message:
-                return "Unable to load CPJ file: %s" % message
+            except Exception as exc:  # pylint: disable=broad-except
+                raise_from(ValueError("Unable to load CPJ file '%s'" % (cpjpath, )), exc)
         return None
 
     def SaveNodeList(self, netname=None):
@@ -243,15 +217,14 @@ class NodeList(object):
                 f.write(content)
             self.Changed = False
             return None
-        except Exception:
-            return "Fail to save node list"
+        except Exception as exc:  # pylint: disable=broad-except
+            raise_from(ValueError("Fail to save node list in '%s'" % (cpjpath)), exc)
 
     def GetSlaveNodeEntry(self, nodeid, index, subindex=None):
-        if nodeid in self.SlaveNodes:
-            self.SlaveNodes[nodeid]["Node"].SetNodeID(nodeid)
-            return self.SlaveNodes[nodeid]["Node"].GetEntry(index, subindex)
-        else:
-            return "Node 0x%2.2X doesn't exist" % nodeid
+        if nodeid not in self.SlaveNodes:
+            raise ValueError("Node 0x%2.2X doesn't exist" % nodeid)
+        self.SlaveNodes[nodeid]["Node"].SetNodeID(nodeid)
+        return self.SlaveNodes[nodeid]["Node"].GetEntry(index, subindex)
 
     def GetMasterNodeEntry(self, index, subindex=None):
         return self.Manager.GetCurrentEntry(index, subindex)
@@ -260,14 +233,12 @@ class NodeList(object):
         self.Manager.SetCurrentEntry(index, subindex, value)
 
     def GetOrderNumber(self, nodeid):
-        nodeindexes = list(self.SlaveNodes.keys())
-        nodeindexes.sort()
+        nodeindexes = list(sorted(self.SlaveNodes))
         return nodeindexes.index(nodeid) + 1
 
     def GetNodeByOrder(self, order):
         if order > 0:
-            nodeindexes = list(self.SlaveNodes.keys())
-            nodeindexes.sort()
+            nodeindexes = list(sorted(self.SlaveNodes))
             if order <= len(nodeindexes):
                 return self.SlaveNodes[nodeindexes[order - 1]]["Node"]
         return None
@@ -276,50 +247,45 @@ class NodeList(object):
         if self.CurrentSelected is not None:
             if self.CurrentSelected == 0:
                 return self.Manager.IsCurrentEntry(index)
-            else:
-                node = self.SlaveNodes[self.CurrentSelected]["Node"]
-                if node:
-                    node.SetNodeID(self.CurrentSelected)
-                    return node.IsEntry(index)
+            node = self.SlaveNodes[self.CurrentSelected]["Node"]
+            if node:
+                node.SetNodeID(self.CurrentSelected)
+                return node.IsEntry(index)
         return False
 
     def GetEntryInfos(self, index):
         if self.CurrentSelected is not None:
             if self.CurrentSelected == 0:
                 return self.Manager.GetEntryInfos(index)
-            else:
-                node = self.SlaveNodes[self.CurrentSelected]["Node"]
-                if node:
-                    node.SetNodeID(self.CurrentSelected)
-                    return node.GetEntryInfos(index)
+            node = self.SlaveNodes[self.CurrentSelected]["Node"]
+            if node:
+                node.SetNodeID(self.CurrentSelected)
+                return node.GetEntryInfos(index)
         return None
 
     def GetSubentryInfos(self, index, subindex):
         if self.CurrentSelected is not None:
             if self.CurrentSelected == 0:
                 return self.Manager.GetSubentryInfos(index, subindex)
-            else:
-                node = self.SlaveNodes[self.CurrentSelected]["Node"]
-                if node:
-                    node.SetNodeID(self.CurrentSelected)
-                    return node.GetSubentryInfos(index, subindex)
+            node = self.SlaveNodes[self.CurrentSelected]["Node"]
+            if node:
+                node.SetNodeID(self.CurrentSelected)
+                return node.GetSubentryInfos(index, subindex)
         return None
 
     def GetCurrentValidIndexes(self, min, max):
         if self.CurrentSelected is not None:
             if self.CurrentSelected == 0:
                 return self.Manager.GetCurrentValidIndexes(min, max)
-            else:
-                node = self.SlaveNodes[self.CurrentSelected]["Node"]
-                if node:
-                    node.SetNodeID(self.CurrentSelected)
-                    validindexes = []
-                    for index in node.GetIndexes():
-                        if min <= index <= max:
-                            validindexes.append((node.GetEntryName(index), index))
-                    return validindexes
-                else:
-                    print("Can't find node")
+            node = self.SlaveNodes[self.CurrentSelected]["Node"]
+            if node:
+                node.SetNodeID(self.CurrentSelected)
+                return [
+                    (node.GetEntryName(index), index)
+                    for index in node.GetIndexes()
+                    if min <= index <= max
+                ]
+            raise ValueError("Can't find node")
         return []
 
     def GetCurrentEntryValues(self, index):
@@ -328,8 +294,7 @@ class NodeList(object):
             if node:
                 node.SetNodeID(self.CurrentSelected)
                 return self.Manager.GetNodeEntryValues(node, index)
-            else:
-                print("Can't find node")
+            raise ValueError("Can't find node")
         return [], []
 
     def AddToMasterDCF(self, node_id, index, subindex, size, value):
@@ -349,17 +314,14 @@ def main():
 
     nodelist = NodeList(manager)
 
-    result = nodelist.LoadProject("/home/laurent/test_nodelist")
-    if result is not None:
-        print(result)
-    else:
-        print("MasterNode :")
-        manager.CurrentNode.Print()
+    nodelist.LoadProject("/home/laurent/test_nodelist")
+    print("MasterNode :")
+    manager.CurrentNode.Print()
+    print()
+    for nodeid, node in nodelist.SlaveNodes.items():
+        print("SlaveNode name=%s id=0x%2.2X :" % (node["Name"], nodeid))
+        node["Node"].Print()
         print()
-        for nodeid, node in nodelist.SlaveNodes.items():
-            print("SlaveNode name=%s id=0x%2.2X :" % (node["Name"], nodeid))
-            node["Node"].Print()
-            print()
 
 
 if __name__ == "__main__":
