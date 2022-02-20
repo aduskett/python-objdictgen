@@ -51,7 +51,7 @@ Mapping = {
     0x607C : {"name" : "Home offset", "struct" : var, "need" : False, "values" :
                 [{"name" : "Home offset", "type" : 0x04, "access" : 'rw', "pdo" : True}]},
 
-    0x607D : {"name" : "Software position limit", "struct" : array, "need" : False, "values" :
+    0x607D : {"name" : "Software position limit", "struct" : record, "need" : False, "values" :
                 [{"name" : "Number of entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
                  {"name" : "Minimal position limit", "type" : 0x04, "access" : 'rw', "pdo" : False},
                  {"name" : "Maximal position limit", "type" : 0x04, "access" : 'rw', "pdo" : False}]},
@@ -95,7 +95,7 @@ Mapping = {
     0x6098 : {"name" : "Homing method", "struct" : var, "need" : False, "values" :
                 [{"name" : "Homing method", "type" : 0x02, "access" : 'rw', "pdo" : True}]},
 
-    0x6099 : {"name" : "Homing speeds", "struct" : array, "need" : False, "values" :
+    0x6099 : {"name" : "Homing speeds", "struct" : record, "need" : False, "values" :
                 [{"name" : "Number of entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
                  {"name" : "Speed for switch search", "type" : 0x07, "access" : 'rw', "pdo" : True},
                  {"name" : "Speed for zero search", "type" : 0x07, "access" : 'rw', "pdo" : True}]},
@@ -103,17 +103,17 @@ Mapping = {
     0x609A : {"name" : "Homing acceleration", "struct" : var, "need" : False, "values" :
                 [{"name" : "Homing acceleration", "type" : 0x07, "access" : 'rw', "pdo" : True}]},
 
-    0x60F6 : {"name" : "Current control parameter set", "struct" : array, "need" : False, "values" :
+    0x60F6 : {"name" : "Current control parameter set", "struct" : record, "need" : False, "values" :
                 [{"name" : "Number of entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
                  {"name" : "Current regulator P-gain", "type" : 0x03, "access" : 'rw', "pdo" : True},
                  {"name" : "Current regulator I-gain", "type" : 0x03, "access" : 'rw', "pdo" : True}]},
 
-    0x60F9 : {"name" : "Velocity control parameter set", "struct" : array, "need" : False, "values" :
+    0x60F9 : {"name" : "Velocity control parameter set", "struct" : record, "need" : False, "values" :
                 [{"name" : "Number of entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
                  {"name" : "Velocity regulator P-gain", "type" : 0x03, "access" : 'rw', "pdo" : True},
                  {"name" : "Velocity regulator I-gain", "type" : 0x03, "access" : 'rw', "pdo" : True}]},
 
-    0x60FB : {"name" : "Position control parameter set", "struct" : array, "need" : False, "values" :
+    0x60FB : {"name" : "Position control parameter set", "struct" : record, "need" : False, "values" :
                 [{"name" : "Number of entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
                  {"name" : "Position regulator P-gain", "type" : 0x03, "access" : 'rw', "pdo" : True},
                  {"name" : "Position regulator I-gain", "type" : 0x03, "access" : 'rw', "pdo" : True},
@@ -127,7 +127,7 @@ Mapping = {
     0x6402 : {"name" : "Motor type", "struct" : var, "need" : False, "values" :
                 [{"name" : "Motor type", "type" : 0x06, "access" : 'rw', "pdo" : False}]},
 
-    0x6410 : {"name" : "Motor data", "struct" : array, "need" : False, "values" :
+    0x6410 : {"name" : "Motor data", "struct" : record, "need" : False, "values" :
                 [{"name" : "Number of entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
                  {"name" : "Continous current limit", "type" : 0x06, "access" : 'rw', "pdo" : True},
                  {"name" : "Output current limit", "type" : 0x06, "access" : 'rw', "pdo" : True},

@@ -314,7 +314,7 @@ class MapVariableDialog(wx.Dialog):
               id=ID_MAPVARIABLEDIALOGRADIOBUTTON2)
 
         self.radioButton3 = wx.RadioButton(id=ID_MAPVARIABLEDIALOGRADIOBUTTON3,
-              label='REC', name='radioButton3', parent=self,
+              label='RECORD', name='radioButton3', parent=self,
               pos=wx.Point(0, 0), size=wx.Size(80, 24), style=0)
         self.radioButton3.SetValue(False)
         self.radioButton3.Bind(wx.EVT_RADIOBUTTON, self.OnRadioButton3Click,
@@ -385,13 +385,13 @@ class MapVariableDialog(wx.Dialog):
         name = self.IndexName.GetValue()
         index = int(self.Index.GetValue(), 16)
         if self.radioButton1.GetValue():
-            struct = 1
+            struct = nod.var
             number = None
         elif self.radioButton2.GetValue():
-            struct = 7
+            struct = nod.array
             number = int(self.Number.GetValue())
         elif self.radioButton3.GetValue():
-            struct = 3
+            struct = nod.record
             number = int(self.Number.GetValue())
         return index, name, struct, number
 

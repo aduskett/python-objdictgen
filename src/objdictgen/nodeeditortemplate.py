@@ -86,9 +86,9 @@ class NodeEditorTemplate(object):
                 if entryinfos["struct"] & nod.OD_IdenticalIndexes:
                     number = " possibly defined %d times" % entryinfos["nbmax"]
                 if entryinfos["struct"] & nod.OD_IdenticalSubindexes:
-                    struct = "REC"
-                elif entryinfos["struct"] & nod.OD_MultipleSubindexes:
                     struct = "ARRAY"
+                elif entryinfos["struct"] & nod.OD_MultipleSubindexes:
+                    struct = "RECORD"
                 text = "%s: %s entry of struct %s%s." % (name, category, struct, number)
                 self.Frame.HelpBar.SetStatusText(text, 2)
             else:

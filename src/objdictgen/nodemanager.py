@@ -469,7 +469,7 @@ class NodeManager(object):
         for index in addinglist:
             infos = self.GetEntryInfos(index)
             if infos["struct"] & nod.OD_MultipleSubindexes:
-                # First case entry is a record
+                # First case entry is an array
                 if infos["struct"] & nod.OD_IdenticalSubindexes:
                     subentry_infos = self.GetSubentryInfos(index, 1)
                     if "default" in subentry_infos:
@@ -494,7 +494,7 @@ class NodeManager(object):
                         node.AddEntry(index, i, default)
                         i += 1
                         subentry_infos = self.GetSubentryInfos(index, i)
-            # Third case entry is a record
+            # Third case entry is a var
             else:
                 subentry_infos = self.GetSubentryInfos(index, 0)
                 if "default" in subentry_infos:
@@ -591,7 +591,7 @@ class NodeManager(object):
             else:
                 values = {"name": "Number of Entries", "type": 0x05, "access": "ro", "pdo": False}
                 node.AddMappingEntry(index, 0, values=values)
-                if struct == nod.rec:
+                if struct == nod.array:
                     values = {"name": name + " %d[(sub)]", "type": 0x05, "access": "rw", "pdo": True, "nbmax": 0xFE}
                     node.AddMappingEntry(index, 1, values=values)
                     for i in range(number):
@@ -618,7 +618,7 @@ class NodeManager(object):
         size = self.GetEntryInfos(type)["size"]
         default = self.GetTypeDefaultValue(type)
         if valuetype == 0:
-            self.CurrentNode.AddMappingEntry(index, name="%s[%d-%d]" % (name, min, max), struct=3, size=size, default=default)
+            self.CurrentNode.AddMappingEntry(index, name="%s[%d-%d]" % (name, min, max), struct=nod.record, size=size, default=default)
             self.CurrentNode.AddMappingEntry(index, 0, values={"name": "Number of Entries", "type": 0x05, "access": "ro", "pdo": False})
             self.CurrentNode.AddMappingEntry(index, 1, values={"name": "Type", "type": 0x05, "access": "ro", "pdo": False})
             self.CurrentNode.AddMappingEntry(index, 2, values={"name": "Minimum Value", "type": type, "access": "ro", "pdo": False})
@@ -627,7 +627,7 @@ class NodeManager(object):
             self.CurrentNode.AddEntry(index, 2, min)
             self.CurrentNode.AddEntry(index, 3, max)
         elif valuetype == 1:
-            self.CurrentNode.AddMappingEntry(index, name="%s%d" % (name, length), struct=3, size=length * size, default=default)
+            self.CurrentNode.AddMappingEntry(index, name="%s%d" % (name, length), struct=nod.record, size=length * size, default=default)
             self.CurrentNode.AddMappingEntry(index, 0, values={"name": "Number of Entries", "type": 0x05, "access": "ro", "pdo": False})
             self.CurrentNode.AddMappingEntry(index, 1, values={"name": "Type", "type": 0x05, "access": "ro", "pdo": False})
             self.CurrentNode.AddMappingEntry(index, 2, values={"name": "Length", "type": 0x05, "access": "ro", "pdo": False})
@@ -731,7 +731,7 @@ class NodeManager(object):
                         entry_infos = self.GetEntryInfos(index)
                         subindex0_infos = self.GetSubentryInfos(index, 0, False).copy()
                         subindex1_infos = self.GetSubentryInfos(index, 1, False).copy()
-                        node.AddMappingEntry(index, name=entry_infos["name"], struct=7)
+                        node.AddMappingEntry(index, name=entry_infos["name"], struct=nod.array)
                         node.AddMappingEntry(index, 0, values=subindex0_infos)
                         node.AddMappingEntry(index, 1, values=subindex1_infos)
                 node.SetMappingEntry(index, subindex, values={name: value})
@@ -750,7 +750,7 @@ class NodeManager(object):
         size = self.GetEntryInfos(type)["size"]
         default = self.GetTypeDefaultValue(type)
         if new_valuetype == 0:
-            self.CurrentNode.SetMappingEntry(index, name="%s[%d-%d]" % (name, min, max), struct=3, size=size, default=default)
+            self.CurrentNode.SetMappingEntry(index, name="%s[%d-%d]" % (name, min, max), struct=nod.record, size=size, default=default)
             if valuetype == 1:
                 self.CurrentNode.SetMappingEntry(index, 2, values={"name": "Minimum Value", "type": type, "access": "ro", "pdo": False})
                 self.CurrentNode.AddMappingEntry(index, 3, values={"name": "Maximum Value", "type": type, "access": "ro", "pdo": False})
@@ -761,7 +761,7 @@ class NodeManager(object):
             else:
                 self.CurrentNode.SetEntry(index, 3, max)
         elif new_valuetype == 1:
-            self.CurrentNode.SetMappingEntry(index, name="%s%d" % (name, length), struct=3, size=size, default=default)
+            self.CurrentNode.SetMappingEntry(index, name="%s%d" % (name, length), struct=nod.record, size=size, default=default)
             if valuetype == 0:
                 self.CurrentNode.SetMappingEntry(index, 2, values={"name": "Length", "type": 0x02, "access": "ro", "pdo": False})
                 self.CurrentNode.RemoveMappingEntry(index, 3)

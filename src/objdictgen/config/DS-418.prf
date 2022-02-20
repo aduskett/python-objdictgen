@@ -12,23 +12,23 @@ Mapping = {
     0x6010 : {"name" : "Temperature", "struct" : var, "need" : True, "values" :
                 [{"name" : "Temperature", "type" : 0x03, "access" : 'ro', "pdo" : True}]},
 
-    0x6020 : {"name" : "Battery Parameters", "struct" : array, "need" : True, "values" :
+    0x6020 : {"name" : "Battery Parameters", "struct" : record, "need" : True, "values" :
                 [{"name" : "Highest Sub-Index Supported", "type" : 0x05, "access" : 'ro', "pdo" : False},
                  {"name" : "Battery Type", "type" : 0x05, "access" : 'ro', "pdo" : False},
                  {"name" : "Ah Capacity", "type" : 0x06, "access" : 'ro', "pdo" : False},
                  {"name" : "Maximum Charge Current", "type" : 0x06, "access" : 'ro', "pdo" : False},
                  {"name" : "Number of Cells", "type" : 0x06, "access" : 'ro', "pdo" : False}]},
 
-    0x6030 : {"name" : "Battery Serial Number", "struct" : rec, "need" : False, "values" :
+    0x6030 : {"name" : "Battery Serial Number", "struct" : array, "need" : False, "values" :
                 [{"name" : "Number of Elements", "type" : 0x05, "access" : 'ro', "pdo" : False},
                  {"name" : "Packed ASCII Characters %d to %d[(sub*4-3,sub*4)]", "type" : 0x07, "access" : 'ro', "pdo" : False, "nbmax" : 0x03}]},
-    0x6031 : {"name" : "Battery ID", "struct" : rec, "need" : False, "values" :
+    0x6031 : {"name" : "Battery ID", "struct" : array, "need" : False, "values" :
                 [{"name" : "Number of Elements", "type" : 0x05, "access" : 'ro', "pdo" : False},
                  {"name" : "Packed ASCII Characters %d to %d[(sub*4-3,sub*4)]", "type" : 0x07, "access" : 'ro', "pdo" : False, "nbmax" : 0x05}]},
-    0x6040 : {"name" : "Vehicle Serial Number", "struct" : rec, "need" : False, "values" :
+    0x6040 : {"name" : "Vehicle Serial Number", "struct" : array, "need" : False, "values" :
                 [{"name" : "Number of Elements", "type" : 0x05, "access" : 'ro', "pdo" : False},
                  {"name" : "Packed ASCII Characters %d to %d[(sub*4-3,sub*4)]", "type" : 0x07, "access" : 'ro', "pdo" : False, "nbmax" : 0x05}]},
-    0x6041 : {"name" : "Vehicle ID", "struct" : rec, "need" : False, "values" :
+    0x6041 : {"name" : "Vehicle ID", "struct" : array, "need" : False, "values" :
                 [{"name" : "Number of Elements", "type" : 0x05, "access" : 'ro', "pdo" : False},
                  {"name" : "Packed ASCII Characters %d to %d[(sub*4-3,sub*4)]", "type" : 0x07, "access" : 'ro', "pdo" : False, "nbmax" : 0x05}]},
 
@@ -44,7 +44,7 @@ Mapping = {
     0x6053 : {"name" : "Ah Since Last Equalization", "struct" : var, "need" : False, "values" :
                 [{"name" : "Ah Since Last Equalization", "type" : 0x06, "access" : 'rw', "pdo" : False}]},
 
-    0x6054 : {"name" : "Date of Last Equalization", "struct" : array, "need" : False, "values" :
+    0x6054 : {"name" : "Date of Last Equalization", "struct" : record, "need" : False, "values" :
                 [{"name" : "Number of Elements", "type" : 0x05, "access" : 'ro', "pdo" : False},
                  {"name" : "Number of Minutes", "type" : 0x06, "access" : 'rw', "pdo" : False},
                  {"name" : "Number of Days", "type" : 0x06, "access" : 'rw', "pdo" : False}]},

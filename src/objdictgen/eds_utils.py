@@ -709,7 +709,7 @@ def GenerateNode(filepath, nodeid=0):
                         if values["DATATYPE"] != 0xF:
                             raise ValueError("Domain entry 0x%4.4X DataType must be 0xF(DOMAIN) if defined" % entry)
                     # Add mapping for entry
-                    node.AddMappingEntry(entry, name=values["PARAMETERNAME"], struct=1)
+                    node.AddMappingEntry(entry, name=values["PARAMETERNAME"], struct=nod.var)
                     # Add mapping for first subindex
                     node.AddMappingEntry(entry, 0, values={
                         "name": values["PARAMETERNAME"],
@@ -722,7 +722,7 @@ def GenerateNode(filepath, nodeid=0):
                     # Extract maximum subindex number defined
                     max_subindex = max(values["subindexes"])
                     # Add mapping for entry
-                    node.AddMappingEntry(entry, name=values["PARAMETERNAME"], struct=3)
+                    node.AddMappingEntry(entry, name=values["PARAMETERNAME"], struct=nod.record)
                     # Add mapping for first subindex
                     node.AddMappingEntry(entry, 0, values={
                         "name": "Number of Entries",
@@ -755,7 +755,7 @@ def GenerateNode(filepath, nodeid=0):
                 #     if 0 not in values["subindexes"]:
                 #         raise ValueError("Error on entry 0x%4.4X: Subindex 0 must be defined for a RECORD entry" % entry)
                 #     # Add mapping for entry
-                #     node.AddMappingEntry(entry, name=values["PARAMETERNAME"], struct=7)
+                #     node.AddMappingEntry(entry, name=values["PARAMETERNAME"], struct=nod.array)
                 #     # Add mapping for first subindex
                 #     node.AddMappingEntry(entry, 0, values={
                 #         "name": "Number of Entries",
