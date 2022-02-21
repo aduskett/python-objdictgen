@@ -591,25 +591,25 @@ Mapping = {
                  {"name" : "SI unit", "type" : 0x05, "access" : 'rw', "pdo" : True},
                  {"name" : "Prefix", "type" : 0x02, "access" : 'rw', "pdo" : True}]},
 
-    0x6330 : {"name" : "vpoc demand value generator ramp type", "struct" : recordd, "need" : False, "values" :
+    0x6330 : {"name" : "vpoc demand value generator ramp type", "struct" : record, "need" : False, "values" :
                 [{"name" : "Number of entries", "type" : 0x02, "access" : 'ro', "pdo" : False},
                  {"name" : "Value", "type" : 0x03, "access" : 'rw', "pdo" : True},
                  {"name" : "SI unit", "type" : 0x05, "access" : 'rw', "pdo" : True},
                  {"name" : "Prefix", "type" : 0x02, "access" : 'rw', "pdo" : True}]},
 
-    0x6331 : {"name" : "vpoc demand value generator ramp acceleration time", "struct" : recordddd, "need" : False, "values" :
+    0x6331 : {"name" : "vpoc demand value generator ramp acceleration time", "struct" : record, "need" : False, "values" :
                 [{"name" : "Number of entries", "type" : 0x02, "access" : 'ro', "pdo" : False},
                  {"name" : "Value", "type" : 0x03, "access" : 'rw', "pdo" : True},
                  {"name" : "SI unit", "type" : 0x05, "access" : 'rw', "pdo" : True},
                  {"name" : "Prefix", "type" : 0x02, "access" : 'rw', "pdo" : True}]},
 
-    0x6332 : {"name" : "vpoc demand value generator ramp acceleration time positive", "struct" : recorddddddd, "need" : False, "values" :
+    0x6332 : {"name" : "vpoc demand value generator ramp acceleration time positive", "struct" : record, "need" : False, "values" :
                 [{"name" : "Number of entries", "type" : 0x02, "access" : 'ro', "pdo" : False},
                  {"name" : "Value", "type" : 0x03, "access" : 'rw', "pdo" : True},
                  {"name" : "SI unit", "type" : 0x05, "access" : 'rw', "pdo" : True},
                  {"name" : "Prefix", "type" : 0x02, "access" : 'rw', "pdo" : True}]},
 
-    0x6333 : {"name" : "vpoc demand value generator ramp acceleration time negative", "struct" : recorddddddd, "need" : False, "values" :
+    0x6333 : {"name" : "vpoc demand value generator ramp acceleration time negative", "struct" : record, "need" : False, "values" :
                 [{"name" : "Number of entries", "type" : 0x02, "access" : 'ro', "pdo" : False},
                  {"name" : "Value", "type" : 0x03, "access" : 'rw', "pdo" : True},
                  {"name" : "SI unit", "type" : 0x05, "access" : 'rw', "pdo" : True},
