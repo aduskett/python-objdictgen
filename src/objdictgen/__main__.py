@@ -7,12 +7,12 @@ def objdictgen_main():
 
 
 def objdictedit_main():
-    from .objdictedit import main as _objdictedit_main
+    from .ui.objdictedit import main as _objdictedit_main
     _objdictedit_main()
 
 
 def networkedit_main():
-    from .networkedit import main as _networkedit_main
+    from .ui.networkedit import main as _networkedit_main
     _networkedit_main()
 
 

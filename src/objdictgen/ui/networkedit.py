@@ -35,15 +35,15 @@ import getopt
 
 import wx
 
-from .nodelist import NodeList
-from .nodemanager import NodeManager
 from .networkeditortemplate import NetworkEditorTemplate
-from . import dbg
+from ..nodelist import NodeList
+from ..nodemanager import NodeManager
+from .. import dbg
 
 
 __version__ = "$Revision: 1.27 $"
 
-ScriptDirectory = os.path.split(os.path.realpath(__file__))[0]
+ScriptDirectory = os.path.split(os.path.split(__file__)[0])[0]
 
 
 def usage():
@@ -225,7 +225,7 @@ class NetworkEdit(wx.Frame, NetworkEditorTemplate):
         self._init_ctrls(parent)
         self.HtmlFrameOpened = []
 
-        icon = wx.Icon(os.path.join(ScriptDirectory, "networkedit.ico"), wx.BITMAP_TYPE_ICO)
+        icon = wx.Icon(os.path.join(ScriptDirectory, "ui", "networkedit.ico"), wx.BITMAP_TYPE_ICO)
         self.SetIcon(icon)
 
         if self.ModeSolo:

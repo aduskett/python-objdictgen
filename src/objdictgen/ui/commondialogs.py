@@ -30,10 +30,10 @@ import os
 import wx
 import wx.grid
 
-from . import node as nod
-from . import dbg
+from .. import node as nod
+from .. import dbg
 
-ScriptDirectory = os.path.split(__file__)[0]
+ScriptDirectory = os.path.split(os.path.split(__file__)[0])[0]
 
 # ------------------------------------------------------------------------------
 #                          Editing Communication Dialog
@@ -1036,10 +1036,7 @@ class CreateNodeDialog(wx.Dialog):
         name = self.NodeName.GetValue()
         message = ""
         if name != "":
-            good = not name[0].isdigit()
-            for item in name.split("_"):
-                good &= item.isalnum()  # FIXME using all()
-            if not good:
+            if not ((not name[0].isdigit()) and all(item.isalnum() for item in name.split("_"))):
                 message = "Node name can't be undefined or start with a digit and must be composed of alphanumerical characters or underscore!"
         if message != "":
             try:

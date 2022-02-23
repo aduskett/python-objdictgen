@@ -28,7 +28,7 @@ from builtins import range
 
 import os
 import re
-import json
+import codecs
 import errno
 from future.utils import raise_from
 
@@ -677,7 +677,7 @@ class NodeManager(object):
                     try:
                         if len(value) % 2 != 0:
                             value = "0" + value
-                        value = value.decode('hex_codec')
+                        value = codecs.decode(value, 'hex_codec')
                         node.SetEntry(index, subindex, value)
                     except Exception as exc:  # FIXME: Which exception is wanted here?
                         dbg("Exception: '%s': %s" % (value, exc))
@@ -1069,7 +1069,7 @@ class NodeManager(object):
                                 editor["value"] = "dcf"
                             else:
                                 editor["value"] = "domain"
-                            dic["value"] = dic["value"].encode('hex_codec')
+                            dic["value"] = codecs.encode(dic["value"].encode(), 'hex_codec')
                         elif dic["type"] == "BOOLEAN":
                             editor["value"] = "bool"
                             dic["value"] = nod.BoolType[dic["value"]]

@@ -35,11 +35,11 @@ import getopt
 
 import wx
 
-from . import nodemanager as nman
 from . import nodeeditortemplate as net
 from . import subindextable as sit
 from . import commondialogs as cdia
-from . import dbg
+from .. import nodemanager as nman
+from .. import dbg
 
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
@@ -52,7 +52,7 @@ def usage():
     print("\n   %s [Filepath, ...]\n" % sys.argv[0])
 
 
-ScriptDirectory = os.path.split(os.path.realpath(__file__))[0]
+ScriptDirectory = os.path.split(os.path.split(__file__)[0])[0]
 
 [
     ID_OBJDICTEDIT, ID_OBJDICTEDITFILEOPENED,
@@ -232,7 +232,7 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
             net.NodeEditorTemplate.__init__(self, manager, self, False)
         self._init_ctrls(parent)
 
-        icon = wx.Icon(os.path.join(ScriptDirectory, "networkedit.ico"), wx.BITMAP_TYPE_ICO)
+        icon = wx.Icon(os.path.join(ScriptDirectory, "ui", "networkedit.ico"), wx.BITMAP_TYPE_ICO)
         self.SetIcon(icon)
 
         if self.ModeSolo:

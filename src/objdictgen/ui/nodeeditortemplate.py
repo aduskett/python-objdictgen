@@ -7,8 +7,8 @@ import sys
 
 import wx
 
-from . import node as nod
 from . import commondialogs as cdia
+from .. import node as nod
 
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name

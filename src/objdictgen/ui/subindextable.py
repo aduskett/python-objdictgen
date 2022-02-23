@@ -26,11 +26,12 @@ from __future__ import absolute_import
 from builtins import map
 from builtins import range
 
+import codecs
 import wx
 import wx.grid
 
 from . import commondialogs as cdia
-from . import node as nod
+from .. import node as nod
 
 
 ColSizes = [75, 250, 150, 125, 100, 60, 250, 60]
@@ -723,7 +724,7 @@ class EditingPanel(wx.SplitterWindow):
                 index = self.ListIndex[selected]
                 if self.Manager.IsCurrentEntry(index):
                     dialog = cdia.DCFEntryValuesDialog(self, self.Editable)
-                    dialog.SetValues(self.Table.GetValue(row, col).decode("hex_codec"))
+                    dialog.SetValues(codecs.decode(self.Table.GetValue(row, col), "hex_codec"))
                     if dialog.ShowModal() == wx.ID_OK and self.Editable:
                         value = dialog.GetValues()
                         self.Manager.SetCurrentEntry(index, row, value, "value", "dcf")
