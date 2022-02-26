@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # This file is part of CanFestival, a library implementing CanOpen Stack.
@@ -22,11 +21,11 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 from __future__ import absolute_import
-# from builtins import str
 from builtins import map
 from builtins import range
 
 import codecs
+
 import wx
 import wx.grid
 
@@ -34,35 +33,22 @@ from . import commondialogs as cdia
 from .. import node as nod
 
 
-ColSizes = [75, 250, 150, 125, 100, 60, 250, 60]
-ColAlignements = [wx.ALIGN_CENTER, wx.ALIGN_LEFT, wx.ALIGN_CENTER, wx.ALIGN_RIGHT, wx.ALIGN_CENTER, wx.ALIGN_CENTER, wx.ALIGN_LEFT, wx.ALIGN_LEFT]
+COL_SIZES = [75, 250, 150, 125, 100, 60, 250, 60]
+COL_ALIGNMENTS = [wx.ALIGN_CENTER, wx.ALIGN_LEFT, wx.ALIGN_CENTER, wx.ALIGN_RIGHT, wx.ALIGN_CENTER, wx.ALIGN_CENTER, wx.ALIGN_LEFT, wx.ALIGN_LEFT]
 
+RW = ["Read Only", "Write Only", "Read/Write"]
+RO = ["Read Only", "Read/Write"]
+RW_ACCESS_LIST = ",".join(RW)
+RO_ACCESS_LIST = ",".join(RO)
+ACCESS_LIST_DICT = {access: access for access in RW}
 
-def GetAccessList(write=True):
-    if write:
-        return ["Read Only", "Write Only", "Read/Write"]
-    return ["Read Only", "Read/Write"]
+BOOL_LIST = ["True", "False"]
+BOOL_STR = ",".join(BOOL_LIST)
+BOOL_DICT = {b: b for b in BOOL_LIST}
 
-
-AccessList = ",".join(GetAccessList())
-RAccessList = ",".join(GetAccessList(False))
-ACCESS_LIST_DICT = {access: access for access in GetAccessList()}
-
-
-def GetBoolList():
-    return ["True", "False"]
-
-
-BoolList = ",".join(GetBoolList())
-BOOL_LIST_DICT = {b: b for b in GetBoolList()}
-
-
-def GetOptionList():
-    return ["Yes", "No"]
-
-
-OptionList = ",".join(GetOptionList())
-OPTION_LIST_DICT = {option: option for option in GetOptionList()}
+OPTION_LIST = ["Yes", "No"]
+OPTION_STR = ",".join(OPTION_LIST)
+OPTION_DICT = {option: option for option in OPTION_LIST}
 
 (USER_TYPE, SDO_SERVER, SDO_CLIENT,
  PDO_TRANSMIT, PDO_RECEIVE, MAP_VARIABLE) = range(6)
@@ -75,7 +61,6 @@ INDEXCHOICE_OPTIONS = {
     PDO_TRANSMIT: ("PDO Transmit", 1, "AddPDOTransmitToCurrent"),
     MAP_VARIABLE: ("Map Variable", 0, "AddMapVariable")
 }
-
 INDEXCHOICE_OPTIONS_DICT = {translation: option for option, (translation, object, function) in INDEXCHOICE_OPTIONS.items()}
 
 INDEXCHOICE_SECTIONS = {
@@ -88,25 +73,9 @@ INDEXCHOICE_SECTIONS = {
     8: [MAP_VARIABLE],
 }
 
+SUBINDEX_TABLE_COLNAMES = ["subindex", "name", "type", "value", "access", "save", "comment", "buffer_size"]
 
-def GetSubindexTableColnames():
-    return ["subindex", "name", "type", "value", "access", "save", "comment", "buffer_size"]
-
-
-DictionaryOrganisation = [
-    {"minIndex": 0x0001, "maxIndex": 0x0FFF, "name": "Data Type Definitions"},
-    {"minIndex": 0x1000, "maxIndex": 0x1029, "name": "Communication Parameters"},
-    {"minIndex": 0x1200, "maxIndex": 0x12FF, "name": "SDO Parameters"},
-    {"minIndex": 0x1400, "maxIndex": 0x15FF, "name": "Receive PDO Parameters"},
-    {"minIndex": 0x1600, "maxIndex": 0x17FF, "name": "Receive PDO Mapping"},
-    {"minIndex": 0x1800, "maxIndex": 0x19FF, "name": "Transmit PDO Parameters"},
-    {"minIndex": 0x1A00, "maxIndex": 0x1BFF, "name": "Transmit PDO Mapping"},
-    {"minIndex": 0x1C00, "maxIndex": 0x1FFF, "name": "Other Communication Parameters"},
-    {"minIndex": 0x2000, "maxIndex": 0x5FFF, "name": "Manufacturer Specific"},
-    {"minIndex": 0x6000, "maxIndex": 0x9FFF, "name": "Standardized Device Profile"},
-    {"minIndex": 0xA000, "maxIndex": 0xBFFF, "name": "Standardized Interface Profile"}]
-
-IECTypeConversion = {
+IEC_TYPE_CONVERSION = {
     "BOOLEAN": "BOOL",
     "INTEGER8": "SINT",
     "INTEGER16": "INT",
@@ -131,7 +100,7 @@ IECTypeConversion = {
     "UNSIGNED56": "ULINT",
     "UNSIGNED64": "ULINT",
 }
-SizeConversion = {1: "X", 8: "B", 16: "W", 24: "D", 32: "D", 40: "L", 48: "L", 56: "L", 64: "L"}
+SIZE_CONVERSION = {1: "X", 8: "B", 16: "W", 24: "D", 32: "D", 40: "L", 48: "L", 56: "L", 64: "L"}
 
 
 class SubindexTable(wx.grid.PyGridTableBase):
@@ -192,9 +161,9 @@ class SubindexTable(wx.grid.PyGridTableBase):
             if colname == "access":
                 value = ACCESS_LIST_DICT[value]
             elif self.editors[row][colname] == "bool":
-                value = BOOL_LIST_DICT[value]
+                value = BOOL_DICT[value]
             elif self.editors[row][colname] == "option":
-                value = OPTION_LIST_DICT[value]
+                value = OPTION_DICT[value]
             elif self.editors[row][colname] == "map" and value == "None":
                 value = "None"
             self.data[row][colname] = value
@@ -243,9 +212,9 @@ class SubindexTable(wx.grid.PyGridTableBase):
 
         for col in range(self.GetNumberCols()):
             attr = wx.grid.GridCellAttr()
-            attr.SetAlignment(ColAlignements[col], wx.ALIGN_CENTRE)
+            attr.SetAlignment(COL_ALIGNMENTS[col], wx.ALIGN_CENTRE)
             grid.SetColAttr(col, attr)
-            grid.SetColMinimalWidth(col, ColSizes[col])
+            grid.SetColMinimalWidth(col, COL_SIZES[col])
             grid.AutoSizeColumn(col, False)
 
         typelist = None
@@ -283,16 +252,16 @@ class SubindexTable(wx.grid.PyGridTableBase):
                         renderer = wx.grid.GridCellStringRenderer()
                     elif editortype == "bool":
                         editor = wx.grid.GridCellChoiceEditor()
-                        editor.SetParameters(BoolList)
+                        editor.SetParameters(BOOL_STR)
                     elif editortype == "access":
                         editor = wx.grid.GridCellChoiceEditor()
-                        editor.SetParameters(AccessList)
+                        editor.SetParameters(RW_ACCESS_LIST)
                     elif editortype == "raccess":
                         editor = wx.grid.GridCellChoiceEditor()
-                        editor.SetParameters(RAccessList)
+                        editor.SetParameters(RO_ACCESS_LIST)
                     elif editortype == "option":
                         editor = wx.grid.GridCellChoiceEditor()
-                        editor.SetParameters(OptionList)
+                        editor.SetParameters(OPTION_STR)
                     elif editortype == "type":
                         editor = wx.grid.GridCellChoiceEditor()
                         if typelist is None:
@@ -518,10 +487,10 @@ class EditingPanel(wx.SplitterWindow):
         self.FirstCall = False
         self.Index = None
 
-        for values in DictionaryOrganisation:
-            text = "   0x%04X-0x%04X      %s" % (values["minIndex"], values["maxIndex"], values["name"])
+        for values in nod.INDEX_RANGES:
+            text = "   0x%04X-0x%04X      %s" % (values["min"], values["max"], values["description"])
             self.PartList.Append(text)
-        self.Table = SubindexTable(self, [], [], GetSubindexTableColnames())
+        self.Table = SubindexTable(self, [], [], SUBINDEX_TABLE_COLNAMES)
         self.SubindexGrid.SetTable(self.Table)
         self.SubindexGrid.SetRowLabelSize(0)
         self.CallbackCheck.Disable()
@@ -567,9 +536,9 @@ class EditingPanel(wx.SplitterWindow):
                             var_name = "%s_%04x_%02x" % (self.Manager.GetCurrentNodeName(), index, subindex)
                             size = typeinfos["size"]
                             data = wx.TextDataObject(str(
-                                ("%s%s.%d.%d" % (SizeConversion[size], bus_id, index, subindex),
+                                ("%s%s.%d.%d" % (SIZE_CONVERSION[size], bus_id, index, subindex),
                                  "location",
-                                 IECTypeConversion.get(typeinfos["name"]),
+                                 IEC_TYPE_CONVERSION.get(typeinfos["name"]),
                                  var_name, "")))
                             dragsource = wx.DropSource(self.SubindexGrid)
                             dragsource.SetData(data)
@@ -590,9 +559,9 @@ class EditingPanel(wx.SplitterWindow):
                             var_name = "%s_%04x_%02x" % (self.Manager.GetSlaveName(node_id), index, subindex)
                             size = typeinfos["size"]
                             data = wx.TextDataObject(str(
-                                ("%s%s.%d.%d.%d" % (SizeConversion[size], bus_id, node_id, index, subindex),
+                                ("%s%s.%d.%d.%d" % (SIZE_CONVERSION[size], bus_id, node_id, index, subindex),
                                  "location",
-                                 IECTypeConversion.get(typeinfos["name"]),
+                                 IEC_TYPE_CONVERSION.get(typeinfos["name"]),
                                  var_name, "")))
                             dragsource = wx.DropSource(self.SubindexGrid)
                             dragsource.SetData(data)
@@ -650,10 +619,10 @@ class EditingPanel(wx.SplitterWindow):
         self.IndexList.Clear()
         self.IndexChoice.Clear()
         i = self.PartList.GetSelection()
-        if i < len(DictionaryOrganisation):
-            values = DictionaryOrganisation[i]
+        if i < len(nod.INDEX_RANGES):
+            values = nod.INDEX_RANGES[i]
             self.ListIndex = []
-            for name, index in self.Manager.GetCurrentValidIndexes(values["minIndex"], values["maxIndex"]):
+            for name, index in self.Manager.GetCurrentValidIndexes(values["min"], values["max"]):
                 self.IndexList.Append("0x%04X   %s" % (index, name))
                 self.ListIndex.append(index)
             if self.Editable:
@@ -668,7 +637,7 @@ class EditingPanel(wx.SplitterWindow):
                     else:
                         self.IndexChoice.SetSelection(0)
                 else:
-                    for name, index in self.Manager.GetCurrentValidChoices(values["minIndex"], values["maxIndex"]):
+                    for name, index in self.Manager.GetCurrentValidChoices(values["min"], values["max"]):
                         if index:
                             self.IndexChoice.Append("0x%04X   %s" % (index, name))
                         else:

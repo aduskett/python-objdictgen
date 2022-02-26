@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # This file is part of CanFestival, a library implementing CanOpen Stack.
@@ -55,25 +54,10 @@ class NodeList(object):
     def HasChanged(self):
         return self.Changed or not self.Manager.CurrentIsSaved()
 
-    def ForceChanged(self, changed):
-        self.Changed = changed
-
-    def GetNetworkName(self):
-        return self.NetworkName
-
-    def SetNetworkName(self, name):
-        self.NetworkName = name
-
-    def GetManager(self):
-        return self.Manager
-
     def GetEDSFolder(self, root_path=None):
         if root_path is None:
             root_path = self.Root
         return os.path.join(root_path, "eds")
-
-    def GetRoot(self):
-        return self.Root
 
     def SetRoot(self, newrootpath):
         if os.path.isdir(newrootpath):
@@ -99,12 +83,6 @@ class NodeList(object):
 
     def GetSlaveIDs(self):
         return list(sorted(self.SlaveNodes))
-
-    def SetCurrentSelected(self, selected):
-        self.CurrentSelected = selected
-
-    def GetCurrentSelected(self):
-        return self.CurrentSelected
 
     def LoadProject(self, root, netname=None):
         self.SlaveNodes = {}
@@ -223,7 +201,7 @@ class NodeList(object):
     def GetSlaveNodeEntry(self, nodeid, index, subindex=None):
         if nodeid not in self.SlaveNodes:
             raise ValueError("Node 0x%2.2X doesn't exist" % nodeid)
-        self.SlaveNodes[nodeid]["Node"].SetNodeID(nodeid)
+        self.SlaveNodes[nodeid]["Node"].ID = nodeid
         return self.SlaveNodes[nodeid]["Node"].GetEntry(index, subindex)
 
     def GetMasterNodeEntry(self, index, subindex=None):
@@ -249,7 +227,7 @@ class NodeList(object):
                 return self.Manager.IsCurrentEntry(index)
             node = self.SlaveNodes[self.CurrentSelected]["Node"]
             if node:
-                node.SetNodeID(self.CurrentSelected)
+                node.ID = self.CurrentSelected
                 return node.IsEntry(index)
         return False
 
@@ -259,7 +237,7 @@ class NodeList(object):
                 return self.Manager.GetEntryInfos(index)
             node = self.SlaveNodes[self.CurrentSelected]["Node"]
             if node:
-                node.SetNodeID(self.CurrentSelected)
+                node.ID = self.CurrentSelected
                 return node.GetEntryInfos(index)
         return None
 
@@ -269,21 +247,21 @@ class NodeList(object):
                 return self.Manager.GetSubentryInfos(index, subindex)
             node = self.SlaveNodes[self.CurrentSelected]["Node"]
             if node:
-                node.SetNodeID(self.CurrentSelected)
+                node.ID = self.CurrentSelected
                 return node.GetSubentryInfos(index, subindex)
         return None
 
-    def GetCurrentValidIndexes(self, min, max):
+    def GetCurrentValidIndexes(self, min_, max_):
         if self.CurrentSelected is not None:
             if self.CurrentSelected == 0:
-                return self.Manager.GetCurrentValidIndexes(min, max)
+                return self.Manager.GetCurrentValidIndexes(min_, max_)
             node = self.SlaveNodes[self.CurrentSelected]["Node"]
             if node:
-                node.SetNodeID(self.CurrentSelected)
+                node.ID = self.CurrentSelected
                 return [
                     (node.GetEntryName(index), index)
                     for index in node.GetIndexes()
-                    if min <= index <= max
+                    if min_ <= index <= max_
                 ]
             raise ValueError("Can't find node")
         return []
@@ -292,7 +270,7 @@ class NodeList(object):
         if self.CurrentSelected is not None:
             node = self.SlaveNodes[self.CurrentSelected]["Node"]
             if node:
-                node.SetNodeID(self.CurrentSelected)
+                node.ID = self.CurrentSelected
                 return self.Manager.GetNodeEntryValues(node, index)
             raise ValueError("Can't find node")
         return [], []
@@ -306,7 +284,7 @@ class NodeList(object):
         self.Manager.AddToDCF(node_id, index, subindex, size, value)
 
 
-def main():
+def main(projectdir):
     # pylint: disable=import-outside-toplevel
     from .nodemanager import NodeManager
 
@@ -314,7 +292,7 @@ def main():
 
     nodelist = NodeList(manager)
 
-    nodelist.LoadProject("/home/laurent/test_nodelist")
+    nodelist.LoadProject(projectdir)
     print("MasterNode :")
     manager.CurrentNode.Print()
     print()
@@ -322,7 +300,3 @@ def main():
         print("SlaveNode name=%s id=0x%2.2X :" % (node["Name"], nodeid))
         node["Node"].Print()
         print()
-
-
-if __name__ == "__main__":
-    main()

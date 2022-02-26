@@ -1,5 +1,5 @@
 
-import objdictgen.objdictgen
+import objdictgen.__main__
 
 
 # def test_odsetup(odfile, fn):
@@ -17,7 +17,7 @@ def test_objdictgen(mocker, odfile, fn):
         odfile + '.c',
     ])
 
-    objdictgen.objdictgen.main()
+    objdictgen.__main__.main_objdictgen()
 
     assert not list(fn.diff_ref(odfile + '.c'))
     assert not list(fn.diff_ref(odfile + '.h'))

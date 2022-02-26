@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # This file is part of CanFestival, a library implementing CanOpen Stack.
@@ -23,18 +22,17 @@
 
 from __future__ import print_function
 from __future__ import absolute_import
-# from builtins import str
 from builtins import range
-from future.utils import raise_from
 
 import os
 import re
 import sys
 from time import localtime, strftime
 from past.builtins import long
+from future.utils import raise_from
 
 from . import node as nod
-from . import dbg
+from . import dbg, SCRIPT_DIRECTORY
 
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
@@ -43,18 +41,18 @@ else:
     INT_TYPES = (int, long)
 
 # Regular expression for finding index section names
-index_model = re.compile(r'([0-9A-F]{1,4}$)')
+RE_INDEX = re.compile(r'([0-9A-F]{1,4}$)')
 # Regular expression for finding subindex section names
-subindex_model = re.compile(r'([0-9A-F]{1,4})SUB([0-9A-F]{1,2}$)')
+RE_SUBINDEX = re.compile(r'([0-9A-F]{1,4})SUB([0-9A-F]{1,2}$)')
 # Regular expression for finding index section names
-index_objectlinks_model = re.compile(r'([0-9A-F]{1,4}OBJECTLINKS$)')
+RE_INDEX_OBJECTLINKS = re.compile(r'([0-9A-F]{1,4}OBJECTLINKS$)')
 
 # Regular expression for finding NodeXPresent keynames
-nodepresent_model = re.compile(r'NODE([0-9]{1,3})PRESENT$')
+RE_NODEPRESENT = re.compile(r'NODE([0-9]{1,3})PRESENT$')
 # Regular expression for finding NodeXName keynames
-nodename_model = re.compile(r'NODE([0-9]{1,3})NAME$')
+RE_NODENAME = re.compile(r'NODE([0-9]{1,3})NAME$')
 # Regular expression for finding NodeXDCFName keynames
-nodedcfname_model = re.compile(r'NODE([0-9]{1,3})DCFNAME$')
+RE_NODEDCFNAME = re.compile(r'NODE([0-9]{1,3})DCFNAME$')
 
 # Dictionary for quickly translate boolean into integer value
 BOOL_TRANSLATE = {True: "1", False: "0"}
@@ -203,9 +201,9 @@ def ParseCPJFile(filepath):
                             computed_value = value
 
                         # Search if the section name match any cpj expression
-                        nodepresent_result = nodepresent_model.match(keyname.upper())
-                        nodename_result = nodename_model.match(keyname.upper())
-                        nodedcfname_result = nodedcfname_model.match(keyname.upper())
+                        nodepresent_result = RE_NODEPRESENT.match(keyname.upper())
+                        nodename_result = RE_NODENAME.match(keyname.upper())
+                        nodedcfname_result = RE_NODEDCFNAME.match(keyname.upper())
 
                         if keyname.upper() == "NETNAME":
                             if not is_string(computed_value):
@@ -280,9 +278,9 @@ def ParseEDSFile(filepath):
         values = {}
 
         # Search if the section name match an index or subindex expression
-        index_result = index_model.match(section_name.upper())
-        subindex_result = subindex_model.match(section_name.upper())
-        index_objectlinks_result = index_objectlinks_model.match(section_name.upper())
+        index_result = RE_INDEX.match(section_name.upper())
+        subindex_result = RE_SUBINDEX.match(section_name.upper())
+        index_objectlinks_result = RE_INDEX_OBJECTLINKS.match(section_name.upper())
 
         # Compilation of the EDS information dictionary
 
@@ -448,10 +446,10 @@ def GenerateFileContent(node, filepath):
     # Extract local time
     current_time = localtime()
     # Extract node informations
-    nodename = node.GetNodeName()
-    # nodeid = node.GetNodeID()
-    nodetype = node.GetNodeType()
-    description = node.GetNodeDescription()
+    nodename = node.Name
+    # nodeid = node.ID
+    nodetype = node.Type
+    description = node.Description or ""
 
     # Retreiving lists of indexes defined
     entries = node.GetIndexes()
@@ -657,7 +655,7 @@ def GenerateCPJContent(nodelist):
     nodes = nodelist.SlaveNodes
 
     filecontent = "[TOPOLOGY]\n"
-    filecontent += "NetName=%s\n" % nodelist.GetNetworkName()
+    filecontent += "NetName=%s\n" % nodelist.NetworkName
     filecontent += "Nodes=0x%2.2X\n" % len(nodes)
 
     for nodeid in sorted(nodes):
@@ -682,14 +680,14 @@ def GenerateNode(filepath, nodeid=0):
     if profilenb not in [0, 301, 302]:
         # Compile Profile name and path to .prf file
         profilename = "DS-%d" % profilenb
-        profilepath = os.path.join(os.path.split(__file__)[0], "config/%s.prf" % profilename)
+        profilepath = os.path.join(SCRIPT_DIRECTORY, "config", "%s.prf" % profilename)
         # Verify that profile is available
         if os.path.isfile(profilepath):
             # Import profile
             mapping, menuentries = nod.ImportProfile(profilepath)
-            node.SetProfileName(profilename)
-            node.SetProfile(mapping)
-            node.SetSpecificMenu(menuentries)
+            node.ProfileName = profilename
+            node.Profile = mapping
+            node.SpecificMenu = menuentries
 
     # Read all entries in the EDS dictionary
     for entry, values in eds_dict.items():
@@ -809,11 +807,3 @@ def GenerateNode(filepath, nodeid=0):
                 else:
                     raise ValueError("Array or Record entry 0x%4.4X must have a 'SubNumber' attribute" % entry)
     return node
-
-
-# ------------------------------------------------------------------------------
-#                             Main Function
-# ------------------------------------------------------------------------------
-
-if __name__ == '__main__':
-    print(ParseEDSFile("examples/example_objdict.eds"))

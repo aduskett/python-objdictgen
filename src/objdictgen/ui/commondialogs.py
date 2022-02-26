@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # This file is part of CanFestival, a library implementing CanOpen Stack.
@@ -22,7 +21,6 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 from __future__ import absolute_import
-# from builtins import str
 from builtins import range
 
 import os
@@ -30,10 +28,9 @@ import os
 import wx
 import wx.grid
 
-from .. import node as nod
+from .. import SCRIPT_DIRECTORY, node as nod
 from .. import dbg
 
-ScriptDirectory = os.path.split(os.path.split(__file__)[0])[0]
 
 # ------------------------------------------------------------------------------
 #                          Editing Communication Dialog
@@ -580,7 +577,7 @@ class UserTypeDialog(wx.Dialog):
         else:
             self.EndModal(wx.ID_OK)
 
-    def SetValues(self, min=None, max=None, length=None):
+    def SetValues(self, min=None, max=None, length=None):  # pylint: disable=redefined-builtin
         if min is not None:
             self.Min.SetValue(str(min))
         if max is not None:
@@ -654,11 +651,8 @@ class UserTypeDialog(wx.Dialog):
 ] = [wx.NewId() for _init_ctrls in range(11)]
 
 
-def GetNodeTypes():
-    return ["master", "slave"]
-
-
-NODE_TYPES_DICT = {node_type: node_type for node_type in GetNodeTypes()}
+NODE_TYPES = ["master", "slave"]
+NODE_TYPES_DICT = {node_type: node_type for node_type in NODE_TYPES}
 
 
 class NodeInfosDialog(wx.Dialog):
@@ -754,7 +748,7 @@ class NodeInfosDialog(wx.Dialog):
         self.staticText2.Hide()
         self.NodeID.Hide()
 
-        for node_type in GetNodeTypes():
+        for node_type in NODE_TYPES:
             self.Type.Append(node_type)
 
     def OnOK(self, event):  # pylint: disable=unused-argument
@@ -780,10 +774,10 @@ class NodeInfosDialog(wx.Dialog):
         else:
             self.EndModal(wx.ID_OK)
 
-    def SetValues(self, name, id, type, description, defaultstringsize):  # pylint: disable=invalid-name
+    def SetValues(self, name, id_, type_, description, defaultstringsize):
         self.NodeName.SetValue(name)
-        self.NodeID.SetValue("0x%02X" % id)
-        self.Type.SetStringSelection(type)
+        self.NodeID.SetValue("0x%02X" % id_)
+        self.Type.SetStringSelection(type_)
         self.Description.SetValue(description)
         self.DefaultStringSize.SetValue(defaultstringsize)
 
@@ -1016,13 +1010,13 @@ class CreateNodeDialog(wx.Dialog):
         self.NodeID.Hide()
 
         self.NodeID.SetValue("0x00")
-        for node_type in GetNodeTypes():
+        for node_type in NODE_TYPES:
             self.Type.Append(node_type)
         self.Type.SetStringSelection("slave")
         self.Description.SetValue("")
         self.ListProfile = {"None": ""}
         self.Profile.Append("None")
-        self.Directory = os.path.join(ScriptDirectory, "config")
+        self.Directory = os.path.join(SCRIPT_DIRECTORY, "config")
         for item in sorted(os.listdir(self.Directory)):
             name, extend = os.path.splitext(item)
             if os.path.isfile(os.path.join(self.Directory, item)) and extend == ".prf" and name != "DS-302":
@@ -1303,8 +1297,7 @@ class AddSlaveDialog(wx.Dialog):
 # ------------------------------------------------------------------------------
 
 
-def DCFEntryTableColnames():
-    return ["Index", "Subindex", "Size", "Value"]
+DCF_ENTRY_TABLE_COLNAMES = ["Index", "Subindex", "Size", "Value"]
 
 
 class DCFEntryValuesTable(wx.grid.PyGridTableBase):
@@ -1336,7 +1329,7 @@ class DCFEntryValuesTable(wx.grid.PyGridTableBase):
                 return self.colnames[col]
             return self.colnames[col]
 
-    def GetRowLabelValues(self, row, translate=True):
+    def GetRowLabelValues(self, row, translate=True):  # pylint: disable=unused-argument
         return row
 
     def GetValue(self, row, col):
@@ -1429,7 +1422,7 @@ class DCFEntryValuesTable(wx.grid.PyGridTableBase):
 class DCFEntryValuesDialog(wx.Dialog):
 
     if wx.VERSION < (2, 6, 0):
-        def Bind(self, event, function, id=None):  # pylint: disable=invalid-name
+        def Bind(self, event, function, id=None):  # pylint: disable=invalid-name, redefined-builtin
             if id is not None:
                 event(self, id, function)
             else:
@@ -1520,7 +1513,7 @@ class DCFEntryValuesDialog(wx.Dialog):
         self.DefaultValue = {"Index": 0, "Subindex": 0, "Size": 1, "Value": 0}
         self.Editable = editable
 
-        self.Table = DCFEntryValuesTable(self, [], DCFEntryTableColnames())
+        self.Table = DCFEntryValuesTable(self, [], DCF_ENTRY_TABLE_COLNAMES)
         self.ValuesGrid.SetTable(self.Table)
 
     def OnValuesGridCellChange(self, event):

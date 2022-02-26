@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # This file is part of CanFestival, a library implementing CanOpen Stack.
@@ -22,16 +21,13 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 from __future__ import print_function
-from future import standard_library
-standard_library.install_aliases()
-# from builtins import str
 from builtins import chr
 from builtins import object
 from builtins import range
 
 import sys
 import re
-import pickle
+import copy
 from collections import OrderedDict
 from past.builtins import execfile
 from future.utils import raise_from
@@ -41,6 +37,9 @@ from . import dbg
 
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
+    ODict = dict
+else:
+    ODict = OrderedDict
 
 
 #
@@ -62,18 +61,18 @@ DefaultParams = {"comment": "", "save": False, "buffer_size": ""}
 #                      Dictionary Mapping and Organisation
 # ------------------------------------------------------------------------------
 
-"""
-Properties of entry structure in the Object Dictionary
-"""
+#
+# Properties of entry structure in the Object Dictionary
+#
 OD_Subindex = 1             # Entry has at least one subindex
 OD_MultipleSubindexes = 2   # Entry has more than one subindex
 OD_IdenticalSubindexes = 4  # Subindexes of entry have the same description
 OD_IdenticalIndexes = 8     # Entry has the same description on multiple indexes
 
-"""
-Structures of entry in the Object Dictionary, sum of the properties described above
-for all sorts of entries use in CAN Open specification
-"""
+#
+# Structures of entry in the Object Dictionary, sum of the properties described above
+# for all sorts of entries use in CAN Open specification
+#
 nosub = 0  # Entry without subindex (only for type declaration)
 var = OD_Subindex  # 1
 record = OD_Subindex | OD_MultipleSubindexes  # 3
@@ -83,13 +82,29 @@ nvar = OD_Subindex | OD_IdenticalIndexes  # 9
 nrecord = OD_Subindex | OD_MultipleSubindexes | OD_IdenticalIndexes  # 11, Example : PDO Parameters
 narray = OD_Subindex | OD_MultipleSubindexes | OD_IdenticalSubindexes | OD_IdenticalIndexes  # 15, Example : PDO Mapping
 
-"""
-MappingDictionary is the structure used for writing a good organised Object
-Dictionary. It follows the specifications of the CANOpen standard.
-Change the informations within it if there is a mistake. But don't modify the
-organisation of this object, it will involve in a malfunction of the application.
-"""
+#
+# List of the Object Dictionary ranges
+#
+INDEX_RANGES = [
+    {"name": "", "min": 0x0001, "max": 0x0FFF, "description": "Data Type Definitions"},
+    {"name": "", "min": 0x1000, "max": 0x1029, "description": "Communication Parameters"},
+    {"name": "", "min": 0x1200, "max": 0x12FF, "description": "SDO Parameters"},
+    {"name": "", "min": 0x1400, "max": 0x15FF, "description": "Receive PDO Parameters"},
+    {"name": "rpdom", "min": 0x1600, "max": 0x17FF, "description": "Receive PDO Mapping"},
+    {"name": "", "min": 0x1800, "max": 0x19FF, "description": "Transmit PDO Parameters"},
+    {"name": "tpdom", "min": 0x1A00, "max": 0x1BFF, "description": "Transmit PDO Mapping"},
+    {"name": "", "min": 0x1C00, "max": 0x1FFF, "description": "Other Communication Parameters"},
+    {"name": "", "min": 0x2000, "max": 0x5FFF, "description": "Manufacturer Specific"},
+    {"name": "", "min": 0x6000, "max": 0x9FFF, "description": "Standardized Device Profile"},
+    {"name": "", "min": 0xA000, "max": 0xBFFF, "description": "Standardized Interface Profile"},
+]
 
+#
+# MappingDictionary is the structure used for writing a good organised Object
+# Dictionary. It follows the specifications of the CANOpen standard.
+# Change the informations within it if there is a mistake. But don't modify the
+# organisation of this object, it will involve in a malfunction of the application.
+#
 MappingDictionary = {
     # -- Static Data Types
     0x0001: {"name": "BOOLEAN", "struct": nosub, "size": 1, "default": False, "values": []},
@@ -278,7 +293,7 @@ def ImportProfile(filepath):
         dbg("EXECFILE %s" % (filepath,))
         execfile(filepath)  # FIXME: Using execfile is unsafe
         # pylint: disable=undefined-variable
-        return Mapping, AddMenuEntries
+        return Mapping, AddMenuEntries  # noqa: F821
     except Exception as exc:  # pylint: disable=broad-except
         dbg("EXECFILE FAILED: %s" % exc)
         raise_from(ValueError("Loading profile '%s' failed: %s" % (filepath, exc)), exc)
@@ -349,11 +364,11 @@ def FindEntryInfos(index, mappingdictionary, compute=True):
     """
     base_index = FindIndex(index, mappingdictionary)
     if base_index:
-        copy = mappingdictionary[base_index].copy()
-        if copy["struct"] & OD_IdenticalIndexes and compute:
-            copy["name"] = StringFormat(copy["name"], (index - base_index) // copy["incr"] + 1, 0)
-        copy.pop("values")
-        return copy
+        obj = mappingdictionary[base_index].copy()
+        if obj["struct"] & OD_IdenticalIndexes and compute:
+            obj["name"] = StringFormat(obj["name"], (index - base_index) // obj["incr"] + 1, 0)
+        obj.pop("values")
+        return obj
     return None
 
 
@@ -489,132 +504,18 @@ class Node(object):
 
     DefaultStringSize = 10
 
-    def __init__(self, name="", type="slave", id=0, description="", profilename="DS-301", profile=None, specificmenu=None):
+    def __init__(self, name="", type="slave", id=0, description="", profilename="DS-301", profile=None, specificmenu=None):  # pylint: disable=redefined-builtin
         self.Name = name
         self.Type = type
         self.ID = id
         self.Description = description
         self.ProfileName = profilename
-        self.Profile = profile or OrderedDict()
+        self.Profile = profile or ODict()
         self.SpecificMenu = specificmenu or []
-        self.Dictionary = OrderedDict()
-        self.ParamsDictionary = OrderedDict()
-        self.DS302 = OrderedDict()
-        self.UserMapping = OrderedDict()
-
-    def GetNodeName(self):
-        """
-        Return the node name
-        """
-        return self.Name
-
-    def SetNodeName(self, name):
-        """
-        Define the node name
-        """
-        self.Name = name
-
-    def GetNodeType(self):
-        """
-        Return the node type ("master" or "slave")
-        """
-        return self.Type
-
-    def SetNodeType(self, type):
-        """
-        Define the node type ("master" or "slave")
-        """
-        self.Type = type
-
-    def GetNodeID(self):
-        """
-        Return the node ID
-        """
-        return self.ID
-
-    def SetNodeID(self, id):
-        """
-        Define the node ID
-        """
-        self.ID = id
-
-    def GetNodeDescription(self):
-        """
-        Return the node description
-        """
-        return getattr(self, "Description", "")
-
-    def SetNodeDescription(self, description):
-        """
-        Define the node description
-        """
-        self.Description = description
-
-    def GetProfileName(self):
-        """
-        Return the Specific Profile Name
-        """
-        return self.ProfileName
-
-    def SetProfileName(self, profilename):
-        """
-        Define the Specific Profile Name
-        """
-        self.ProfileName = profilename
-
-    def GetProfile(self):
-        """
-        Return the Specific Profile
-        """
-        return self.Profile
-
-    def SetProfile(self, profile):
-        """
-        Define the Specific Profile
-        """
-        self.Profile = profile
-
-    def GetDefaultStringSize(self):
-        """
-        Return the default string size
-        """
-        return self.DefaultStringSize
-
-    def SetDefaultStringSize(self, size):
-        """
-        Define the default string size
-        """
-        self.DefaultStringSize = size
-
-    def SetDS302Profile(self, profile):
-        """
-        Define the DS-302 Profile
-        """
-        self.DS302 = profile
-
-    def GetDS302Profile(self):
-        """
-        Define the DS-302 Profile
-        """
-        return self.DS302
-
-    def GetSpecificMenu(self):
-        """
-        Return the Specific Menu Entries
-        """
-        return self.SpecificMenu
-
-    def SetSpecificMenu(self, specificmenu):
-        """
-        Define the Specific Menu Entries
-        """
-        self.SpecificMenu = specificmenu
-
-    def ExtendSpecificMenu(self, specificmenu):
-        """
-        Extend the Specific Menu Entries
-        """
-        self.SpecificMenu.extend(specificmenu)
+        self.Dictionary = ODict()
+        self.ParamsDictionary = ODict()
+        self.DS302 = ODict()
+        self.UserMapping = ODict()
 
     def GetMappings(self, userdefinedtoo=True):
         """
@@ -657,8 +558,6 @@ class Node(object):
         return False
 
     def SetParamsEntry(self, index, subindex=None, comment=None, buffer_size=None, save=None, callback=None):
-        if not getattr(self, "ParamsDictionary", False):
-            self.ParamsDictionary = {}
         if index in self.Dictionary:
             if (comment is not None or save is not None or callback is not None or buffer_size is not None) and index not in self.ParamsDictionary:
                 self.ParamsDictionary[index] = {}
@@ -690,8 +589,6 @@ class Node(object):
         it will remove this subindex only if it's the last of the index. If no subindex
         is specified it removes the whole index and subIndexes from the Object Dictionary.
         """
-        if not getattr(self, "ParamsDictionary", False):
-            self.ParamsDictionary = {}
         if index in self.Dictionary:
             if not subindex:
                 self.Dictionary.pop(index)
@@ -750,8 +647,6 @@ class Node(object):
         Returns the value of the entry asked. If the entry has the value "count", it
         returns the number of subindex in the entry except the first.
         """
-        if not getattr(self, "ParamsDictionary", False):
-            self.ParamsDictionary = {}
         if index in self.Dictionary:
             if subindex is None:
                 if isinstance(self.Dictionary[index], list):
@@ -787,8 +682,6 @@ class Node(object):
         if entry_infos and "callback" in entry_infos:
             return entry_infos["callback"]
         else:
-            if not getattr(self, "ParamsDictionary", False):
-                self.ParamsDictionary = {}
             if index in self.Dictionary and index in self.ParamsDictionary and "callback" in self.ParamsDictionary[index]:
                 return self.ParamsDictionary[index]["callback"]
         return False
@@ -926,19 +819,19 @@ class Node(object):
                     if (value & mask) == model:
                         self.Dictionary[i][j] = model + size
 
-    def RemoveLine(self, index, max, incr=1):
+    def RemoveLine(self, index, max_, incr=1):
         i = index
-        while i < max and self.IsEntry(i + incr):
+        while i < max_ and self.IsEntry(i + incr):
             self.Dictionary[i] = self.Dictionary[i + incr]
             i += incr
         self.Dictionary.pop(i)
 
     def RemoveUserType(self, index):
-        type = self.GetEntry(index, 1)
+        type_ = self.GetEntry(index, 1)
         for i in self.UserMapping:  # pylint: disable=consider-using-dict-items
             for value in self.UserMapping[i]["values"]:
                 if value["type"] == index:
-                    value["type"] = type
+                    value["type"] = type_
         self.RemoveMappingEntry(index)
         self.RemoveEntry(index)
 
@@ -946,7 +839,7 @@ class Node(object):
         """
         Return a copy of the node
         """
-        return pickle.loads(pickle.dumps(self))
+        return copy.deepcopy(self)
 
     def GetIndexes(self):
         """
@@ -995,7 +888,8 @@ class Node(object):
 
     def CompileValue(self, value, index, compute=True):
         if isinstance(value, (str, unicode)) and '$NODEID' in value.upper():
-            base = self.GetBaseIndex(index)  # NOTE: Don't change this, as the eval() below depend on it
+            # NOTE: Don't change base, as the eval() use this
+            base = self.GetBaseIndexNumber(index)  # noqa: F841  pylint: disable=unused-variable
             try:
                 dbg("EVAL CompileValue(): '%s'" % (value,))
                 raw = eval(value)  # FIXME: Using eval is not safe
@@ -1004,7 +898,7 @@ class Node(object):
                     dbg("EVAL CompileValue() #2: '%s'" % (raw,))
                     return eval(raw)  # FIXME: Using eval is not safe
                 return raw
-            except Exception as exc:
+            except Exception as exc:  # pylint: disable=broad-except
                 dbg("EVAL FAILED: %s" % exc)
                 raise_from(ValueError("CompileValue failed for '%s'" % (value,)), exc)
                 return 0  # FIXME: Why ignore this exception?
@@ -1161,21 +1055,6 @@ class Node(object):
     def GenerateMapName(self, name, index, subindex):  # pylint: disable=unused-argument
         return "%s (0x%4.4X)" % (name, index)
 
-    def GenerateMapList(self):
-        """
-        Generate the list of variables that can be mapped for the current node
-        """
-        self.MapList = "None"
-        self.NameTranslation = {"None": "00000000"}
-        self.MapTranslation = {"00000000": "None"}
-        list_ = self.GetMapVariableList()
-        for index, subindex, size, name in list_:
-            self.MapList += ",%s" % name
-            mapvalue = "%04X%02X%02X" % (index, subindex, size)
-            mapname = self.GenerateMapName(name, index, subindex)
-            self.NameTranslation[mapname] = mapvalue
-            self.MapTranslation[mapvalue] = mapname
-
     def GetMapValue(self, mapname):
         if mapname == "None":
             return 0
@@ -1193,7 +1072,7 @@ class Node(object):
                             except KeyError as exc:
                                 dbg("KeyError: %s" % exc)
                                 raise  # FIXME: Original code swallows the exception
-                                return None  # No string length found and default string size is too big to fit in a PDO
+                                # return None  # No string length found and default string size is too big to fit in a PDO
                     else:
                         if self.IsStringType(self.UserMapping[index]["values"][subindex]["type"]):
                             try:
@@ -1204,7 +1083,7 @@ class Node(object):
                             except KeyError as exc:
                                 dbg("KeyError: %s" % exc)
                                 raise   # FIXME: Original code swallows the exception
-                                return None  # No string length found and default string size is too big to fit in a PDO
+                                # return None  # No string length found and default string size is too big to fit in a PDO
                     return (index << 16) + (subindex << 8) + size
             return None
 

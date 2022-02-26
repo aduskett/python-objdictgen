@@ -23,7 +23,7 @@ class NetworkEditorTemplate(net.NodeEditorTemplate):
 
     def __init__(self, manager, frame, mode_solo):
         self.NodeList = manager
-        net.NodeEditorTemplate.__init__(self, self.NodeList.GetManager(), frame, mode_solo)
+        net.NodeEditorTemplate.__init__(self, self.NodeList.Manager, frame, mode_solo)
 
     def GetCurrentNodeId(self):
         selected = self.NetworkNodes.GetSelection()
@@ -58,7 +58,7 @@ class NetworkEditorTemplate(net.NodeEditorTemplate):
             # At init selected = -1
             if selected >= 0:
                 window = self.NetworkNodes.GetPage(selected)
-                self.NodeList.SetCurrentSelected(window.GetIndex())
+                self.NodeList.CurrentSelected = window.GetIndex()
             wx.CallAfter(self.RefreshMainMenu)  # FIXME: Missing symbol. From where?
             wx.CallAfter(self.RefreshStatusBar)
         event.Skip()
@@ -93,7 +93,7 @@ class NetworkEditorTemplate(net.NodeEditorTemplate):
                 new_editingpanel.SetIndex(values["slaveNodeID"])
                 idx = self.NodeList.GetOrderNumber(values["slaveNodeID"])
                 self.NetworkNodes.InsertPage(idx, new_editingpanel, "")
-                self.NodeList.SetCurrentSelected(idx)
+                self.NodeList.CurrentSelected = idx
                 self.NetworkNodes.SetSelection(idx)
                 self.RefreshBufferState()
             except Exception as exc:  # pylint: disable=broad-except
@@ -115,7 +115,7 @@ class NetworkEditorTemplate(net.NodeEditorTemplate):
                     new_selection = min(current, self.NetworkNodes.GetPageCount() - 1)
                     self.NetworkNodes.SetSelection(new_selection)
                     if new_selection > 0:
-                        self.NodeList.SetCurrentSelected(slaveids[new_selection - 1])
+                        self.NodeList.CurrentSelected = slaveids[new_selection - 1]
                 self.RefreshBufferState()
             except Exception as exc:  # pylint: disable=broad-except
                 self.ShowErrorMessage(exc)

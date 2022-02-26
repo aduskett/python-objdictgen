@@ -1,6 +1,5 @@
 from __future__ import print_function
 from __future__ import absolute_import
-# from builtins import str
 from builtins import object
 
 import sys
@@ -18,6 +17,9 @@ from .xtoy import (
 
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
+    ODict = dict
+else:
+    ODict = OrderedDict
 
 
 class _EmptyClass(object):
@@ -610,7 +612,7 @@ def _thing_from_dom(dom_node, container=None):
             elif node_family == 'map':
                 # map must exist in VISITED{} before we unpickle subitems,
                 # in order to handle self-references
-                mapping = OrderedDict()
+                mapping = ODict()
                 _save_obj_with_id(node, mapping)
                 node_val = _thing_from_dom(node, mapping)
             elif node_family == 'uniq':

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # This file is part of CanFestival, a library implementing CanOpen Stack.
@@ -22,7 +21,6 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 from __future__ import absolute_import
-# from builtins import str
 from builtins import range
 
 import re
@@ -139,15 +137,15 @@ def GenerateFileContent(node, headerfilepath, pointers_dict=None):
     pointers_dict = pointers_dict or {}
     texts = {}
     texts["maxPDOtransmit"] = 0
-    texts["NodeName"] = node.GetNodeName()
-    texts["NodeID"] = node.GetNodeID()
-    texts["NodeType"] = node.GetNodeType()
-    texts["Description"] = node.GetNodeDescription()
+    texts["NodeName"] = node.Name
+    texts["NodeID"] = node.ID
+    texts["NodeType"] = node.Type
+    texts["Description"] = node.Description or ""
     texts["iam_a_slave"] = 0
     if texts["NodeType"] == "slave":
         texts["iam_a_slave"] = 1
 
-    context.default_string_size = node.GetDefaultStringSize()
+    context.default_string_size = node.DefaultStringSize
 
     # Compiling lists of indexes
     rangelist = [idx for idx in node.GetIndexes() if 0 <= idx <= 0x260]
