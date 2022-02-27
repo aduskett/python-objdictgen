@@ -194,7 +194,7 @@ class NodeManager(object):
 #                        Create Load and Save Functions
 # ------------------------------------------------------------------------------
 
-    def CreateNewNode(self, name, id, type, description, profile, filepath, nmt, options):  # pylint: disable=redefined-builtin
+    def CreateNewNode(self, name, id, type, description, profile, filepath, nmt, options):  # pylint: disable=redefined-builtin, invalid-name
         """
         Create a new node and add a new buffer for storing it
         """
@@ -268,7 +268,7 @@ class NodeManager(object):
         """
         if isXml(filepath):
             return self.ImportCurrentFromODFile(filepath)
-        elif isEds(filepath):
+        if isEds(filepath):
             return self.ImportCurrentFromEDSFile(filepath, True)
         return self.ImportCurrentFromJsonFile(filepath)
 
@@ -410,16 +410,15 @@ class NodeManager(object):
                 node.AddEntry(index, length + i, default)
             if not disable_buffer:
                 self.BufferCurrentNode()
-            return None
+            return
         # Second case entry is array, only possible for manufacturer specific
-        elif infos["struct"] & nod.OD_MultipleSubindexes and 0x2000 <= index <= 0x5FFF:
+        if infos["struct"] & nod.OD_MultipleSubindexes and 0x2000 <= index <= 0x5FFF:
             values = {"name": "Undefined", "type": 5, "access": "rw", "pdo": True}
             for i in range(1, min(number, 0xFE - length) + 1):
                 node.AddMappingEntry(index, length + i, values=values.copy())
                 node.AddEntry(index, length + i, 0)
             if not disable_buffer:
                 self.BufferCurrentNode()
-            return None
 
     def RemoveSubentriesFromCurrent(self, index, number):
         """
@@ -555,7 +554,6 @@ class NodeManager(object):
             self.RemoveCurrentVariable(index)
         if not disable_buffer:
             self.BufferCurrentNode()
-        return None
 
     def SetCurrentEntryToDefault(self, index, subindex, node=None):
         """
@@ -651,9 +649,8 @@ class NodeManager(object):
                         node.AddEntry(index, i + 1, 0)
             if not disable_buffer:
                 self.BufferCurrentNode()
-            return None
-        else:
-            raise ValueError("Index 0x%04X isn't a valid index for Map Variable!" % index)
+            return
+        raise ValueError("Index 0x%04X isn't a valid index for Map Variable!" % index)
 
     def AddUserTypeToCurrent(self, type_, min_, max_, length):
         index = 0xA0
@@ -735,10 +732,7 @@ class NodeManager(object):
                 else:
                     subentry_infos = self.GetSubentryInfos(index, subindex)
                     type_ = subentry_infos["type"]
-                    dic = {
-                        typeindex: typevalue
-                        for typeindex, typevalue in nod.CustomisableTypes
-                    }
+                    dic = nod.CustomisableTypes.copy()
                     if type_ not in dic:
                         type_ = node.GetEntry(type_)[1]
                     if dic[type_] == 0:
@@ -785,7 +779,6 @@ class NodeManager(object):
                 node.SetMappingEntry(index, subindex, values={name: value})
             if not disable_buffer:
                 self.BufferCurrentNode()
-            return None
 
     def SetCurrentEntryName(self, index, name):
         self.CurrentNode.SetMappingEntry(index, name=name)
@@ -879,8 +872,7 @@ class NodeManager(object):
     def GetFilename(self, index):
         if self.UndoBuffers[index].IsCurrentSaved():
             return self.FileNames[index]
-        else:
-            return "~%s~" % self.FileNames[index]
+        return "~%s~" % self.FileNames[index]
 
     def SetCurrentFilePath(self, filepath):
         self.FilePaths[self.NodeIndex] = filepath
@@ -893,8 +885,7 @@ class NodeManager(object):
     def GetCurrentFilePath(self):
         if len(self.FilePaths) > 0:
             return self.FilePaths[self.NodeIndex]
-        else:
-            return ""
+        return ""
 
     def GetCurrentBufferState(self):
         first = self.UndoBuffers[self.NodeIndex].IsFirst()
@@ -944,8 +935,7 @@ class NodeManager(object):
                 index += 1
             if index < 0x6000:
                 return index
-            else:
-                return None
+        return None
 
     def CurrentDS302Defined(self):
         if self.CurrentNode:
@@ -959,20 +949,17 @@ class NodeManager(object):
     def GetCurrentNodeName(self):
         if self.CurrentNode:
             return self.CurrentNode.Name
-        else:
-            return ""
+        return ""
 
     def GetCurrentNodeCopy(self):
         if self.CurrentNode:
             return self.CurrentNode.Copy()
-        else:
-            return None
+        return None
 
     def GetCurrentNodeID(self, node=None):  # pylint: disable=unused-argument
         if self.CurrentNode:
             return self.CurrentNode.ID
-        else:
-            return None
+        return None
 
     def GetCurrentNodeInfos(self):
         name = self.CurrentNode.Name
@@ -991,8 +978,7 @@ class NodeManager(object):
     def GetCurrentNodeDefaultStringSize(self):
         if self.CurrentNode:
             return self.CurrentNode.DefaultStringSize
-        else:
-            return nod.Node.DefaultStringSize
+        return nod.Node.DefaultStringSize
 
     def SetCurrentNodeDefaultStringSize(self, size):
         if self.CurrentNode:
@@ -1054,6 +1040,7 @@ class NodeManager(object):
     def GetCurrentEntryValues(self, index):
         if self.CurrentNode:
             return self.GetNodeEntryValues(self.CurrentNode, index)
+        return None
 
     def GetNodeEntryValues(self, node, index):
         if node and node.IsEntry(index):
@@ -1151,8 +1138,7 @@ class NodeManager(object):
                                 dic["buffer_size"] = ""
                 editors.append(editor)
             return data, editors
-        else:
-            return None
+        return None
 
     def AddToDCF(self, node_id, index, subindex, size, value):
         if self.CurrentNode.IsEntry(0x1F22, node_id):

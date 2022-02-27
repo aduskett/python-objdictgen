@@ -194,10 +194,10 @@ def main():
         except OSError as exc:
             parser.error("%s: %s" % (exc.__class__.__name__, str(exc)))
 
-        n1 = od1.CurrentNode.GetDict()
-        n2 = od2.CurrentNode.GetDict()
+        node1 = od1.CurrentNode.GetDict()
+        node2 = od2.CurrentNode.GetDict()
 
-        equal = n1 == n2
+        equal = node1 == node2
         print("OD '%s' and '%s' are %s" % (
             opts.od1,
             opts.od2,
@@ -214,7 +214,7 @@ def main():
         for k in sorted(node.Dictionary):
 
             for ir in nod.INDEX_RANGES:
-                if k >= ir["min"] and k <= ir["max"] and ir != index_range:
+                if ir["min"] <= k <= ir["max"] and ir != index_range:
                     index_range = ir
                     print(ir["description"])
 

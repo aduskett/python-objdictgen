@@ -69,6 +69,7 @@ def usage():
 
 
 class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
+    # pylint: disable=attribute-defined-outside-init
 
     EDITMENU_ID = ID_OBJDICTEDITEDITMENUOTHERPROFILE
 

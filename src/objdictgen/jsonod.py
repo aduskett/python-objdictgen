@@ -10,7 +10,7 @@ from . import dbg, SCRIPT_DIRECTORY
 
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
-    long = int
+    long = int  # pylint: disable=invalid-name
     ODict = dict
 else:
     ODict = OrderedDict
@@ -62,7 +62,7 @@ def str_to_number(string):
     s = string.strip()
     if s.startswith('0x') or s.startswith('-0x'):
         return int(s.replace('0x', ''), 16)
-    elif s.isdigit():
+    if s.isdigit():
         return int(string)
     return string
 
@@ -88,7 +88,7 @@ def remove_underscore(d):
             for k, v in d.items()
             if not k.startswith('__')
         }
-    elif isinstance(d, list):
+    if isinstance(d, list):
         return [
             remove_underscore(v)
             for v in d

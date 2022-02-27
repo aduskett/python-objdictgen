@@ -64,6 +64,7 @@ def usage():
 
 
 class NetworkEdit(wx.Frame, NetworkEditorTemplate):
+    # pylint: disable=attribute-defined-outside-init
 
     EDITMENU_ID = ID_NETWORKEDITEDITMENUOTHERPROFILE
 

@@ -298,7 +298,7 @@ MappingDictionary = {
 # ------------------------------------------------------------------------------
 def GetIndexRange(index):
     for irange in INDEX_RANGES:
-        if index >= irange["min"] and index <= irange["max"]:
+        if irange["min"] <= index <= irange["max"]:
             return irange
     raise ValueError("Cannot find index range for value '0x%x'" % index)
 
@@ -375,8 +375,7 @@ def FindEntryName(index, mappingdictionary, compute=True):
         infos = mappingdictionary[base_index]
         if infos["struct"] & OD_IdenticalIndexes and compute:
             return StringFormat(infos["name"], (index - base_index) // infos["incr"] + 1, 0)
-        else:
-            return infos["name"]
+        return infos["name"]
     return None
 
 
@@ -477,16 +476,15 @@ def FindIndex(index, mappingdictionary):
     """
     if index in mappingdictionary:
         return index
-    else:
-        listpluri = [
-            idx for idx, mapping in mappingdictionary.items()
-            if mapping["struct"] & OD_IdenticalIndexes
-        ]
-        for idx in sorted(listpluri):
-            nb_max = mappingdictionary[idx]["nbmax"]
-            incr = mappingdictionary[idx]["incr"]
-            if idx < index < idx + incr * nb_max and (index - idx) % incr == 0:
-                return idx
+    listpluri = [
+        idx for idx, mapping in mappingdictionary.items()
+        if mapping["struct"] & OD_IdenticalIndexes
+    ]
+    for idx in sorted(listpluri):
+        nb_max = mappingdictionary[idx]["nbmax"]
+        incr = mappingdictionary[idx]["incr"]
+        if idx < index < idx + incr * nb_max and (index - idx) % incr == 0:
+            return idx
     return None
 
 
@@ -526,7 +524,7 @@ class Node(object):
 
     DefaultStringSize = 10
 
-    def __init__(self, name="", type="slave", id=0, description="", profilename="DS-301", profile=None, specificmenu=None):  # pylint: disable=redefined-builtin
+    def __init__(self, name="", type="slave", id=0, description="", profilename="DS-301", profile=None, specificmenu=None):  # pylint: disable=redefined-builtin, invalid-name
         self.Name = name
         self.Type = type
         self.ID = id
@@ -545,8 +543,7 @@ class Node(object):
         """
         if userdefinedtoo:
             return [self.Profile, self.DS302, self.UserMapping]
-        else:
-            return [self.Profile, self.DS302]
+        return [self.Profile, self.DS302]
 
     def AddEntry(self, index, subindex=None, value=None):
         """
@@ -556,7 +553,7 @@ class Node(object):
             if not subindex:
                 self.Dictionary[index] = value
                 return True
-            elif subindex == 1:
+            if subindex == 1:
                 self.Dictionary[index] = [value]
                 return True
         elif subindex > 0 and isinstance(self.Dictionary[index], list) and subindex == len(self.Dictionary[index]) + 1:
@@ -568,41 +565,43 @@ class Node(object):
         """
         Warning ! Modifies an existing entry in the Object Dictionary. Can't add a new one.
         """
-        if index in self.Dictionary:
-            if not subindex:
-                if value is not None:
-                    self.Dictionary[index] = value
-                return True
-            elif isinstance(self.Dictionary[index], list) and 0 < subindex <= len(self.Dictionary[index]):
-                if value is not None:
-                    self.Dictionary[index][subindex - 1] = value
-                return True
+        if index not in self.Dictionary:
+            return False
+        if not subindex:
+            if value is not None:
+                self.Dictionary[index] = value
+            return True
+        if isinstance(self.Dictionary[index], list) and 0 < subindex <= len(self.Dictionary[index]):
+            if value is not None:
+                self.Dictionary[index][subindex - 1] = value
+            return True
         return False
 
     def SetParamsEntry(self, index, subindex=None, comment=None, buffer_size=None, save=None, callback=None):
-        if index in self.Dictionary:
-            if (comment is not None or save is not None or callback is not None or buffer_size is not None) and index not in self.ParamsDictionary:
-                self.ParamsDictionary[index] = {}
-            if subindex is None or not isinstance(self.Dictionary[index], list) and subindex == 0:
-                if comment is not None:
-                    self.ParamsDictionary[index]["comment"] = comment
-                if buffer_size is not None:
-                    self.ParamsDictionary[index]["buffer_size"] = buffer_size
-                if save is not None:
-                    self.ParamsDictionary[index]["save"] = save
-                if callback is not None:
-                    self.ParamsDictionary[index]["callback"] = callback
-                return True
-            elif isinstance(self.Dictionary[index], list) and 0 <= subindex <= len(self.Dictionary[index]):
-                if (comment is not None or save is not None or callback is not None or buffer_size is not None) and subindex not in self.ParamsDictionary[index]:
-                    self.ParamsDictionary[index][subindex] = {}
-                if comment is not None:
-                    self.ParamsDictionary[index][subindex]["comment"] = comment
-                if buffer_size is not None:
-                    self.ParamsDictionary[index][subindex]["buffer_size"] = buffer_size
-                if save is not None:
-                    self.ParamsDictionary[index][subindex]["save"] = save
-                return True
+        if index not in self.Dictionary:
+            return False
+        if (comment is not None or save is not None or callback is not None or buffer_size is not None) and index not in self.ParamsDictionary:
+            self.ParamsDictionary[index] = {}
+        if subindex is None or not isinstance(self.Dictionary[index], list) and subindex == 0:
+            if comment is not None:
+                self.ParamsDictionary[index]["comment"] = comment
+            if buffer_size is not None:
+                self.ParamsDictionary[index]["buffer_size"] = buffer_size
+            if save is not None:
+                self.ParamsDictionary[index]["save"] = save
+            if callback is not None:
+                self.ParamsDictionary[index]["callback"] = callback
+            return True
+        if isinstance(self.Dictionary[index], list) and 0 <= subindex <= len(self.Dictionary[index]):
+            if (comment is not None or save is not None or callback is not None or buffer_size is not None) and subindex not in self.ParamsDictionary[index]:
+                self.ParamsDictionary[index][subindex] = {}
+            if comment is not None:
+                self.ParamsDictionary[index][subindex]["comment"] = comment
+            if buffer_size is not None:
+                self.ParamsDictionary[index][subindex]["buffer_size"] = buffer_size
+            if save is not None:
+                self.ParamsDictionary[index][subindex]["save"] = save
+            return True
         return False
 
     def RemoveEntry(self, index, subindex=None):
@@ -611,24 +610,25 @@ class Node(object):
         it will remove this subindex only if it's the last of the index. If no subindex
         is specified it removes the whole index and subIndexes from the Object Dictionary.
         """
-        if index in self.Dictionary:
-            if not subindex:
+        if index not in self.Dictionary:
+            return False
+        if not subindex:
+            self.Dictionary.pop(index)
+            if index in self.ParamsDictionary:
+                self.ParamsDictionary.pop(index)
+            return True
+        if isinstance(self.Dictionary[index], list) and subindex == len(self.Dictionary[index]):
+            self.Dictionary[index].pop(subindex - 1)
+            if index in self.ParamsDictionary:
+                if subindex in self.ParamsDictionary[index]:
+                    self.ParamsDictionary[index].pop(subindex)
+                if len(self.ParamsDictionary[index]) == 0:
+                    self.ParamsDictionary.pop(index)
+            if len(self.Dictionary[index]) == 0:
                 self.Dictionary.pop(index)
                 if index in self.ParamsDictionary:
                     self.ParamsDictionary.pop(index)
-                return True
-            elif isinstance(self.Dictionary[index], list) and subindex == len(self.Dictionary[index]):
-                self.Dictionary[index].pop(subindex - 1)
-                if index in self.ParamsDictionary:
-                    if subindex in self.ParamsDictionary[index]:
-                        self.ParamsDictionary[index].pop(subindex)
-                    if len(self.ParamsDictionary[index]) == 0:
-                        self.ParamsDictionary.pop(index)
-                if len(self.Dictionary[index]) == 0:
-                    self.Dictionary.pop(index)
-                    if index in self.ParamsDictionary:
-                        self.ParamsDictionary.pop(index)
-                return True
+            return True
         return False
 
     def IsEntry(self, index, subindex=None):
@@ -653,16 +653,14 @@ class Node(object):
                         self.CompileValue(value, index, compute)
                         for value in self.Dictionary[index]
                     ]
-                elif aslist:
+                if aslist:
                     return [self.CompileValue(self.Dictionary[index], index, compute)]
-                else:
-                    return self.CompileValue(self.Dictionary[index], index, compute)
-            elif subindex == 0:
+                return self.CompileValue(self.Dictionary[index], index, compute)
+            if subindex == 0:
                 if isinstance(self.Dictionary[index], list):
                     return len(self.Dictionary[index])
-                else:
-                    return self.CompileValue(self.Dictionary[index], index, compute)
-            elif isinstance(self.Dictionary[index], list) and 0 < subindex <= len(self.Dictionary[index]):
+                return self.CompileValue(self.Dictionary[index], index, compute)
+            if isinstance(self.Dictionary[index], list) and 0 < subindex <= len(self.Dictionary[index]):
                 return self.CompileValue(self.Dictionary[index][subindex - 1], index, compute)
         return None
 
@@ -682,21 +680,19 @@ class Node(object):
                                 line.update(self.ParamsDictionary[index][i])
                             result.append(line)
                         return result
-                    else:
-                        return [DefaultParams.copy() for i in range(len(self.Dictionary[index]) + 1)]
-                else:
-                    result = DefaultParams.copy()
-                    if index in self.ParamsDictionary:
-                        result.update(self.ParamsDictionary[index])
-                    if aslist:
-                        return [result]
-                    return result
-            elif subindex == 0 and not isinstance(self.Dictionary[index], list):
+                    return [DefaultParams.copy() for i in range(len(self.Dictionary[index]) + 1)]
+                result = DefaultParams.copy()
+                if index in self.ParamsDictionary:
+                    result.update(self.ParamsDictionary[index])
+                if aslist:
+                    return [result]
+                return result
+            if subindex == 0 and not isinstance(self.Dictionary[index], list):
                 result = DefaultParams.copy()
                 if index in self.ParamsDictionary:
                     result.update(self.ParamsDictionary[index])
                 return result
-            elif isinstance(self.Dictionary[index], list) and 0 <= subindex <= len(self.Dictionary[index]):
+            if isinstance(self.Dictionary[index], list) and 0 <= subindex <= len(self.Dictionary[index]):
                 result = DefaultParams.copy()
                 if index in self.ParamsDictionary and subindex in self.ParamsDictionary[index]:
                     result.update(self.ParamsDictionary[index][subindex])
@@ -707,9 +703,8 @@ class Node(object):
         entry_infos = self.GetEntryInfos(index)
         if entry_infos and "callback" in entry_infos:
             return entry_infos["callback"]
-        else:
-            if index in self.Dictionary and index in self.ParamsDictionary and "callback" in self.ParamsDictionary[index]:
-                return self.ParamsDictionary[index]["callback"]
+        if index in self.Dictionary and index in self.ParamsDictionary and "callback" in self.ParamsDictionary[index]:
+            return self.ParamsDictionary[index]["callback"]
         return False
 
     def IsMappingEntry(self, index):
@@ -745,65 +740,66 @@ class Node(object):
         """
         Warning ! Modifies an existing entry in the User Mapping Dictionary. Can't add a new one.
         """
-        if index in self.UserMapping:
-            if subindex is None:
-                if name is not None:
-                    self.UserMapping[index]["name"] = name
-                    if self.UserMapping[index]["struct"] & OD_IdenticalSubindexes:
-                        self.UserMapping[index]["values"][1]["name"] = name + " %d[(sub)]"
-                    elif not self.UserMapping[index]["struct"] & OD_MultipleSubindexes:
-                        self.UserMapping[index]["values"][0]["name"] = name
-                if struct is not None:
-                    self.UserMapping[index]["struct"] = struct
-                if size is not None:
-                    self.UserMapping[index]["size"] = size
-                if nbmax is not None:
-                    self.UserMapping[index]["nbmax"] = nbmax
-                if default is not None:
-                    self.UserMapping[index]["default"] = default
-                if values is not None:
-                    self.UserMapping[index]["values"] = values
-                return True
-            elif 0 <= subindex < len(self.UserMapping[index]["values"]) and values is not None:
-                if "type" in values:
-                    if self.UserMapping[index]["struct"] & OD_IdenticalSubindexes:
-                        if self.IsStringType(self.UserMapping[index]["values"][subindex]["type"]):
-                            if self.IsRealType(values["type"]):
-                                for i in range(len(self.Dictionary[index])):
-                                    self.SetEntry(index, i + 1, 0.)
-                            elif not self.IsStringType(values["type"]):
-                                for i in range(len(self.Dictionary[index])):
-                                    self.SetEntry(index, i + 1, 0)
-                        elif self.IsRealType(self.UserMapping[index]["values"][subindex]["type"]):
-                            if self.IsStringType(values["type"]):
-                                for i in range(len(self.Dictionary[index])):
-                                    self.SetEntry(index, i + 1, "")
-                            elif not self.IsRealType(values["type"]):
-                                for i in range(len(self.Dictionary[index])):
-                                    self.SetEntry(index, i + 1, 0)
-                        elif self.IsStringType(values["type"]):
-                            for i in range(len(self.Dictionary[index])):
-                                self.SetEntry(index, i + 1, "")
-                        elif self.IsRealType(values["type"]):
+        if index not in self.UserMapping:
+            return False
+        if subindex is None:
+            if name is not None:
+                self.UserMapping[index]["name"] = name
+                if self.UserMapping[index]["struct"] & OD_IdenticalSubindexes:
+                    self.UserMapping[index]["values"][1]["name"] = name + " %d[(sub)]"
+                elif not self.UserMapping[index]["struct"] & OD_MultipleSubindexes:
+                    self.UserMapping[index]["values"][0]["name"] = name
+            if struct is not None:
+                self.UserMapping[index]["struct"] = struct
+            if size is not None:
+                self.UserMapping[index]["size"] = size
+            if nbmax is not None:
+                self.UserMapping[index]["nbmax"] = nbmax
+            if default is not None:
+                self.UserMapping[index]["default"] = default
+            if values is not None:
+                self.UserMapping[index]["values"] = values
+            return True
+        if 0 <= subindex < len(self.UserMapping[index]["values"]) and values is not None:
+            if "type" in values:
+                if self.UserMapping[index]["struct"] & OD_IdenticalSubindexes:
+                    if self.IsStringType(self.UserMapping[index]["values"][subindex]["type"]):
+                        if self.IsRealType(values["type"]):
                             for i in range(len(self.Dictionary[index])):
                                 self.SetEntry(index, i + 1, 0.)
-                    else:
-                        if self.IsStringType(self.UserMapping[index]["values"][subindex]["type"]):
-                            if self.IsRealType(values["type"]):
-                                self.SetEntry(index, subindex, 0.)
-                            elif not self.IsStringType(values["type"]):
-                                self.SetEntry(index, subindex, 0)
-                        elif self.IsRealType(self.UserMapping[index]["values"][subindex]["type"]):
-                            if self.IsStringType(values["type"]):
-                                self.SetEntry(index, subindex, "")
-                            elif not self.IsRealType(values["type"]):
-                                self.SetEntry(index, subindex, 0)
-                        elif self.IsStringType(values["type"]):
-                            self.SetEntry(index, subindex, "")
-                        elif self.IsRealType(values["type"]):
+                        elif not self.IsStringType(values["type"]):
+                            for i in range(len(self.Dictionary[index])):
+                                self.SetEntry(index, i + 1, 0)
+                    elif self.IsRealType(self.UserMapping[index]["values"][subindex]["type"]):
+                        if self.IsStringType(values["type"]):
+                            for i in range(len(self.Dictionary[index])):
+                                self.SetEntry(index, i + 1, "")
+                        elif not self.IsRealType(values["type"]):
+                            for i in range(len(self.Dictionary[index])):
+                                self.SetEntry(index, i + 1, 0)
+                    elif self.IsStringType(values["type"]):
+                        for i in range(len(self.Dictionary[index])):
+                            self.SetEntry(index, i + 1, "")
+                    elif self.IsRealType(values["type"]):
+                        for i in range(len(self.Dictionary[index])):
+                            self.SetEntry(index, i + 1, 0.)
+                else:
+                    if self.IsStringType(self.UserMapping[index]["values"][subindex]["type"]):
+                        if self.IsRealType(values["type"]):
                             self.SetEntry(index, subindex, 0.)
-                self.UserMapping[index]["values"][subindex].update(values)
-                return True
+                        elif not self.IsStringType(values["type"]):
+                            self.SetEntry(index, subindex, 0)
+                    elif self.IsRealType(self.UserMapping[index]["values"][subindex]["type"]):
+                        if self.IsStringType(values["type"]):
+                            self.SetEntry(index, subindex, "")
+                        elif not self.IsRealType(values["type"]):
+                            self.SetEntry(index, subindex, 0)
+                    elif self.IsStringType(values["type"]):
+                        self.SetEntry(index, subindex, "")
+                    elif self.IsRealType(values["type"]):
+                        self.SetEntry(index, subindex, 0.)
+            self.UserMapping[index]["values"][subindex].update(values)
+            return True
         return False
 
     def RemoveMappingEntry(self, index, subindex=None):
@@ -816,7 +812,7 @@ class Node(object):
             if subindex is None:
                 self.UserMapping.pop(index)
                 return True
-            elif subindex == len(self.UserMapping[index]["values"]) - 1:
+            if subindex == len(self.UserMapping[index]["values"]) - 1:
                 self.UserMapping[index]["values"].pop(subindex)
                 return True
         return False
@@ -1065,7 +1061,7 @@ class Node(object):
     def IsStringType(self, index):
         if index in (0x9, 0xA, 0xB, 0xF):
             return True
-        elif 0xA0 <= index < 0x100:
+        if 0xA0 <= index < 0x100:
             result = self.GetEntry(index, 1)
             if result is not None and result in (0x9, 0xA, 0xB):
                 return True
@@ -1074,7 +1070,7 @@ class Node(object):
     def IsRealType(self, index):
         if index in (0x8, 0x11):
             return True
-        elif 0xA0 <= index < 0x100:
+        if 0xA0 <= index < 0x100:
             result = self.GetEntry(index, 1)
             if result is not None and result in (0x8, 0x11):
                 return True
@@ -1096,34 +1092,32 @@ class Node(object):
     def GetMapValue(self, mapname):
         if mapname == "None":
             return 0
-        else:
-            list_ = self.GetMapVariableList()
-            for index, subindex, size, name in list_:
-                if mapname == self.GenerateMapName(name, index, subindex):
-                    if self.UserMapping[index]["struct"] == array:  # array type, only look at subindex 1 in UserMapping
-                        if self.IsStringType(self.UserMapping[index]["values"][1]["type"]):
-                            try:
-                                if int(self.ParamsDictionary[index][subindex]["buffer_size"]) <= 8:
-                                    return (index << 16) + (subindex << 8) + size * int(self.ParamsDictionary[index][subindex]["buffer_size"])
-                                else:
-                                    return None  # String size is too big to fit in a PDO
-                            except KeyError as exc:
-                                dbg("KeyError: %s" % exc)
-                                raise  # FIXME: Original code swallows the exception
-                                # return None  # No string length found and default string size is too big to fit in a PDO
-                    else:
-                        if self.IsStringType(self.UserMapping[index]["values"][subindex]["type"]):
-                            try:
-                                if int(self.ParamsDictionary[index][subindex]["buffer_size"]) <= 8:
-                                    return (index << 16) + (subindex << 8) + size * int(self.ParamsDictionary[index][subindex]["buffer_size"])
-                                else:
-                                    return None  # String size is too big to fit in a PDO
-                            except KeyError as exc:
-                                dbg("KeyError: %s" % exc)
-                                raise   # FIXME: Original code swallows the exception
-                                # return None  # No string length found and default string size is too big to fit in a PDO
-                    return (index << 16) + (subindex << 8) + size
-            return None
+
+        list_ = self.GetMapVariableList()
+        for index, subindex, size, name in list_:
+            if mapname == self.GenerateMapName(name, index, subindex):
+                if self.UserMapping[index]["struct"] == array:  # array type, only look at subindex 1 in UserMapping
+                    if self.IsStringType(self.UserMapping[index]["values"][1]["type"]):
+                        try:
+                            if int(self.ParamsDictionary[index][subindex]["buffer_size"]) <= 8:
+                                return (index << 16) + (subindex << 8) + size * int(self.ParamsDictionary[index][subindex]["buffer_size"])
+                            return None  # String size is too big to fit in a PDO
+                        except KeyError as exc:
+                            dbg("KeyError: %s" % exc)
+                            raise  # FIXME: Original code swallows the exception
+                            # return None  # No string length found and default string size is too big to fit in a PDO
+                else:
+                    if self.IsStringType(self.UserMapping[index]["values"][subindex]["type"]):
+                        try:
+                            if int(self.ParamsDictionary[index][subindex]["buffer_size"]) <= 8:
+                                return (index << 16) + (subindex << 8) + size * int(self.ParamsDictionary[index][subindex]["buffer_size"])
+                            return None  # String size is too big to fit in a PDO
+                        except KeyError as exc:
+                            dbg("KeyError: %s" % exc)
+                            raise   # FIXME: Original code swallows the exception
+                            # return None  # No string length found and default string size is too big to fit in a PDO
+                return (index << 16) + (subindex << 8) + size
+        return None
 
     def GetMapIndex(self, value):
         if value:

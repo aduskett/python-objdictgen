@@ -102,9 +102,9 @@ def GetValidTypeInfos(context, typename, items=None):
 def ComputeValue(type_, value):
     if type_ == "visible_string":
         return '"%s"' % value, ""
-    elif type_ == "domain":
+    if type_ == "domain":
         return '"%s"' % ''.join(["\\x%2.2x" % ord(char) for char in value]), ""
-    elif type_.startswith("real"):
+    if type_.startswith("real"):
         return "%f" % value, ""
     # value is integer; make sure to handle negative numbers correctly
     if value < 0:

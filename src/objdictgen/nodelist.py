@@ -181,7 +181,6 @@ class NodeList(object):
                 self.Changed = False
             except Exception as exc:  # pylint: disable=broad-except
                 raise_from(ValueError("Unable to load CPJ file '%s'" % (cpjpath, )), exc)
-        return None
 
     def SaveNodeList(self, netname=None):
         try:
@@ -194,7 +193,6 @@ class NodeList(object):
             with open(cpjpath, mode=mode) as f:
                 f.write(content)
             self.Changed = False
-            return None
         except Exception as exc:  # pylint: disable=broad-except
             raise_from(ValueError("Fail to save node list in '%s'" % (cpjpath)), exc)
 

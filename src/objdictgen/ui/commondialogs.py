@@ -46,6 +46,8 @@ from .. import dbg
 
 
 class CommunicationDialog(wx.Dialog):
+    # pylint: disable=attribute-defined-outside-init
+
     def _init_coll_flexGridSizer1_Items(self, parent):
         parent.AddSizer(self.MainSizer, 0, border=20, flag=wx.GROW | wx.TOP | wx.LEFT | wx.RIGHT)
         parent.AddSizer(self.ButtonSizer, 0, border=20, flag=wx.ALIGN_RIGHT | wx.BOTTOM | wx.LEFT | wx.RIGHT)
@@ -236,6 +238,8 @@ class CommunicationDialog(wx.Dialog):
 
 
 class MapVariableDialog(wx.Dialog):
+    # pylint: disable=attribute-defined-outside-init
+
     def _init_coll_flexGridSizer1_Items(self, parent):
         parent.AddSizer(self.MainSizer, 0, border=20, flag=wx.GROW | wx.TOP | wx.LEFT | wx.RIGHT)
         parent.AddSizer(self.ButtonSizer, 0, border=20, flag=wx.ALIGN_RIGHT | wx.BOTTOM | wx.LEFT | wx.RIGHT)
@@ -425,6 +429,8 @@ class MapVariableDialog(wx.Dialog):
 
 
 class UserTypeDialog(wx.Dialog):
+    # pylint: disable=attribute-defined-outside-init
+
     def _init_coll_flexGridSizer1_Items(self, parent):
         parent.AddSizer(self.MainSizer, 0, border=20, flag=wx.GROW | wx.TOP | wx.LEFT | wx.RIGHT)
         parent.AddSizer(self.ButtonSizer, 0, border=20, flag=wx.ALIGN_RIGHT | wx.BOTTOM | wx.LEFT | wx.RIGHT)
@@ -656,6 +662,8 @@ NODE_TYPES_DICT = {node_type: node_type for node_type in NODE_TYPES}
 
 
 class NodeInfosDialog(wx.Dialog):
+    # pylint: disable=attribute-defined-outside-init
+
     def _init_coll_flexGridSizer1_Items(self, parent):
         parent.AddSizer(self.MainSizer, 0, border=20, flag=wx.GROW | wx.TOP | wx.LEFT | wx.RIGHT)
         parent.AddSizer(self.ButtonSizer, 0, border=20, flag=wx.ALIGN_RIGHT | wx.BOTTOM | wx.LEFT | wx.RIGHT)
@@ -811,6 +819,8 @@ class NodeInfosDialog(wx.Dialog):
 
 
 class CreateNodeDialog(wx.Dialog):
+    # pylint: disable=attribute-defined-outside-init
+
     def _init_coll_flexGridSizer1_Items(self, parent):
         parent.AddSizer(self.MainSizer, 0, border=20, flag=wx.GROW | wx.TOP | wx.LEFT | wx.RIGHT)
         parent.AddSizer(self.ButtonSizer, 0, border=20, flag=wx.ALIGN_RIGHT | wx.BOTTOM | wx.LEFT | wx.RIGHT)
@@ -1064,9 +1074,9 @@ class CreateNodeDialog(wx.Dialog):
     def GetNMTManagement(self):
         if self.NMT_None.GetValue():
             return "None"
-        elif self.NMT_NodeGuarding.GetValue():
+        if self.NMT_NodeGuarding.GetValue():
             return "NodeGuarding"
-        elif self.NMT_Heartbeat.GetValue():
+        if self.NMT_Heartbeat.GetValue():
             return "Heartbeat"
         return None
 
@@ -1114,6 +1124,8 @@ class CreateNodeDialog(wx.Dialog):
 
 
 class AddSlaveDialog(wx.Dialog):
+    # pylint: disable=attribute-defined-outside-init
+
     def _init_coll_flexGridSizer1_Items(self, parent):
         parent.AddSizer(self.MainSizer, 0, border=20, flag=wx.GROW | wx.TOP | wx.LEFT | wx.RIGHT)
         parent.AddSizer(self.ButtonSizer, 0, border=20, flag=wx.ALIGN_RIGHT | wx.BOTTOM | wx.LEFT | wx.RIGHT)
@@ -1301,6 +1313,7 @@ DCF_ENTRY_TABLE_COLNAMES = ["Index", "Subindex", "Size", "Value"]
 
 
 class DCFEntryValuesTable(wx.grid.PyGridTableBase):
+    # pylint: disable=attribute-defined-outside-init
 
     """
     A custom wxGrid Table using user supplied data
@@ -1328,6 +1341,7 @@ class DCFEntryValuesTable(wx.grid.PyGridTableBase):
             if translate:
                 return self.colnames[col]
             return self.colnames[col]
+        return None
 
     def GetRowLabelValues(self, row, translate=True):  # pylint: disable=unused-argument
         return row
@@ -1335,10 +1349,12 @@ class DCFEntryValuesTable(wx.grid.PyGridTableBase):
     def GetValue(self, row, col):
         if row < self.GetNumberRows():
             return str(self.data[row].get(self.GetColLabelValue(col, False), ""))
+        return None
 
     def GetEditor(self, row, col):
         if row < self.GetNumberRows():
             return self.editors[row].get(self.GetColLabelValue(col, False), "")
+        return None
 
     def GetValueByName(self, row, colname):
         return self.data[row].get(colname)
@@ -1420,6 +1436,7 @@ class DCFEntryValuesTable(wx.grid.PyGridTableBase):
 
 
 class DCFEntryValuesDialog(wx.Dialog):
+    # pylint: disable=attribute-defined-outside-init
 
     if wx.VERSION < (2, 6, 0):
         def Bind(self, event, function, id=None):  # pylint: disable=invalid-name, redefined-builtin

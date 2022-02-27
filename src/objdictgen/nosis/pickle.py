@@ -10,7 +10,7 @@ from past.builtins import long
 from future.utils import raise_from
 
 from .xtoy import (
-    aton, ntoa, dbg,
+    aton, ntoa,
     unsafe_string, unsafe_content,
     safe_string, safe_content,
 )
@@ -112,12 +112,12 @@ def get_node_valuetext(node):
         # text in tag
         ttext = node.getAttribute('value')
         return unsafe_string(ttext)
-    else:
-        # text in body
-        node.normalize()
-        if node.childNodes:
-            return unsafe_content(node.childNodes[0].nodeValue)
-        return ''
+
+    # text in body
+    node.normalize()
+    if node.childNodes:
+        return unsafe_content(node.childNodes[0].nodeValue)
+    return ''
 
 
 # a multipurpose list-like object. it is nicer conceptually for us
@@ -162,9 +162,9 @@ class StreamWriter(object):
                 # the sio, we CAN'T close it (getvalue() wouldn't work)
                 self.iohandle.close()
             return self.sio.getvalue()
-        else:
-            # don't raise an exception - want getvalue() unconditionally
-            return None
+
+        # don't raise an exception - want getvalue() unconditionally
+        return None
 
 
 # split off for future expansion of compression types, etc.
@@ -341,13 +341,13 @@ def _tag_compound(start_tag, family_type, thing, deepcopy, extra=''):
         # don't need ids in a deepcopied file (looks neater)
         start_tag = start_tag + '%s %s>\n' % (family_type, extra)
         return (start_tag, 1)
-    else:
-        if VISITED.get(id(thing)):
-            start_tag = start_tag + '%s refid="%s" />\n' % (family_type, id(thing))
-            return (start_tag, 0)
-        else:
-            start_tag = start_tag + '%s id="%s" %s>\n' % (family_type, id(thing), extra)
-            return (start_tag, 1)
+
+    if VISITED.get(id(thing)):
+        start_tag = start_tag + '%s refid="%s" />\n' % (family_type, id(thing))
+        return (start_tag, 0)
+
+    start_tag = start_tag + '%s id="%s" %s>\n' % (family_type, id(thing), extra)
+    return (start_tag, 1)
 
 
 #
@@ -390,8 +390,7 @@ def _family_type(family, typename, mtype, mextra):
         else:
             mextra = ''
         return 'family="%s" type="%s" %s' % (family, mtype, mextra)
-    else:
-        return 'family="%s" type="%s"' % (family, typename)
+    return 'family="%s" type="%s"' % (family, typename)
 
 
 def _fix_family(family, typename):
@@ -406,26 +405,25 @@ def _fix_family(family, typename):
         return 'none'
     if typename == 'dict':
         return 'map'
-    elif typename == 'list':
+    if typename == 'list':
         return 'seq'
-    elif typename == 'tuple':
+    if typename == 'tuple':
         return 'seq'
-    elif typename == 'numeric':
+    if typename == 'numeric':
         return 'atom'
-    elif typename == 'string':
+    if typename == 'string':
         return 'atom'
-    elif typename == 'PyObject':
+    if typename == 'PyObject':
         return 'obj'
-    elif typename == 'function':
+    if typename == 'function':
         return 'lang'
-    elif typename == 'class':
+    if typename == 'class':
         return 'lang'
-    elif typename == 'True':
+    if typename == 'True':
         return 'uniq'
-    elif typename == 'False':
+    if typename == 'False':
         return 'uniq'
-    else:
-        raise ValueError("family= must be given for unknown type '%s'" % typename)
+    raise ValueError("family= must be given for unknown type '%s'" % typename)
 
 
 def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
@@ -633,6 +631,7 @@ def _thing_from_dom(dom_node, container=None):
             # clearer to show all cases being handled (easier to see the pattern
             # when doing later maintenance).
 
+            # pylint: disable=self-assigning-variable
             if node_type == 'None':
                 node_val = None
             elif node_type == 'numeric':

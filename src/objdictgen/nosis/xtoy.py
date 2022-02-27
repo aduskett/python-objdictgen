@@ -1,6 +1,6 @@
-from past.builtins import long
 import sys
 import re
+from past.builtins import long
 
 
 def dbg(msg):  # pylint: disable=unused-argument
@@ -70,23 +70,23 @@ def aton(s):
 
 
 # we use ntoa() instead of repr() to ensure we have a known output format
-def ntoa(n):
+def ntoa(num):
     "Convert a number to a string without calling repr()"
-    if isinstance(n, int):
-        s = "%d" % n
-    elif isinstance(n, long):
-        s = "%ldL" % n
-    elif isinstance(n, float):
-        s = "%.17g" % n
+    if isinstance(num, int):
+        s = "%d" % num
+    elif isinstance(num, long):
+        s = "%ldL" % num
+    elif isinstance(num, float):
+        s = "%.17g" % num
         # ensure a '.', adding if needed (unless in scientific notation)
         if '.' not in s and 'e' not in s:
             s = s + '.'
-    elif isinstance(n, complex):
+    elif isinstance(num, complex):
         # these are always used as doubles, so it doesn't
         # matter if the '.' shows up
-        s = "%.17g:%.17g" % (n.real, n.imag)
+        s = "%.17g:%.17g" % (num.real, num.imag)
     else:
-        raise ValueError("Unknown numeric type: %s" % repr(n))
+        raise ValueError("Unknown numeric type: %s" % repr(num))
     return s
 
 

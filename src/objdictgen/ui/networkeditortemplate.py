@@ -13,6 +13,7 @@ from . import commondialogs as cdia
 
 
 class NetworkEditorTemplate(net.NodeEditorTemplate):
+    # pylint: disable=attribute-defined-outside-init
 
     def _init_ctrls(self, prnt):
         self.NetworkNodes = wx.Notebook(id=ID_NETWORKEDITNETWORKNODES,
@@ -31,8 +32,7 @@ class NetworkEditorTemplate(net.NodeEditorTemplate):
         if selected > 0:
             window = self.NetworkNodes.GetPage(selected)
             return window.GetIndex()
-        else:
-            return 0
+        return 0
 
     def RefreshCurrentIndexList(self):
         selected = self.NetworkNodes.GetSelection()

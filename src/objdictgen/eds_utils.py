@@ -114,18 +114,15 @@ def GetDefaultValue(node, index, subindex=None):
         if "default" in subentry_infos:
             return subentry_infos["default"]
         # If not, returns the default value for the subindex type
-        else:
-            return node.GetTypeDefaultValue(subentry_infos["type"])
+        return node.GetTypeDefaultValue(subentry_infos["type"])
+
     # Third case entry is a var
-    else:
-        subentry_infos = node.GetSubentryInfos(index, 0)
-        # If a default value is defined for this subindex, returns it
-        if "default" in subentry_infos:
-            return subentry_infos["default"]
-        # If not, returns the default value for the subindex type
-        else:
-            return node.GetTypeDefaultValue(subentry_infos["type"])
-    return None
+    subentry_infos = node.GetSubentryInfos(index, 0)
+    # If a default value is defined for this subindex, returns it
+    if "default" in subentry_infos:
+        return subentry_infos["default"]
+    # If not, returns the default value for the subindex type
+    return node.GetTypeDefaultValue(subentry_infos["type"])
 
 
 # ------------------------------------------------------------------------------
@@ -372,10 +369,9 @@ def ParseEDSFile(filepath):
                             if keyname.upper() not in ENTRY_ATTRIBUTES:
                                 raise ValueError("Keyname '%s' not recognised for section '[%s]'" % (keyname, section_name))
                             # Verify that value is valid
-                            elif not ENTRY_ATTRIBUTES[keyname.upper()](computed_value):
+                            if not ENTRY_ATTRIBUTES[keyname.upper()](computed_value):
                                 raise ValueError("Invalid value '%s' for keyname '%s' of section '[%s]'" % (value, keyname, section_name))
-                            else:
-                                values[keyname.upper()] = computed_value
+                            values[keyname.upper()] = computed_value
                         else:
                             values[keyname.upper()] = computed_value
             # All lines that are not empty and are neither a comment neither not a valid assignment

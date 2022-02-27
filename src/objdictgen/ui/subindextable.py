@@ -138,6 +138,7 @@ class SubindexTable(wx.grid.PyGridTableBase):
     def GetColLabelValue(self, col, translate=True):  # pylint: disable=unused-argument
         if col < len(self.colnames):
             return self.colnames[col]
+        return None
 
     def GetRowLabelValues(self, row, translate=True):  # pylint: disable=unused-argument
         return row
@@ -147,10 +148,12 @@ class SubindexTable(wx.grid.PyGridTableBase):
             colname = self.GetColLabelValue(col, False)
             value = str(self.data[row].get(colname, ""))
             return value
+        return None
 
     def GetEditor(self, row, col):
         if row < self.GetNumberRows():
             return self.editors[row].get(self.GetColLabelValue(col, False), "")
+        return None
 
     def GetValueByName(self, row, colname):
         return self.data[row].get(colname)
@@ -325,6 +328,8 @@ class SubindexTable(wx.grid.PyGridTableBase):
 
 
 class EditingPanel(wx.SplitterWindow):
+    # pylint: disable=attribute-defined-outside-init
+
     def _init_coll_AddToListSizer_Items(self, parent):
         parent.AddWindow(self.AddButton, 0, border=0, flag=0)
         parent.AddWindow(self.IndexChoice, 0, border=0, flag=wx.GROW)
