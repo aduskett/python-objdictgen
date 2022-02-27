@@ -82,11 +82,11 @@ class NodeEditorTemplate(object):
                     category = "Mandatory"
                 struct = "VAR"
                 number = ""
-                if entryinfos["struct"] & nod.OD_IdenticalIndexes:
+                if entryinfos["struct"] & nod.OD.IdenticalIndexes:
                     number = " possibly defined %d times" % entryinfos["nbmax"]
-                if entryinfos["struct"] & nod.OD_IdenticalSubindexes:
+                if entryinfos["struct"] & nod.OD.IdenticalSubindexes:
                     struct = "ARRAY"
-                elif entryinfos["struct"] & nod.OD_MultipleSubindexes:
+                elif entryinfos["struct"] & nod.OD.MultipleSubindexes:
                     struct = "RECORD"
                 text = "%s: %s entry of struct %s%s." % (name, category, struct, number)
                 self.Frame.HelpBar.SetStatusText(text, 2)

@@ -5,36 +5,36 @@ MappingDictionary for DS-302
 """
 
 Mapping = {
-    0x1F20 : {"name" : "Store DCF", "struct" : array, "need" : False, "values" :
+    0x1F20 : {"name" : "Store DCF", "struct" : OD.ARRAY, "need" : False, "values" :
                 [{"name" : "Number of Entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
                  {"name" : "Store DCF for node %d[(sub)]", "type" : 0x0F, "access" : 'rw', "pdo" : False, "nbmax" : 0x7F}]},
 
-    0x1F21 : {"name" : "Storage Format", "struct" : array, "need" : False, "values" :
+    0x1F21 : {"name" : "Storage Format", "struct" : OD.ARRAY, "need" : False, "values" :
                 [{"name" : "Number of Entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
                  {"name" : "Storage Format for Node %d[(sub)]", "type" : 0x02, "access" : 'rw', "pdo" : False, "nbmax" : 0x7F}]},
 
-    0x1F22 : {"name" : "Concise DCF", "struct" : array, "need" : False, "values" :
+    0x1F22 : {"name" : "Concise DCF", "struct" : OD.ARRAY, "need" : False, "values" :
                 [{"name" : "Number of Entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
                  {"name" : "Concise DCF for Node %d[(sub)]", "type" : 0x0F, "access" : 'rw', "pdo" : False, "nbmax" : 0x7F}]} ,
 
-    0x1F50 : {"name" : "Download Program Data", "struct" : array, "need" : False, "values" :
+    0x1F50 : {"name" : "Download Program Data", "struct" : OD.ARRAY, "need" : False, "values" :
                 [{"name" : "Number of different programs supported on the node", "type" : 0x05, "access" : 'ro', "pdo" : False},
                  {"name" : "Program Number %d[(sub)]", "type" : 0x0F, "access" : 'rw', "pdo" : False, "nbmax" : 0x7F}]},
 
-    0x1F51 : {"name" : "Program Control", "struct" : array, "need" : False, "values" :
+    0x1F51 : {"name" : "Program Control", "struct" : OD.ARRAY, "need" : False, "values" :
                 [{"name" : "Number of different programs on the node", "type" : 0x05, "access" : 'ro', "pdo" : False},
                  {"name" : "Program Number %d[(sub)]", "type" : 0x05, "access" : 'rw', "pdo" : False, "nbmax" : 0x7F}]},
 
-    0x1F52 : {"name" : "Verify Application Software", "struct" : record, "need" : False, "values" :
+    0x1F52 : {"name" : "Verify Application Software", "struct" : OD.RECORD, "need" : False, "values" :
                 [{"name" : "Number of Entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
                  {"name" : "Application software date", "type" : 0x07, "access" : 'rw', "pdo" : False},
                  {"name" : "Application sofware time", "type" : 0x07, "access" : 'rw', "pdo" : False}]},
 
-    0x1F53 : {"name" : "Expected Application SW Date", "struct" : array, "need" : False, "values" :
+    0x1F53 : {"name" : "Expected Application SW Date", "struct" : OD.ARRAY, "need" : False, "values" :
                 [{"name" : "Number of different programs on the node", "type" : 0x05, "access" : 'ro', "pdo" : False},
                  {"name" : "Program number %d[(sub)]", "type" : 0x07, "access" : 'rw', "pdo" : False, "nbmax" : 0x7F}]},
 
-    0x1F55 : {"name" : "Expected Application SW Time", "struct" : array, "need" : False, "values" :
+    0x1F55 : {"name" : "Expected Application SW Time", "struct" : OD.ARRAY, "need" : False, "values" :
                 [{"name" : "Number of different programs on the node", "type" : 0x05, "access" : 'ro', "pdo" : False},
                  {"name" : "Program number %d[(sub)]", "type" : 0x07, "access" : 'rw', "pdo" : False, "nbmax" : 0x7F}]}
 }

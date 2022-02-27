@@ -221,7 +221,7 @@ def main():
             obj = node.GetEntryInfos(k)
             name = node.GetEntryName(k)
             struct = obj.get('struct')
-            struct = nod.STRUCT_TYPES_LOOKUP.get(struct, struct).upper()
+            struct = nod.OD.to_string(struct, '???').upper()
             flags = []
             if obj.get('need'):
                 flags.append("Mandatory")

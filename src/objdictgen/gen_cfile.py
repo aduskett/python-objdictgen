@@ -249,7 +249,7 @@ def GenerateFileContent(node, headerfilepath, pointers_dict=None):
             strindex += "                    %(subIndexType)s %(NodeName)s_highestSubIndex_obj%(index)04X = %(value)d; /* number of subindex - 1*/\n" % texts
 
             # Entry type is ARRAY
-            if entry_infos["struct"] & nod.OD_IdenticalSubindexes:
+            if entry_infos["struct"] & nod.OD.IdenticalSubindexes:
                 subentry_infos = node.GetSubentryInfos(index, 1)
                 typename = node.GetTypeName(subentry_infos["type"])
                 typeinfos = GetValidTypeInfos(context, typename, values[1:])
@@ -332,20 +332,20 @@ def GenerateFileContent(node, headerfilepath, pointers_dict=None):
             else:
                 sep = ""
             typename = node.GetTypeName(subentry_infos["type"])
-            if entry_infos["struct"] & nod.OD_IdenticalSubindexes:
+            if entry_infos["struct"] & nod.OD.IdenticalSubindexes:
                 typeinfos = GetValidTypeInfos(context, typename, values[1:])
             else:
                 typeinfos = GetValidTypeInfos(context, typename, [values[subindex]])
             if subindex == 0:
                 if index == 0x1003:
                     typeinfos = GetValidTypeInfos(context, "valueRange_EMC")
-                if entry_infos["struct"] & nod.OD_MultipleSubindexes:
+                if entry_infos["struct"] & nod.OD.MultipleSubindexes:
                     name = "%(NodeName)s_highestSubIndex_obj%(index)04X" % texts
                 elif index in variablelist:
                     name = FormatName(subentry_infos["name"])
                 else:
                     name = FormatName("%s_obj%04X" % (texts["NodeName"], texts["index"]))
-            elif entry_infos["struct"] & nod.OD_IdenticalSubindexes:
+            elif entry_infos["struct"] & nod.OD.IdenticalSubindexes:
                 if index in variablelist:
                     name = "%s[%d]" % (FormatName(entry_infos["name"]), subindex - 1)
                 else:
@@ -373,7 +373,7 @@ def GenerateFileContent(node, headerfilepath, pointers_dict=None):
             pointer_name = pointers_dict.get((index, subindex), None)
             if pointer_name is not None:
                 pointedVariableContent += "%s* %s = &%s;\n" % (typeinfos[0], pointer_name, name)
-            if not entry_infos["struct"] & nod.OD_IdenticalSubindexes:
+            if not entry_infos["struct"] & nod.OD.IdenticalSubindexes:
                 generateSubIndexArrayComment = True
                 headerObjectDefinitionContent += (
                     "#define "

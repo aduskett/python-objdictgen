@@ -59,38 +59,55 @@ DEFAULT_PARAMS = {"comment": "", "save": False, "buffer_size": ""}
 #                      Dictionary Mapping and Organisation
 # ------------------------------------------------------------------------------
 
-#
-# Properties of entry structure in the Object Dictionary
-#
-OD_Subindex = 1             # Entry has at least one subindex
-OD_MultipleSubindexes = 2   # Entry has more than one subindex
-OD_IdenticalSubindexes = 4  # Subindexes of entry have the same description
-OD_IdenticalIndexes = 8     # Entry has the same description on multiple indexes
+class ODStructTypes:
+    #
+    # Properties of entry structure in the Object Dictionary
+    #
+    Subindex = 1             # Entry has at least one subindex
+    MultipleSubindexes = 2   # Entry has more than one subindex
+    IdenticalSubindexes = 4  # Subindexes of entry have the same description
+    IdenticalIndexes = 8     # Entry has the same description on multiple indexes
 
-#
-# Structures of entry in the Object Dictionary, sum of the properties described above
-# for all sorts of entries use in CAN Open specification
-#
-nosub = 0  # Entry without subindex (only for type declaration)
-var = OD_Subindex  # 1
-record = OD_Subindex | OD_MultipleSubindexes  # 3
-array = OD_Subindex | OD_MultipleSubindexes | OD_IdenticalSubindexes  # 7
-# Entries identical on multiple indexes
-nvar = OD_Subindex | OD_IdenticalIndexes  # 9
-nrecord = OD_Subindex | OD_MultipleSubindexes | OD_IdenticalIndexes  # 11, Example : PDO Parameters
-narray = OD_Subindex | OD_MultipleSubindexes | OD_IdenticalSubindexes | OD_IdenticalIndexes  # 15, Example : PDO Mapping
+    #
+    # Structures of entry in the Object Dictionary, sum of the properties described above
+    # for all sorts of entries use in CAN Open specification
+    #
+    NOSUB = 0  # Entry without subindex (only for type declaration)
+    VAR = Subindex  # 1
+    RECORD = Subindex | MultipleSubindexes  # 3
+    ARRAY = Subindex | MultipleSubindexes | IdenticalSubindexes  # 7
+    # Entries identical on multiple indexes
+    NVAR = Subindex | IdenticalIndexes  # 9
+    NRECORD = Subindex | MultipleSubindexes | IdenticalIndexes  # 11, Example : PDO Parameters
+    NARRAY = Subindex | MultipleSubindexes | IdenticalSubindexes | IdenticalIndexes  # 15, Example : PDO Mapping
 
-# Mapping against name and structure number
-STRUCT_TYPES = {
-    None: nosub,
-    "var": var,
-    "record": record,
-    "array": array,
-    "nvar": nvar,
-    "nrecord": nrecord,
-    "narray": narray,
-}
-STRUCT_TYPES_LOOKUP = {v: k for k, v in STRUCT_TYPES.items()}
+    #
+    # Mapping against name and structure number
+    #
+    STRINGS = {
+        NOSUB: None,
+        VAR: "var",
+        RECORD: "record",
+        ARRAY: "array",
+        NVAR: "nvar",
+        NRECORD: "nrecord",
+        NARRAY: "narray",
+    }
+
+    @classmethod
+    def to_string(cls, val, default=None):
+        return cls.STRINGS.get(val, default)
+
+    @classmethod
+    def from_string(cls, val, default=None):
+        try:
+            return next(k for k, v in cls.STRINGS.items() if v == val)
+        except StopIteration:
+            return default
+
+
+# Convenience shortcut
+OD = ODStructTypes
 
 #
 # List of the Object Dictionary ranges
@@ -117,150 +134,150 @@ INDEX_RANGES = [
 #
 MAPPING_DICTIONARY = {
     # -- Static Data Types
-    0x0001: {"name": "BOOLEAN", "struct": nosub, "size": 1, "default": False, "values": []},
-    0x0002: {"name": "INTEGER8", "struct": nosub, "size": 8, "default": 0, "values": []},
-    0x0003: {"name": "INTEGER16", "struct": nosub, "size": 16, "default": 0, "values": []},
-    0x0004: {"name": "INTEGER32", "struct": nosub, "size": 32, "default": 0, "values": []},
-    0x0005: {"name": "UNSIGNED8", "struct": nosub, "size": 8, "default": 0, "values": []},
-    0x0006: {"name": "UNSIGNED16", "struct": nosub, "size": 16, "default": 0, "values": []},
-    0x0007: {"name": "UNSIGNED32", "struct": nosub, "size": 32, "default": 0, "values": []},
-    0x0008: {"name": "REAL32", "struct": nosub, "size": 32, "default": 0.0, "values": []},
-    0x0009: {"name": "VISIBLE_STRING", "struct": nosub, "size": 8, "default": "", "values": []},
-    0x000A: {"name": "OCTET_STRING", "struct": nosub, "size": 8, "default": "", "values": []},
-    0x000B: {"name": "UNICODE_STRING", "struct": nosub, "size": 16, "default": "", "values": []},
-    # 0x000C: {"name": "TIME_OF_DAY", "struct": nosub, "size": 48, "default": 0, "values": []},
-    # 0x000D: {"name": "TIME_DIFFERENCE", "struct": nosub, "size": 48, "default": 0, "values": []},
+    0x0001: {"name": "BOOLEAN", "struct": OD.NOSUB, "size": 1, "default": False, "values": []},
+    0x0002: {"name": "INTEGER8", "struct": OD.NOSUB, "size": 8, "default": 0, "values": []},
+    0x0003: {"name": "INTEGER16", "struct": OD.NOSUB, "size": 16, "default": 0, "values": []},
+    0x0004: {"name": "INTEGER32", "struct": OD.NOSUB, "size": 32, "default": 0, "values": []},
+    0x0005: {"name": "UNSIGNED8", "struct": OD.NOSUB, "size": 8, "default": 0, "values": []},
+    0x0006: {"name": "UNSIGNED16", "struct": OD.NOSUB, "size": 16, "default": 0, "values": []},
+    0x0007: {"name": "UNSIGNED32", "struct": OD.NOSUB, "size": 32, "default": 0, "values": []},
+    0x0008: {"name": "REAL32", "struct": OD.NOSUB, "size": 32, "default": 0.0, "values": []},
+    0x0009: {"name": "VISIBLE_STRING", "struct": OD.NOSUB, "size": 8, "default": "", "values": []},
+    0x000A: {"name": "OCTET_STRING", "struct": OD.NOSUB, "size": 8, "default": "", "values": []},
+    0x000B: {"name": "UNICODE_STRING", "struct": OD.NOSUB, "size": 16, "default": "", "values": []},
+    # 0x000C: {"name": "TIME_OF_DAY", "struct": OD.NOSUB, "size": 48, "default": 0, "values": []},
+    # 0x000D: {"name": "TIME_DIFFERENCE", "struct": OD.NOSUB, "size": 48, "default": 0, "values": []},
     # 0x000E: RESERVED
-    0x000F: {"name": "DOMAIN", "struct": nosub, "size": 0, "default": "", "values": []},
-    0x0010: {"name": "INTEGER24", "struct": nosub, "size": 24, "default": 0, "values": []},
-    0x0011: {"name": "REAL64", "struct": nosub, "size": 64, "default": 0.0, "values": []},
-    0x0012: {"name": "INTEGER40", "struct": nosub, "size": 40, "default": 0, "values": []},
-    0x0013: {"name": "INTEGER48", "struct": nosub, "size": 48, "default": 0, "values": []},
-    0x0014: {"name": "INTEGER56", "struct": nosub, "size": 56, "default": 0, "values": []},
-    0x0015: {"name": "INTEGER64", "struct": nosub, "size": 64, "default": 0, "values": []},
-    0x0016: {"name": "UNSIGNED24", "struct": nosub, "size": 24, "default": 0, "values": []},
+    0x000F: {"name": "DOMAIN", "struct": OD.NOSUB, "size": 0, "default": "", "values": []},
+    0x0010: {"name": "INTEGER24", "struct": OD.NOSUB, "size": 24, "default": 0, "values": []},
+    0x0011: {"name": "REAL64", "struct": OD.NOSUB, "size": 64, "default": 0.0, "values": []},
+    0x0012: {"name": "INTEGER40", "struct": OD.NOSUB, "size": 40, "default": 0, "values": []},
+    0x0013: {"name": "INTEGER48", "struct": OD.NOSUB, "size": 48, "default": 0, "values": []},
+    0x0014: {"name": "INTEGER56", "struct": OD.NOSUB, "size": 56, "default": 0, "values": []},
+    0x0015: {"name": "INTEGER64", "struct": OD.NOSUB, "size": 64, "default": 0, "values": []},
+    0x0016: {"name": "UNSIGNED24", "struct": OD.NOSUB, "size": 24, "default": 0, "values": []},
     # 0x0017: RESERVED
-    0x0018: {"name": "UNSIGNED40", "struct": nosub, "size": 40, "default": 0, "values": []},
-    0x0019: {"name": "UNSIGNED48", "struct": nosub, "size": 48, "default": 0, "values": []},
-    0x001A: {"name": "UNSIGNED56", "struct": nosub, "size": 56, "default": 0, "values": []},
-    0x001B: {"name": "UNSIGNED64", "struct": nosub, "size": 64, "default": 0, "values": []},
+    0x0018: {"name": "UNSIGNED40", "struct": OD.NOSUB, "size": 40, "default": 0, "values": []},
+    0x0019: {"name": "UNSIGNED48", "struct": OD.NOSUB, "size": 48, "default": 0, "values": []},
+    0x001A: {"name": "UNSIGNED56", "struct": OD.NOSUB, "size": 56, "default": 0, "values": []},
+    0x001B: {"name": "UNSIGNED64", "struct": OD.NOSUB, "size": 64, "default": 0, "values": []},
     # 0x001C-0x001F: RESERVED
 
     # -- Communication Profile Area
-    0x1000: {"name": "Device Type", "struct": var, "need": True, "values":
+    0x1000: {"name": "Device Type", "struct": OD.VAR, "need": True, "values":
              [{"name": "Device Type", "type": 0x07, "access": 'ro', "pdo": False}]},
-    0x1001: {"name": "Error Register", "struct": var, "need": True, "values":
+    0x1001: {"name": "Error Register", "struct": OD.VAR, "need": True, "values":
              [{"name": "Error Register", "type": 0x05, "access": 'ro', "pdo": True}]},
-    0x1002: {"name": "Manufacturer Status Register", "struct": var, "need": False, "values":
+    0x1002: {"name": "Manufacturer Status Register", "struct": OD.VAR, "need": False, "values":
              [{"name": "Manufacturer Status Register", "type": 0x07, "access": 'ro', "pdo": True}]},
-    0x1003: {"name": "Pre-defined Error Field", "struct": array, "need": False, "callback": True, "values":
+    0x1003: {"name": "Pre-defined Error Field", "struct": OD.ARRAY, "need": False, "callback": True, "values":
              [{"name": "Number of Errors", "type": 0x05, "access": 'rw', "pdo": False},
               {"name": "Standard Error Field", "type": 0x07, "access": 'ro', "pdo": False, "nbmin": 1, "nbmax": 0xFE}]},
-    0x1005: {"name": "SYNC COB ID", "struct": var, "need": False, "callback": True, "values":
+    0x1005: {"name": "SYNC COB ID", "struct": OD.VAR, "need": False, "callback": True, "values":
              [{"name": "SYNC COB ID", "type": 0x07, "access": 'rw', "pdo": False}]},
-    0x1006: {"name": "Communication / Cycle Period", "struct": var, "need": False, "callback": True, "values":
+    0x1006: {"name": "Communication / Cycle Period", "struct": OD.VAR, "need": False, "callback": True, "values":
              [{"name": "Communication Cycle Period", "type": 0x07, "access": 'rw', "pdo": False}]},
-    0x1007: {"name": "Synchronous Window Length", "struct": var, "need": False, "values":
+    0x1007: {"name": "Synchronous Window Length", "struct": OD.VAR, "need": False, "values":
              [{"name": "Synchronous Window Length", "type": 0x07, "access": 'rw', "pdo": False}]},
-    0x1008: {"name": "Manufacturer Device Name", "struct": var, "need": False, "values":
+    0x1008: {"name": "Manufacturer Device Name", "struct": OD.VAR, "need": False, "values":
              [{"name": "Manufacturer Device Name", "type": 0x09, "access": 'ro', "pdo": False}]},
-    0x1009: {"name": "Manufacturer Hardware Version", "struct": var, "need": False, "values":
+    0x1009: {"name": "Manufacturer Hardware Version", "struct": OD.VAR, "need": False, "values":
              [{"name": "Manufacturer Hardware Version", "type": 0x09, "access": 'ro', "pdo": False}]},
-    0x100A: {"name": "Manufacturer Software Version", "struct": var, "need": False, "values":
+    0x100A: {"name": "Manufacturer Software Version", "struct": OD.VAR, "need": False, "values":
              [{"name": "Manufacturer Software Version", "type": 0x09, "access": 'ro', "pdo": False}]},
-    0x100C: {"name": "Guard Time", "struct": var, "need": False, "values":
+    0x100C: {"name": "Guard Time", "struct": OD.VAR, "need": False, "values":
              [{"name": "Guard Time", "type": 0x06, "access": 'rw', "pdo": False}]},
-    0x100D: {"name": "Life Time Factor", "struct": var, "need": False, "values":
+    0x100D: {"name": "Life Time Factor", "struct": OD.VAR, "need": False, "values":
              [{"name": "Life Time Factor", "type": 0x05, "access": 'rw', "pdo": False}]},
-    0x1010: {"name": "Store parameters", "struct": record, "need": False, "values":
+    0x1010: {"name": "Store parameters", "struct": OD.RECORD, "need": False, "values":
              [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "Save All Parameters", "type": 0x07, "access": 'rw', "pdo": False},
               {"name": "Save Communication Parameters", "type": 0x07, "access": 'rw', "pdo": False},
               {"name": "Save Application Parameters", "type": 0x07, "access": 'rw', "pdo": False},
               {"name": "Save Manufacturer Parameters %d[(sub - 3)]", "type": 0x07, "access": 'rw', "pdo": False, "nbmax": 0x7C}]},
-    0x1011: {"name": "Restore Default Parameters", "struct": record, "need": False, "values":
+    0x1011: {"name": "Restore Default Parameters", "struct": OD.RECORD, "need": False, "values":
              [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "Restore All Default Parameters", "type": 0x07, "access": 'rw', "pdo": False},
               {"name": "Restore Communication Default Parameters", "type": 0x07, "access": 'rw', "pdo": False},
               {"name": "Restore Application Default Parameters", "type": 0x07, "access": 'rw', "pdo": False},
               {"name": "Restore Manufacturer Defined Default Parameters %d[(sub - 3)]", "type": 0x07, "access": 'rw', "pdo": False, "nbmax": 0x7C}]},
-    0x1012: {"name": "TIME COB ID", "struct": var, "need": False, "values":
+    0x1012: {"name": "TIME COB ID", "struct": OD.VAR, "need": False, "values":
              [{"name": "TIME COB ID", "type": 0x07, "access": 'rw', "pdo": False}]},
-    0x1013: {"name": "High Resolution Timestamp", "struct": var, "need": False, "values":
+    0x1013: {"name": "High Resolution Timestamp", "struct": OD.VAR, "need": False, "values":
              [{"name": "High Resolution Time Stamp", "type": 0x07, "access": 'rw', "pdo": True}]},
-    0x1014: {"name": "Emergency COB ID", "struct": var, "need": False, "values":
+    0x1014: {"name": "Emergency COB ID", "struct": OD.VAR, "need": False, "values":
              [{"name": "Emergency COB ID", "type": 0x07, "access": 'rw', "pdo": False, "default": "\"$NODEID+0x80\""}]},
-    0x1015: {"name": "Inhibit Time Emergency", "struct": var, "need": False, "values":
+    0x1015: {"name": "Inhibit Time Emergency", "struct": OD.VAR, "need": False, "values":
              [{"name": "Inhibit Time Emergency", "type": 0x06, "access": 'rw', "pdo": False}]},
-    0x1016: {"name": "Consumer Heartbeat Time", "struct": array, "need": False, "values":
+    0x1016: {"name": "Consumer Heartbeat Time", "struct": OD.ARRAY, "need": False, "values":
              [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "Consumer Heartbeat Time", "type": 0x07, "access": 'rw', "pdo": False, "nbmin": 1, "nbmax": 0x7F}]},
-    0x1017: {"name": "Producer Heartbeat Time", "struct": var, "need": False, "callback": True, "values":
+    0x1017: {"name": "Producer Heartbeat Time", "struct": OD.VAR, "need": False, "callback": True, "values":
              [{"name": "Producer Heartbeat Time", "type": 0x06, "access": 'rw', "pdo": False}]},
-    0x1018: {"name": "Identity", "struct": record, "need": True, "values":
+    0x1018: {"name": "Identity", "struct": OD.RECORD, "need": True, "values":
              [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "Vendor ID", "type": 0x07, "access": 'ro', "pdo": False},
               {"name": "Product Code", "type": 0x07, "access": 'ro', "pdo": False},
               {"name": "Revision Number", "type": 0x07, "access": 'ro', "pdo": False},
               {"name": "Serial Number", "type": 0x07, "access": 'ro', "pdo": False}]},
-    0x1019: {"name": "Synchronous counter overflow value", "struct": var, "need": False, "values":
+    0x1019: {"name": "Synchronous counter overflow value", "struct": OD.VAR, "need": False, "values":
              [{"name": "Synchronous counter overflow value", "type": 0x05, "access": 'rw', "pdo": False}]},
-    0x1020: {"name": "Verify Configuration", "struct": record, "need": False, "values":
+    0x1020: {"name": "Verify Configuration", "struct": OD.RECORD, "need": False, "values":
              [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "Configuration Date", "type": 0x07, "access": 'rw', "pdo": False},
               {"name": "Configuration Time", "type": 0x07, "access": 'rw', "pdo": False}]},
-    # 0x1021: {"name": "Store EDS", "struct": var, "need": False, "values":
+    # 0x1021: {"name": "Store EDS", "struct": OD.VAR, "need": False, "values":
     #          [{"name": "Store EDS", "type": 0x0F, "access": 'rw', "pdo": False}]},
-    # 0x1022: {"name": "Storage Format", "struct": var, "need": False, "values":
+    # 0x1022: {"name": "Storage Format", "struct": OD.VAR, "need": False, "values":
     #          [{"name": "Storage Format", "type": 0x06, "access": 'rw', "pdo": False}]},
-    0x1023: {"name": "OS Command", "struct": record, "need": False, "values":
+    0x1023: {"name": "OS Command", "struct": OD.RECORD, "need": False, "values":
              [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "Command", "type": 0x0A, "access": 'rw', "pdo": False},
               {"name": "Status", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "Reply", "type": 0x0A, "access": 'ro', "pdo": False}]},
-    0x1024: {"name": "OS Command Mode", "struct": var, "need": False, "values":
+    0x1024: {"name": "OS Command Mode", "struct": OD.VAR, "need": False, "values":
              [{"name": "OS Command Mode", "type": 0x05, "access": 'wo', "pdo": False}]},
-    0x1025: {"name": "OS Debugger Interface", "struct": record, "need": False, "values":
+    0x1025: {"name": "OS Debugger Interface", "struct": OD.RECORD, "need": False, "values":
              [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "Command", "type": 0x0A, "access": 'rw', "pdo": False},
               {"name": "Status", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "Reply", "type": 0x0A, "access": 'ro', "pdo": False}]},
-    0x1026: {"name": "OS Prompt", "struct": record, "need": False, "values":
+    0x1026: {"name": "OS Prompt", "struct": OD.RECORD, "need": False, "values":
              [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "StdIn", "type": 0x05, "access": 'wo', "pdo": True},
               {"name": "StdOut", "type": 0x05, "access": 'ro', "pdo": True},
               {"name": "StdErr", "type": 0x05, "access": 'ro', "pdo": True}]},
-    0x1027: {"name": "Module List", "struct": array, "need": False, "values":
+    0x1027: {"name": "Module List", "struct": OD.ARRAY, "need": False, "values":
              [{"name": "Number of Connected Modules", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "Module %d[(sub)]", "type": 0x06, "access": 'ro', "pdo": False, "nbmin": 1, "nbmax": 0xFE}]},
-    0x1028: {"name": "Emergency Consumer", "struct": array, "need": False, "values":
+    0x1028: {"name": "Emergency Consumer", "struct": OD.ARRAY, "need": False, "values":
              [{"name": "Number of Consumed Emergency Objects", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "Emergency Consumer", "type": 0x07, "access": 'rw', "pdo": False, "nbmin": 1, "nbmax": 0x7F}]},
-    0x1029: {"name": "Error Behavior", "struct": record, "need": False, "values":
+    0x1029: {"name": "Error Behavior", "struct": OD.RECORD, "need": False, "values":
              [{"name": "Number of Error Classes", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "Communication Error", "type": 0x05, "access": 'rw', "pdo": False},
               {"name": "Device Profile", "type": 0x05, "access": 'rw', "pdo": False, "nbmax": 0xFE}]},
 
     # -- Server SDO Parameters
-    0x1200: {"name": "Server SDO Parameter", "struct": record, "need": False, "values":
+    0x1200: {"name": "Server SDO Parameter", "struct": OD.RECORD, "need": False, "values":
              [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "COB ID Client to Server (Receive SDO)", "type": 0x07, "access": 'ro', "pdo": False, "default": "\"$NODEID+0x600\""},
               {"name": "COB ID Server to Client (Transmit SDO)", "type": 0x07, "access": 'ro', "pdo": False, "default": "\"$NODEID+0x580\""}]},
-    0x1201: {"name": "Additional Server SDO %d Parameter[(idx)]", "struct": nrecord, "incr": 1, "nbmax": 0x7F, "need": False, "values":
+    0x1201: {"name": "Additional Server SDO %d Parameter[(idx)]", "struct": OD.NRECORD, "incr": 1, "nbmax": 0x7F, "need": False, "values":
              [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "COB ID Client to Server (Receive SDO)", "type": 0x07, "access": 'ro', "pdo": False},
               {"name": "COB ID Server to Client (Transmit SDO)", "type": 0x07, "access": 'ro', "pdo": False},
               {"name": "Node ID of the SDO Client", "type": 0x05, "access": 'ro', "pdo": False}]},
 
     # -- Client SDO Parameters
-    0x1280: {"name": "Client SDO %d Parameter[(idx)]", "struct": nrecord, "incr": 1, "nbmax": 0x100, "need": False, "values":
+    0x1280: {"name": "Client SDO %d Parameter[(idx)]", "struct": OD.NRECORD, "incr": 1, "nbmax": 0x100, "need": False, "values":
              [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "COB ID Client to Server (Transmit SDO)", "type": 0x07, "access": 'rw', "pdo": False},
               {"name": "COB ID Server to Client (Receive SDO)", "type": 0x07, "access": 'rw', "pdo": False},
               {"name": "Node ID of the SDO Server", "type": 0x05, "access": 'rw', "pdo": False}]},
 
     # -- Receive PDO Communication Parameters
-    0x1400: {"name": "Receive PDO %d Parameter[(idx)]", "struct": nrecord, "incr": 1, "nbmax": 0x200, "need": False, "values":
+    0x1400: {"name": "Receive PDO %d Parameter[(idx)]", "struct": OD.NRECORD, "incr": 1, "nbmax": 0x200, "need": False, "values":
              [{"name": "Highest SubIndex Supported", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "COB ID used by PDO", "type": 0x07, "access": 'rw', "pdo": False, "default": "{True:\"$NODEID+0x%X00\"%(base+2),False:0x80000000}[base<4]"},
               {"name": "Transmission Type", "type": 0x05, "access": 'rw', "pdo": False},
@@ -270,12 +287,12 @@ MAPPING_DICTIONARY = {
               {"name": "SYNC start value", "type": 0x05, "access": 'rw', "pdo": False}]},
 
     # -- Receive PDO Mapping Parameters
-    0x1600: {"name": "Receive PDO %d Mapping[(idx)]", "struct": narray, "incr": 1, "nbmax": 0x200, "need": False, "values":
+    0x1600: {"name": "Receive PDO %d Mapping[(idx)]", "struct": OD.NARRAY, "incr": 1, "nbmax": 0x200, "need": False, "values":
              [{"name": "Number of Entries", "type": 0x05, "access": 'rw', "pdo": False},
               {"name": "PDO %d Mapping for an application object %d[(idx,sub)]", "type": 0x07, "access": 'rw', "pdo": False, "nbmin": 0, "nbmax": 0x40}]},
 
     # -- Transmit PDO Communication Parameters
-    0x1800: {"name": "Transmit PDO %d Parameter[(idx)]", "struct": nrecord, "incr": 1, "nbmax": 0x200, "need": False, "callback": True, "values":
+    0x1800: {"name": "Transmit PDO %d Parameter[(idx)]", "struct": OD.NRECORD, "incr": 1, "nbmax": 0x200, "need": False, "callback": True, "values":
              [{"name": "Highest SubIndex Supported", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "COB ID used by PDO", "type": 0x07, "access": 'rw', "pdo": False, "default": "{True:\"$NODEID+0x%X80\"%(base+1),False:0x80000000}[base<4]"},
               {"name": "Transmission Type", "type": 0x05, "access": 'rw', "pdo": False},
@@ -285,7 +302,7 @@ MAPPING_DICTIONARY = {
               {"name": "SYNC start value", "type": 0x05, "access": 'rw', "pdo": False}]},
 
     # -- Transmit PDO Mapping Parameters
-    0x1A00: {"name": "Transmit PDO %d Mapping[(idx)]", "struct": narray, "incr": 1, "nbmax": 0x200, "need": False, "values":
+    0x1A00: {"name": "Transmit PDO %d Mapping[(idx)]", "struct": OD.NARRAY, "incr": 1, "nbmax": 0x200, "need": False, "values":
              [{"name": "Number of Entries", "type": 0x05, "access": 'rw', "pdo": False},
               {"name": "PDO %d Mapping for a process data variable %d[(idx,sub)]", "type": 0x07, "access": 'rw', "pdo": False, "nbmin": 0, "nbmax": 0x40}]},
 }
@@ -371,7 +388,7 @@ def FindEntryName(index, mappingdictionary, compute=True):
     base_index = FindIndex(index, mappingdictionary)
     if base_index:
         infos = mappingdictionary[base_index]
-        if infos["struct"] & OD_IdenticalIndexes and compute:
+        if infos["struct"] & OD.IdenticalIndexes and compute:
             return StringFormat(infos["name"], (index - base_index) // infos["incr"] + 1, 0)
         return infos["name"]
     return None
@@ -384,7 +401,7 @@ def FindEntryInfos(index, mappingdictionary, compute=True):
     base_index = FindIndex(index, mappingdictionary)
     if base_index:
         obj = mappingdictionary[base_index].copy()
-        if obj["struct"] & OD_IdenticalIndexes and compute:
+        if obj["struct"] & OD.IdenticalIndexes and compute:
             obj["name"] = StringFormat(obj["name"], (index - base_index) // obj["incr"] + 1, 0)
         obj.pop("values")
         return obj
@@ -398,18 +415,18 @@ def FindSubentryInfos(index, subindex, mappingdictionary, compute=True):
     base_index = FindIndex(index, mappingdictionary)
     if base_index:
         struct = mappingdictionary[base_index]["struct"]
-        if struct & OD_IdenticalIndexes:
+        if struct & OD.IdenticalIndexes:
             incr = mappingdictionary[base_index]["incr"]
         else:
             incr = 1
-        if struct & OD_Subindex:
+        if struct & OD.Subindex:
             infos = None
-            if struct & OD_IdenticalSubindexes:
+            if struct & OD.IdenticalSubindexes:
                 if subindex == 0:
                     infos = mappingdictionary[base_index]["values"][0].copy()
                 elif 0 < subindex <= mappingdictionary[base_index]["values"][1]["nbmax"]:
                     infos = mappingdictionary[base_index]["values"][1].copy()
-            elif struct & OD_MultipleSubindexes:
+            elif struct & OD.MultipleSubindexes:
                 idx = 0
                 for subindex_infos in mappingdictionary[base_index]["values"]:
                     if "nbmax" in subindex_infos:
@@ -441,7 +458,7 @@ def FindMapVariableList(mappingdictionary, node, compute=True):
                 if mappingdictionary[index]["values"][subindex]["pdo"]:
                     infos = node.GetEntryInfos(mappingdictionary[index]["values"][subindex]["type"])
                     name = mappingdictionary[index]["values"][subindex]["name"]
-                    if mappingdictionary[index]["struct"] & OD_IdenticalSubindexes:
+                    if mappingdictionary[index]["struct"] & OD.IdenticalSubindexes:
                         values = node.GetEntry(index)
                         for i in range(len(values) - 1):
                             computed_name = name
@@ -476,7 +493,7 @@ def FindIndex(index, mappingdictionary):
         return index
     listpluri = [
         idx for idx, mapping in mappingdictionary.items()
-        if mapping["struct"] & OD_IdenticalIndexes
+        if mapping["struct"] & OD.IdenticalIndexes
     ]
     for idx in sorted(listpluri):
         nb_max = mappingdictionary[idx]["nbmax"]
@@ -743,9 +760,9 @@ class Node(object):
         if subindex is None:
             if name is not None:
                 self.UserMapping[index]["name"] = name
-                if self.UserMapping[index]["struct"] & OD_IdenticalSubindexes:
+                if self.UserMapping[index]["struct"] & OD.IdenticalSubindexes:
                     self.UserMapping[index]["values"][1]["name"] = name + " %d[(sub)]"
-                elif not self.UserMapping[index]["struct"] & OD_MultipleSubindexes:
+                elif not self.UserMapping[index]["struct"] & OD.MultipleSubindexes:
                     self.UserMapping[index]["values"][0]["name"] = name
             if struct is not None:
                 self.UserMapping[index]["struct"] = struct
@@ -760,7 +777,7 @@ class Node(object):
             return True
         if 0 <= subindex < len(self.UserMapping[index]["values"]) and values is not None:
             if "type" in values:
-                if self.UserMapping[index]["struct"] & OD_IdenticalSubindexes:
+                if self.UserMapping[index]["struct"] & OD.IdenticalSubindexes:
                     if self.IsStringType(self.UserMapping[index]["values"][subindex]["type"]):
                         if self.IsRealType(values["type"]):
                             for i in range(len(self.Dictionary[index])):
@@ -1094,7 +1111,7 @@ class Node(object):
         list_ = self.GetMapVariableList()
         for index, subindex, size, name in list_:
             if mapname == self.GenerateMapName(name, index, subindex):
-                if self.UserMapping[index]["struct"] == array:  # array type, only look at subindex 1 in UserMapping
+                if self.UserMapping[index]["struct"] == OD.ARRAY:  # array type, only look at subindex 1 in UserMapping
                     if self.IsStringType(self.UserMapping[index]["values"][1]["type"]):
                         try:
                             if int(self.ParamsDictionary[index][subindex]["buffer_size"]) <= 8:

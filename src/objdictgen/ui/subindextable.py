@@ -533,7 +533,7 @@ class EditingPanel(wx.SplitterWindow):
                     index = self.ListIndex[selected]
                     subindex = event.GetRow()
                     entry_infos = self.Manager.GetEntryInfos(index)
-                    if not entry_infos["struct"] & nod.OD_MultipleSubindexes or subindex != 0:
+                    if not entry_infos["struct"] & nod.OD.MultipleSubindexes or subindex != 0:
                         subentry_infos = self.Manager.GetSubentryInfos(index, subindex)
                         typeinfos = self.Manager.GetEntryInfos(subentry_infos["type"])
                         if typeinfos:
@@ -556,7 +556,7 @@ class EditingPanel(wx.SplitterWindow):
                     index = self.ListIndex[selected]
                     subindex = event.GetRow()
                     entry_infos = self.Manager.GetEntryInfos(index)
-                    if not entry_infos["struct"] & nod.OD_MultipleSubindexes or subindex != 0:
+                    if not entry_infos["struct"] & nod.OD.MultipleSubindexes or subindex != 0:
                         subentry_infos = self.Manager.GetSubentryInfos(index, subindex)
                         typeinfos = self.Manager.GetEntryInfos(subentry_infos["type"])
                         if subentry_infos["pdo"] and typeinfos:
@@ -766,7 +766,7 @@ class EditingPanel(wx.SplitterWindow):
                 if self.Manager.IsCurrentEntry(index):
                     showpopup = False
                     infos = self.Manager.GetEntryInfos(index)
-                    if 0x2000 <= index <= 0x5FFF and infos["struct"] & nod.OD_MultipleSubindexes or infos["struct"] & nod.OD_IdenticalSubindexes:
+                    if 0x2000 <= index <= 0x5FFF and infos["struct"] & nod.OD.MultipleSubindexes or infos["struct"] & nod.OD.IdenticalSubindexes:
                         showpopup = True
                         self.SubindexGridMenu.FindItemByPosition(0).Enable(True)
                         self.SubindexGridMenu.FindItemByPosition(1).Enable(True)
@@ -786,7 +786,7 @@ class EditingPanel(wx.SplitterWindow):
                 index = self.ListIndex[selected]
                 if self.Manager.IsCurrentEntry(index):
                     infos = self.Manager.GetEntryInfos(index)
-                    if not infos["struct"] & nod.OD_MultipleSubindexes or event.GetRow() > 0:
+                    if not infos["struct"] & nod.OD.MultipleSubindexes or event.GetRow() > 0:
                         self.SubindexGridMenu.FindItemByPosition(0).Enable(False)
                         self.SubindexGridMenu.FindItemByPosition(1).Enable(False)
                         self.SubindexGridMenu.FindItemByPosition(3).Enable(False)
@@ -801,7 +801,7 @@ class EditingPanel(wx.SplitterWindow):
                 index = self.ListIndex[selected]
                 subindex = self.SubindexGrid.GetGridCursorRow()
                 entry_infos = self.Manager.GetEntryInfos(index)
-                if not entry_infos["struct"] & nod.OD_MultipleSubindexes or subindex != 0:
+                if not entry_infos["struct"] & nod.OD.MultipleSubindexes or subindex != 0:
                     subentry_infos = self.Manager.GetSubentryInfos(index, subindex)
                     typeinfos = self.Manager.GetEntryInfos(subentry_infos["type"])
                     if typeinfos:

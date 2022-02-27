@@ -242,14 +242,14 @@ def GenerateFile(filepath, node):
         # The struct describes what kind of object structure this object have
         # See OD_* in node.py
         struct = obj.setdefault("struct", base["struct"])
-        offset = 1 if struct not in (nod.var, nod.nvar) else 0
+        offset = 1 if struct not in (nod.OD.VAR, nod.OD.NVAR) else 0
 
         # Copy the values (aka the sub-indexes) and convert into a dict
         values = {i: v.copy() for i, v in enumerate(obj.pop("values", []))}
         if values:
 
             # Move index 0 -> index 1 for VAR types
-            if struct in (nod.var, nod.nvar):
+            if struct in (nod.OD.VAR, nod.OD.NVAR):
                 if len(values) != 1:
                     raise Exception("Unexpected data in values")
                 values[1] = values[0]
@@ -267,7 +267,7 @@ def GenerateFile(filepath, node):
         if params:
 
             # REC carries N items which must be added to sub-index 1 values
-            if struct & nod.OD_IdenticalSubindexes:
+            if struct & nod.OD.IdenticalSubindexes:
                 values.setdefault(1, {})["values"] = [  # Note the plural values
                     params.pop(i + 1)
                     for i in range(max(params))
@@ -283,7 +283,7 @@ def GenerateFile(filepath, node):
 
                 # Move any params not listed in IN_PARAMS to values[1]
                 # E.g. moves "comment" into "values" instead of in top-object
-                if struct in (nod.var, nod.nvar):
+                if struct in (nod.OD.VAR, nod.OD.NVAR):
                     for k in list(k for k in param0 if k not in IN_PARAMS):
                         values[1][k] = param0.pop(k)
 
@@ -299,7 +299,7 @@ def GenerateFile(filepath, node):
             if values.get(0):
 
                 # Move to either value[1] or to top-level, depending on type
-                if struct in (nod.array, nod.narray):
+                if struct in (nod.OD.ARRAY, nod.OD.NARRAY):
                     values[1].update(values.pop(0))
                 else:
                     obj.update(values.pop(0))
@@ -312,13 +312,13 @@ def GenerateFile(filepath, node):
             del obj["group"]
 
         if TEXT_FIELDS:
-            obj["struct"] = nod.STRUCT_TYPES_LOOKUP.get(struct, struct)
+            obj["struct"] = nod.OD.to_string(struct, struct)
 
         if RICH and "name" not in obj:
             obj["__name"] = node.GetEntryName(index)
 
         if RICH and "struct" not in obj:
-            obj["__struct"] = nod.STRUCT_TYPES_LOOKUP.get(struct, struct)
+            obj["__struct"] = nod.OD.to_string(struct, struct)
 
         # Iterater over the sub-indexes
         for i, sub in enumerate(obj["sub"]):
@@ -429,7 +429,7 @@ def GenerateNode(filepath):
             raise Exception("Missing 'struct' member")
         struct = obj["struct"]
         if not isinstance(struct, int):
-            obj["struct"] = nod.STRUCT_TYPES[struct]
+            obj["struct"] = nod.OD.from_string(struct)
 
         # Get the parameter group (None, "profile", "ds302")
         group = obj.pop("group", None)
@@ -455,11 +455,11 @@ def GenerateNode(filepath):
         sublist = obj.pop("sub", [])
 
         # Restore the Dictionary values
-        if struct in (nod.var, nod.nvar):
+        if struct in (nod.OD.VAR, nod.OD.NVAR):
             if "value" in sublist[0]:
                 node.Dictionary[index] = sublist[0].pop("value")
                 values = None
-        elif struct & nod.OD_IdenticalSubindexes:
+        elif struct & nod.OD.IdenticalSubindexes:
             values = [v.pop("value", NA) for v in sublist[0]["values"]]
         else:
             values = [v.pop("value", NA) for v in sublist]
@@ -489,12 +489,12 @@ def GenerateNode(filepath):
                     sub["type"] = type_index[sub["type"]]
 
             # Move parameter fields to params
-            offset = 1 if struct in (nod.record, nod.nrecord) else 0
+            offset = 1 if struct in (nod.OD.RECORD, nod.OD.NRECORD) else 0
             for k in list(k for k in sub if k in PARAM_FIELDS):  # list enabled use of pop
                 params.setdefault(i + offset, {})[k] = sub.pop(k)
 
         # Restore Params values for N equal entries of the same type
-        if struct in (nod.array, nod.narray):
+        if struct in (nod.OD.ARRAY, nod.OD.NARRAY):
             for i, sub in enumerate(sublist[0]["values"]):
 
                 # Move parameter fields to params
@@ -508,7 +508,7 @@ def GenerateNode(filepath):
 
         # For some reason expects Node() to find params for these types directly
         # in params
-        if struct in (nod.var, nod.nvar):
+        if struct in (nod.OD.VAR, nod.OD.NVAR):
             if 0 in params:
                 params.update(params.pop(0))
 
@@ -518,7 +518,7 @@ def GenerateNode(filepath):
 
         # Reconstruct the values list
         values = obj.setdefault('values', [])
-        if struct not in (nod.var, nod.nvar):
+        if struct not in (nod.OD.VAR, nod.OD.NVAR):
             values.append(SUBINDEX0.copy())
         values.extend(sublist)
 

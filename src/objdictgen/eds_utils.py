@@ -103,9 +103,9 @@ ENTRY_TYPES = {
 # and return the default value
 def GetDefaultValue(node, index, subindex=None):
     infos = node.GetEntryInfos(index)
-    if infos["struct"] & nod.OD_MultipleSubindexes:
+    if infos["struct"] & nod.OD.MultipleSubindexes:
         # First case entry is a array
-        if infos["struct"] & nod.OD_IdenticalSubindexes:
+        if infos["struct"] & nod.OD.IdenticalSubindexes:
             subentry_infos = node.GetSubentryInfos(index, 1)
         # Second case entry is an record
         else:
@@ -563,7 +563,7 @@ def GenerateFileContent(node, filepath):
         else:
             # Generate EDS informations for the entry
             text += "ParameterName=%s\n" % entry_infos["name"]
-            if entry_infos["struct"] & nod.OD_IdenticalSubindexes:
+            if entry_infos["struct"] & nod.OD.IdenticalSubindexes:
                 text += "ObjectType=0x8\n"
             else:
                 text += "ObjectType=0x9\n"
@@ -715,7 +715,7 @@ def GenerateNode(filepath, nodeid=0):
                         if values["DATATYPE"] != 0xF:
                             raise ValueError("Domain entry 0x%4.4X DataType must be 0xF(DOMAIN) if defined" % entry)
                     # Add mapping for entry
-                    node.AddMappingEntry(entry, name=values["PARAMETERNAME"], struct=nod.var)
+                    node.AddMappingEntry(entry, name=values["PARAMETERNAME"], struct=nod.OD.VAR)
                     # Add mapping for first subindex
                     node.AddMappingEntry(entry, 0, values={
                         "name": values["PARAMETERNAME"],
@@ -728,7 +728,7 @@ def GenerateNode(filepath, nodeid=0):
                     # Extract maximum subindex number defined
                     max_subindex = max(values["subindexes"])
                     # Add mapping for entry
-                    node.AddMappingEntry(entry, name=values["PARAMETERNAME"], struct=nod.record)
+                    node.AddMappingEntry(entry, name=values["PARAMETERNAME"], struct=nod.OD.RECORD)
                     # Add mapping for first subindex
                     node.AddMappingEntry(entry, 0, values={
                         "name": "Number of Entries",
@@ -761,7 +761,7 @@ def GenerateNode(filepath, nodeid=0):
                 #     if 0 not in values["subindexes"]:
                 #         raise ValueError("Error on entry 0x%4.4X: Subindex 0 must be defined for a RECORD entry" % entry)
                 #     # Add mapping for entry
-                #     node.AddMappingEntry(entry, name=values["PARAMETERNAME"], struct=nod.array)
+                #     node.AddMappingEntry(entry, name=values["PARAMETERNAME"], struct=nod.OD.ARRAY)
                 #     # Add mapping for first subindex
                 #     node.AddMappingEntry(entry, 0, values={
                 #         "name": "Number of Entries",
