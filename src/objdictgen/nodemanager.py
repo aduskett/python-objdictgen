@@ -32,6 +32,7 @@ import errno
 from .nosis import pickle as nosis
 from . import node as nod
 from . import eds_utils, gen_cfile
+from . import jsonod
 from . import SCRIPT_DIRECTORY, dbg
 
 UndoBufferLength = 20
@@ -48,6 +49,18 @@ def GetNewId():
     global CurrentID
     CurrentID += 1
     return CurrentID
+
+
+def isXml(filepath):
+    with open(filepath, 'r') as f:
+        header = f.read(5)
+        return header == "<?xml"
+
+
+def isEds(filepath):
+    with open(filepath, 'r') as f:
+        header = f.readline().rstrip()
+        return header == "[FileInfo]"
 
 
 class UndoBuffer(object):
@@ -253,14 +266,11 @@ class NodeManager(object):
         """
         Open a file and store it in a new buffer
         """
-        with open(filepath, "r") as f:
-            node = nosis.xmlload(f)
-        self.CurrentNode = node
-        self.CurrentNode.ID = 0
-        # Add a new buffer and defining current state
-        index = self.AddNodeBuffer(self.CurrentNode.Copy(), True)
-        self.SetCurrentFilePath(filepath)
-        return index
+        if isXml(filepath):
+            return self.ImportCurrentFromODFile(filepath)
+        elif isEds(filepath):
+            return self.ImportCurrentFromEDSFile(filepath, True)
+        return self.ImportCurrentFromJsonFile(filepath)
 
     def SaveCurrentInFile(self, filepath=None):
         """
@@ -271,9 +281,16 @@ class NodeManager(object):
             filepath = self.GetCurrentFilePath()
             if filepath == "":
                 return False
+
         # Save node in file
-        with open(filepath, "w") as f:
-            nosis.xmldump(f, self.CurrentNode)
+        low = filepath.lower() if filepath else ''
+        if low.endswith('.od'):
+            self.ExportCurrentToODFile(filepath)
+        elif low.endswith('.eds'):
+            self.ExportCurrentToEDSFile(filepath)
+        elif low.endswith('.json'):
+            self.ExportCurrentToJsonFile(filepath)
+
         self.SetCurrentFilePath(filepath)
         # Update saved state in buffer
         self.UndoBuffers[self.NodeIndex].CurrentSaved()
@@ -302,15 +319,36 @@ class NodeManager(object):
             return True
         return False
 
-    def ImportCurrentFromEDSFile(self, filepath):
+    def ImportCurrentFromODFile(self, filepath):
+        """
+        Open an od file and store it in a new buffer
+        """
+        with open(filepath, "r") as f:
+            node = nosis.xmlload(f)
+        self.CurrentNode = node
+        self.CurrentNode.ID = 0
+        # Add a new buffer and defining current state
+        index = self.AddNodeBuffer(self.CurrentNode.Copy(), True)
+        self.SetCurrentFilePath(filepath)
+        return index
+
+    def ExportCurrentToODFile(self, filepath):
+        """
+        Export to an eds file and store it in a new buffer if no node edited
+        """
+        # Save node in file
+        with open(filepath, "w") as f:
+            nosis.xmldump(f, self.CurrentNode)
+
+    def ImportCurrentFromEDSFile(self, filepath, load=False):
         """
         Import an eds file and store it in a new buffer if no node edited
         """
         # Generate node from definition in a xml file
         node = eds_utils.GenerateNode(filepath)
         self.CurrentNode = node
-        index = self.AddNodeBuffer(self.CurrentNode.Copy(), False)
-        self.SetCurrentFilePath("")
+        index = self.AddNodeBuffer(self.CurrentNode.Copy(), load)
+        self.SetCurrentFilePath(filepath if load else "")
         return index
 
     def ExportCurrentToEDSFile(self, filepath):
@@ -325,6 +363,25 @@ class NodeManager(object):
         """
         if self.CurrentNode:
             gen_cfile.GenerateFile(filepath, self.CurrentNode)
+
+    def ExportCurrentToJsonFile(self, filepath):
+        """
+        Export JSON
+        """
+        jsonod.GenerateFile(filepath, self.CurrentNode)
+
+    def ImportCurrentFromJsonFile(self, filepath):
+        """
+        Open a JSON file and store it in a new buffer
+        """
+        # Open and load file
+        node = jsonod.GenerateNode(filepath)
+        self.CurrentNode = node
+        self.CurrentNode.ID = 0
+        # Add a new buffer and defining current state
+        index = self.AddNodeBuffer(self.CurrentNode.Copy(), True)
+        self.SetCurrentFilePath(filepath)
+        return index
 
 # ------------------------------------------------------------------------------
 #                        Add Entries to Current Functions

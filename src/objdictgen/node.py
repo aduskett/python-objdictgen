@@ -82,6 +82,18 @@ nvar = OD_Subindex | OD_IdenticalIndexes  # 9
 nrecord = OD_Subindex | OD_MultipleSubindexes | OD_IdenticalIndexes  # 11, Example : PDO Parameters
 narray = OD_Subindex | OD_MultipleSubindexes | OD_IdenticalSubindexes | OD_IdenticalIndexes  # 15, Example : PDO Mapping
 
+# Mapping against name and structure number
+STRUCT_TYPES = {
+    None: nosub,
+    "var": var,
+    "record": record,
+    "array": array,
+    "nvar": nvar,
+    "nrecord": nrecord,
+    "narray": narray,
+}
+STRUCT_TYPES_LOOKUP = {v: k for k, v in STRUCT_TYPES.items()}
+
 #
 # List of the Object Dictionary ranges
 #
@@ -279,6 +291,16 @@ MappingDictionary = {
              [{"name": "Number of Entries", "type": 0x05, "access": 'rw', "pdo": False},
               {"name": "PDO %d Mapping for a process data variable %d[(idx,sub)]", "type": 0x07, "access": 'rw', "pdo": False, "nbmin": 0, "nbmax": 0x40}]},
 }
+
+
+# ------------------------------------------------------------------------------
+#                         Utils
+# ------------------------------------------------------------------------------
+def GetIndexRange(index):
+    for irange in INDEX_RANGES:
+        if index >= irange["min"] and index <= irange["max"]:
+            return irange
+    raise ValueError("Cannot find index range for value '0x%x'" % index)
 
 
 # ------------------------------------------------------------------------------
@@ -619,7 +641,7 @@ class Node(object):
             return subindex <= len(self.Dictionary[index])
         return False
 
-    def GetEntry(self, index, subindex=None, compute=True):
+    def GetEntry(self, index, subindex=None, compute=True, aslist=False):
         """
         Returns the value of the entry asked. If the entry has the value "count", it
         returns the number of subindex in the entry except the first.
@@ -631,6 +653,8 @@ class Node(object):
                         self.CompileValue(value, index, compute)
                         for value in self.Dictionary[index]
                     ]
+                elif aslist:
+                    return [self.CompileValue(self.Dictionary[index], index, compute)]
                 else:
                     return self.CompileValue(self.Dictionary[index], index, compute)
             elif subindex == 0:
@@ -642,7 +666,7 @@ class Node(object):
                 return self.CompileValue(self.Dictionary[index][subindex - 1], index, compute)
         return None
 
-    def GetParamsEntry(self, index, subindex=None):
+    def GetParamsEntry(self, index, subindex=None, aslist=False):
         """
         Returns the value of the entry asked. If the entry has the value "count", it
         returns the number of subindex in the entry except the first.
@@ -664,6 +688,8 @@ class Node(object):
                     result = DefaultParams.copy()
                     if index in self.ParamsDictionary:
                         result.update(self.ParamsDictionary[index])
+                    if aslist:
+                        return [result]
                     return result
             elif subindex == 0 and not isinstance(self.Dictionary[index], list):
                 result = DefaultParams.copy()
@@ -841,6 +867,9 @@ class Node(object):
         """
         return copy.deepcopy(self)
 
+    def GetDict(self):
+        return copy.deepcopy(self.__dict__)
+
     def GetIndexes(self):
         """
         Return a sorted list of indexes in Object Dictionary
@@ -891,11 +920,11 @@ class Node(object):
             # NOTE: Don't change base, as the eval() use this
             base = self.GetBaseIndexNumber(index)  # noqa: F841  pylint: disable=unused-variable
             try:
-                dbg("EVAL CompileValue(): '%s'" % (value,))
+                # dbg("EVAL CompileValue(): '%s'" % (value,))
                 raw = eval(value)  # FIXME: Using eval is not safe
                 if compute and isinstance(raw, (str, unicode)):
                     raw = raw.upper().replace("$NODEID", "self.ID")
-                    dbg("EVAL CompileValue() #2: '%s'" % (raw,))
+                    # dbg("EVAL CompileValue() #2: '%s'" % (raw,))
                     return eval(raw)  # FIXME: Using eval is not safe
                 return raw
             except Exception as exc:  # pylint: disable=broad-except
@@ -910,6 +939,15 @@ class Node(object):
 # ------------------------------------------------------------------------------
 
     def GetBaseIndex(self, index):
+        """ Return the index number of the base object """
+        for mapping in self.GetMappings():
+            result = FindIndex(index, mapping)
+            if result:
+                return result
+        return FindIndex(index, MappingDictionary)
+
+    def GetBaseIndexNumber(self, index):
+        """ Return the index number from the base object """
         for mapping in self.GetMappings():
             result = FindIndex(index, mapping)
             if result is not None:
@@ -1087,10 +1125,17 @@ class Node(object):
                     return (index << 16) + (subindex << 8) + size
             return None
 
-    def GetMapName(self, value):
-        if value != 0:
+    def GetMapIndex(self, value):
+        if value:
             index = value >> 16
             subindex = (value >> 8) % (1 << 8)
+            size = (value) % (1 << 8)
+            return index, subindex, size
+        return 0, 0, 0
+
+    def GetMapName(self, value):
+        index, subindex, _ = self.GetMapIndex(value)
+        if value:
             result = self.GetSubentryInfos(index, subindex)
             if result:
                 return self.GenerateMapName(result["name"], index, subindex)

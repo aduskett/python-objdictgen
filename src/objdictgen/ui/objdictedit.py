@@ -404,7 +404,7 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
             directory = os.path.dirname(filepath)
         else:
             directory = os.getcwd()
-        dialog = wx.FileDialog(self, "Choose a file", directory, "", "OD files (*.od)|*.od|All files|*.*", wx.OPEN | wx.CHANGE_DIR)
+        dialog = wx.FileDialog(self, "Choose a file", directory, "", "OD files (*.json;*.od;*.eds)|*.json;*.od;*.eds|All files|*.*", wx.OPEN | wx.CHANGE_DIR)
         if dialog.ShowModal() == wx.ID_OK:
             filepath = dialog.GetPath()
             if os.path.isfile(filepath):
@@ -456,7 +456,7 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
             directory, filename = os.path.split(filepath)
         else:
             directory, filename = os.getcwd(), "%s.od" % self.Manager.GetCurrentNodeInfos()[0]
-        dialog = wx.FileDialog(self, "Choose a file", directory, filename, "OD files (*.od)|*.od|All files|*.*", wx.SAVE | wx.OVERWRITE_PROMPT | wx.CHANGE_DIR)
+        dialog = wx.FileDialog(self, "Choose a file", directory, filename, "OD files (*.json;*.od;*.eds)|*.json;*.od;*.eds|All files|*.*", wx.SAVE | wx.OVERWRITE_PROMPT | wx.CHANGE_DIR)
         if dialog.ShowModal() == wx.ID_OK:
             filepath = dialog.GetPath()
             if not os.path.isdir(os.path.dirname(filepath)):

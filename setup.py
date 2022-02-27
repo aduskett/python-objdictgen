@@ -182,6 +182,7 @@ setup(
         'console_scripts': [
             'objdictgen=objdictgen.__main__:main_objdictgen',
             'objdictedit=objdictgen.__main__:main_objdictedit',
+            'odg=objdictgen.__main__:main',
         ],
     },
 

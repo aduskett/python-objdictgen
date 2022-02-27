@@ -481,6 +481,10 @@ def GenerateFileContent(node, filepath):
     fileContent += "ModificationDate=%s\n" % strftime("%m-%d-%Y", current_time)
     fileContent += "ModifiedBy=CANFestival\n"
 
+    have_1018 = node.GetEntry(0x1018)
+    if not have_1018:
+        raise ValueError("OD does't have mandatory index 0x1018")
+
     # Generate DeviceInfo section
     fileContent += "\n[DeviceInfo]\n"
     fileContent += "VendorName=CANFestival\n"
@@ -674,6 +678,14 @@ def GenerateNode(filepath, nodeid=0):
 
     # Parse file and extract dictionary of EDS entry
     eds_dict = ParseEDSFile(filepath)
+
+    # Ensure we have the ODs we need
+    missing = ["0x%04X" % i for i in (
+        0x1000,
+    ) if i not in eds_dict]
+    if missing:
+        raise ValueError("EDS file is missing parameter index %s" % (",".join(missing),))
+
     # Extract Profile Number from Device Type entry
     profilenb = eds_dict[0x1000].get("DEFAULTVALUE", 0) & 0x0000ffff
     # If profile is not DS-301 or DS-302

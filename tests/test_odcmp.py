@@ -1,8 +1,8 @@
-from pprint import pprint
 import shutil
 import re
 import os
 import sys
+from collections import OrderedDict
 import pytest
 from objdictgen.nodemanager import NodeManager
 
@@ -27,7 +27,7 @@ def test_odexport(odfile, fn):
     m1.OpenFileInCurrent(odfile + '.od')
 
     # Save the OD
-    m1.SaveCurrentInFile(odfile + '.od2')
+    m1.ExportCurrentToODFile(odfile + '.od2')
 
     # Modify the od files to remove unique elements
     RE_ID = re.compile(r'(id|module)="\w+"')
@@ -44,7 +44,7 @@ def test_odexport(odfile, fn):
 
     # Load the saved OD
     m2 = NodeManager()
-    m2.OpenFileInCurrent(odfile + '.od2')
+    m2.ImportCurrentFromODFile(odfile + '.od2')
 
     # Compare the OD master and the OD2 objects
     assert m1.CurrentNode.__dict__ == m2.CurrentNode.__dict__
@@ -57,18 +57,26 @@ def test_odexport(odfile, fn):
 def test_odcompare23(odfile, fn):
     m1 = NodeManager()
     m1.OpenFileInCurrent(odfile + '.od')
-    m1.SaveCurrentInFile(odfile + '.od2')
+    m1.ExportCurrentToODFile(odfile + '.od2')
 
     m1 = NodeManager()
-    m1.OpenFileInCurrent(odfile + '.od2')
+    m1.ImportCurrentFromODFile(odfile + '.od2')
 
     oposite = odfile.replace(fn.DUT, fn.OPOSITE)
     if not os.path.exists(oposite + '.od2'):
         raise pytest.skip("Missing .od2 files from '%s'" %(oposite + '.od2'))
+
     m2 = NodeManager()
-    m2.OpenFileInCurrent(oposite + '.od2')
+    m2.ImportCurrentFromODFile(oposite + '.od2')
 
     assert m1.CurrentNode.__dict__ == m2.CurrentNode.__dict__
+
+
+def test_jsonexport(odfile, fn):
+    m1 = NodeManager()
+    m1.OpenFileInCurrent(odfile + '.od')
+
+    m1.ExportCurrentToJsonFile(odfile + '.json')
 
 
 def test_cexport(odfile, fn):
@@ -108,3 +116,32 @@ def test_edsimport(odfile, fn):
 
     # EDS isn't complete enough to compare with an OD-loaded file
     # assert m1.CurrentNode.__dict__ == m2.CurrentNode.__dict__
+
+
+def dictify(d):
+    if isinstance(d, dict):
+        return {
+            k: dictify(v)
+            for k, v in d.items()
+        }
+    elif isinstance(d, list):
+        return [
+            dictify(v)
+            for v in d
+        ]
+    return d
+
+
+def test_jsonimport(odfile, fn):
+    m1 = NodeManager()
+    m1.OpenFileInCurrent(odfile + '.od')
+
+    m1.ExportCurrentToJsonFile(odfile + '.json')
+
+    m2 = NodeManager()
+    m2.ImportCurrentFromJsonFile(odfile + '.json')
+
+    cn1 = dictify(m1.CurrentNode.__dict__)
+    cn2 = dictify(m2.CurrentNode.__dict__)
+
+    assert cn1 == cn2
