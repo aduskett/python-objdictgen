@@ -100,7 +100,7 @@ def get_all_mappings(node):
     # Make a complete list of the entire mapping
     mapping = {}
     for group, mappings in (
-            (None, nod.MappingDictionary),
+            (None, nod.MAPPING_DICTIONARY),
             (None, node.UserMapping),
             ("profile", node.Profile),
             ("ds302", node.DS302),

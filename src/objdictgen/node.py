@@ -45,17 +45,15 @@ else:
 #
 # Dictionary of translation between access symbol and their signification
 #
-AccessType = {"ro": "Read Only", "wo": "Write Only", "rw": "Read/Write"}
-
-BoolType = {True: "True", False: "False"}
-OptionType = {True: "Yes", False: "No"}
-
-CustomisableTypes = [(0x02, 0), (0x03, 0), (0x04, 0), (0x05, 0), (0x06, 0), (0x07, 0),
-    (0x08, 0), (0x09, 1), (0x0A, 1), (0x0B, 1), (0x10, 0), (0x11, 0), (0x12, 0),
-    (0x13, 0), (0x14, 0), (0x15, 0), (0x16, 0), (0x18, 0), (0x19, 0), (0x1A, 0),
-    (0x1B, 0)]
-
-DefaultParams = {"comment": "", "save": False, "buffer_size": ""}
+ACCESS_TYPE = {"ro": "Read Only", "wo": "Write Only", "rw": "Read/Write"}
+BOOL_TYPE = {True: "True", False: "False"}
+OPTION_TYPE = {True: "Yes", False: "No"}
+CUSTOMISABLE_TYPES = [
+    (0x02, 0), (0x03, 0), (0x04, 0), (0x05, 0), (0x06, 0), (0x07, 0), (0x08, 0),
+    (0x09, 1), (0x0A, 1), (0x0B, 1), (0x10, 0), (0x11, 0), (0x12, 0), (0x13, 0),
+    (0x14, 0), (0x15, 0), (0x16, 0), (0x18, 0), (0x19, 0), (0x1A, 0), (0x1B, 0),
+]
+DEFAULT_PARAMS = {"comment": "", "save": False, "buffer_size": ""}
 
 # ------------------------------------------------------------------------------
 #                      Dictionary Mapping and Organisation
@@ -98,26 +96,26 @@ STRUCT_TYPES_LOOKUP = {v: k for k, v in STRUCT_TYPES.items()}
 # List of the Object Dictionary ranges
 #
 INDEX_RANGES = [
-    {"name": "", "min": 0x0001, "max": 0x0FFF, "description": "Data Type Definitions"},
-    {"name": "", "min": 0x1000, "max": 0x1029, "description": "Communication Parameters"},
-    {"name": "", "min": 0x1200, "max": 0x12FF, "description": "SDO Parameters"},
-    {"name": "", "min": 0x1400, "max": 0x15FF, "description": "Receive PDO Parameters"},
-    {"name": "rpdom", "min": 0x1600, "max": 0x17FF, "description": "Receive PDO Mapping"},
-    {"name": "", "min": 0x1800, "max": 0x19FF, "description": "Transmit PDO Parameters"},
-    {"name": "tpdom", "min": 0x1A00, "max": 0x1BFF, "description": "Transmit PDO Mapping"},
-    {"name": "", "min": 0x1C00, "max": 0x1FFF, "description": "Other Communication Parameters"},
-    {"name": "", "min": 0x2000, "max": 0x5FFF, "description": "Manufacturer Specific"},
-    {"name": "", "min": 0x6000, "max": 0x9FFF, "description": "Standardized Device Profile"},
-    {"name": "", "min": 0xA000, "max": 0xBFFF, "description": "Standardized Interface Profile"},
+    {"min": 0x0001, "max": 0x0FFF, "name": "dtd", "description": "Data Type Definitions"},
+    {"min": 0x1000, "max": 0x1029, "name": "cp", "description": "Communication Parameters"},
+    {"min": 0x1200, "max": 0x12FF, "name": "sdop", "description": "SDO Parameters"},
+    {"min": 0x1400, "max": 0x15FF, "name": "rpdop", "description": "Receive PDO Parameters"},
+    {"min": 0x1600, "max": 0x17FF, "name": "rpdom", "description": "Receive PDO Mapping"},
+    {"min": 0x1800, "max": 0x19FF, "name": "tpdop", "description": "Transmit PDO Parameters"},
+    {"min": 0x1A00, "max": 0x1BFF, "name": "tpdom", "description": "Transmit PDO Mapping"},
+    {"min": 0x1C00, "max": 0x1FFF, "name": "ocp", "description": "Other Communication Parameters"},
+    {"min": 0x2000, "max": 0x5FFF, "name": "ms", "description": "Manufacturer Specific"},
+    {"min": 0x6000, "max": 0x9FFF, "name": "sdp", "description": "Standardized Device Profile"},
+    {"min": 0xA000, "max": 0xBFFF, "name": "sip", "description": "Standardized Interface Profile"},
 ]
 
 #
-# MappingDictionary is the structure used for writing a good organised Object
+# MAPPING_DICTIONARY is the structure used for writing a good organised Object
 # Dictionary. It follows the specifications of the CANOpen standard.
 # Change the informations within it if there is a mistake. But don't modify the
 # organisation of this object, it will involve in a malfunction of the application.
 #
-MappingDictionary = {
+MAPPING_DICTIONARY = {
     # -- Static Data Types
     0x0001: {"name": "BOOLEAN", "struct": nosub, "size": 1, "default": False, "values": []},
     0x0002: {"name": "INTEGER8", "struct": nosub, "size": 8, "default": 0, "values": []},
@@ -492,14 +490,14 @@ def FindIndex(index, mappingdictionary):
 #                           Formating Name of an Entry
 # ------------------------------------------------------------------------------
 
-name_model = re.compile(r'(.*)\[(.*)\]')
+RE_NAME = re.compile(r'(.*)\[(.*)\]')
 
 
 def StringFormat(text, idx, sub):  # pylint: disable=unused-argument
     """
     Format the text given with the index and subindex defined
     """
-    result = name_model.match(text)
+    result = RE_NAME.match(text)
     if result:
         fmt = result.groups()
         try:
@@ -675,25 +673,25 @@ class Node(object):
                     if index in self.ParamsDictionary:
                         result = []
                         for i in range(len(self.Dictionary[index]) + 1):
-                            line = DefaultParams.copy()
+                            line = DEFAULT_PARAMS.copy()
                             if i in self.ParamsDictionary[index]:
                                 line.update(self.ParamsDictionary[index][i])
                             result.append(line)
                         return result
-                    return [DefaultParams.copy() for i in range(len(self.Dictionary[index]) + 1)]
-                result = DefaultParams.copy()
+                    return [DEFAULT_PARAMS.copy() for i in range(len(self.Dictionary[index]) + 1)]
+                result = DEFAULT_PARAMS.copy()
                 if index in self.ParamsDictionary:
                     result.update(self.ParamsDictionary[index])
                 if aslist:
                     return [result]
                 return result
             if subindex == 0 and not isinstance(self.Dictionary[index], list):
-                result = DefaultParams.copy()
+                result = DEFAULT_PARAMS.copy()
                 if index in self.ParamsDictionary:
                     result.update(self.ParamsDictionary[index])
                 return result
             if isinstance(self.Dictionary[index], list) and 0 <= subindex <= len(self.Dictionary[index]):
-                result = DefaultParams.copy()
+                result = DEFAULT_PARAMS.copy()
                 if index in self.ParamsDictionary and subindex in self.ParamsDictionary[index]:
                     result.update(self.ParamsDictionary[index][subindex])
                 return result
@@ -940,7 +938,7 @@ class Node(object):
             result = FindIndex(index, mapping)
             if result:
                 return result
-        return FindIndex(index, MappingDictionary)
+        return FindIndex(index, MAPPING_DICTIONARY)
 
     def GetBaseIndexNumber(self, index):
         """ Return the index number from the base object """
@@ -948,9 +946,9 @@ class Node(object):
             result = FindIndex(index, mapping)
             if result is not None:
                 return (index - result) // mapping[result].get("incr", 1)
-        result = FindIndex(index, MappingDictionary)
+        result = FindIndex(index, MAPPING_DICTIONARY)
         if result is not None:
-            return (index - result) // MappingDictionary[result].get("incr", 1)
+            return (index - result) // MAPPING_DICTIONARY[result].get("incr", 1)
         return 0
 
     def GetCustomisedTypeValues(self, index):
@@ -966,7 +964,7 @@ class Node(object):
             result = FindEntryName(index, mappings[i], compute)
             i += 1
         if result is None:
-            result = FindEntryName(index, MappingDictionary, compute)
+            result = FindEntryName(index, MAPPING_DICTIONARY, compute)
         return result
 
     def GetEntryInfos(self, index, compute=True):
@@ -976,7 +974,7 @@ class Node(object):
         while not result and i < len(mappings):
             result = FindEntryInfos(index, mappings[i], compute)
             i += 1
-        r301 = FindEntryInfos(index, MappingDictionary, compute)
+        r301 = FindEntryInfos(index, MAPPING_DICTIONARY, compute)
         if r301:
             if result is not None:
                 r301.update(result)
@@ -992,7 +990,7 @@ class Node(object):
             if result:
                 result["user_defined"] = i == len(mappings) - 1 and index >= 0x1000
             i += 1
-        r301 = FindSubentryInfos(index, subindex, MappingDictionary, compute)
+        r301 = FindSubentryInfos(index, subindex, MAPPING_DICTIONARY, compute)
         if r301:
             if result is not None:
                 r301.update(result)
@@ -1009,7 +1007,7 @@ class Node(object):
             result = FindTypeIndex(typename, mappings[i])
             i += 1
         if result is None:
-            result = FindTypeIndex(typename, MappingDictionary)
+            result = FindTypeIndex(typename, MAPPING_DICTIONARY)
         return result
 
     def GetTypeName(self, typeindex):
@@ -1020,7 +1018,7 @@ class Node(object):
             result = FindTypeName(typeindex, mappings[i])
             i += 1
         if result is None:
-            result = FindTypeName(typeindex, MappingDictionary)
+            result = FindTypeName(typeindex, MAPPING_DICTIONARY)
         return result
 
     def GetTypeDefaultValue(self, typeindex):
@@ -1031,25 +1029,25 @@ class Node(object):
             result = FindTypeDefaultValue(typeindex, mappings[i])
             i += 1
         if result is None:
-            result = FindTypeDefaultValue(typeindex, MappingDictionary)
+            result = FindTypeDefaultValue(typeindex, MAPPING_DICTIONARY)
         return result
 
     def GetMapVariableList(self, compute=True):
-        list_ = FindMapVariableList(MappingDictionary, self, compute)
+        list_ = FindMapVariableList(MAPPING_DICTIONARY, self, compute)
         for mapping in self.GetMappings():
             list_.extend(FindMapVariableList(mapping, self, compute))
         list_.sort()
         return list_
 
     def GetMandatoryIndexes(self, node=None):  # pylint: disable=unused-argument
-        list_ = FindMandatoryIndexes(MappingDictionary)
+        list_ = FindMandatoryIndexes(MAPPING_DICTIONARY)
         for mapping in self.GetMappings():
             list_.extend(FindMandatoryIndexes(mapping))
         return list_
 
     def GetCustomisableTypes(self):
         dic = {}
-        for index, valuetype in CustomisableTypes:
+        for index, valuetype in CUSTOMISABLE_TYPES:
             name = self.GetTypeName(index)
             dic[index] = [name, valuetype]
         return dic
@@ -1081,7 +1079,7 @@ class Node(object):
 # ------------------------------------------------------------------------------
 
     def GetTypeList(self):
-        list_ = FindTypeList(MappingDictionary)
+        list_ = FindTypeList(MAPPING_DICTIONARY)
         for mapping in self.GetMappings():
             list_.extend(FindTypeList(mapping))
         return ",".join(sorted(list_))

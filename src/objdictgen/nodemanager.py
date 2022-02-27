@@ -732,7 +732,7 @@ class NodeManager(object):
                 else:
                     subentry_infos = self.GetSubentryInfos(index, subindex)
                     type_ = subentry_infos["type"]
-                    dic = nod.CustomisableTypes.copy()
+                    dic = nod.CUSTOMISABLE_TYPES
                     if type_ not in dic:
                         type_ = node.GetEntry(type_)[1]
                     if dic[type_] == 0:
@@ -766,7 +766,7 @@ class NodeManager(object):
                 elif editor in ["access", "raccess"]:
                     dic = {
                         access: abbrev
-                        for abbrev, access in nod.AccessType.items()
+                        for abbrev, access in nod.ACCESS_TYPE.items()
                     }
                     value = dic[value]
                     if editor == "raccess" and not node.IsMappingEntry(index):
@@ -898,10 +898,10 @@ class NodeManager(object):
 
     def GetCurrentCommunicationLists(self):
         list_ = []
-        for index in nod.MappingDictionary:
+        for index in nod.MAPPING_DICTIONARY:
             if 0x1000 <= index < 0x1200:
                 list_.append(index)
-        return self.GetProfileLists(nod.MappingDictionary, list_)
+        return self.GetProfileLists(nod.MAPPING_DICTIONARY, list_)
 
     def GetCurrentDS302Lists(self):
         return self.GetSpecificProfileLists(self.CurrentNode.DS302)
@@ -1023,7 +1023,7 @@ class NodeManager(object):
                 good &= min_ <= index <= max_
             if good:
                 validchoices.append((menu, None))
-        list_ = [index for index in nod.MappingDictionary if index >= 0x1000]
+        list_ = [index for index in nod.MAPPING_DICTIONARY if index >= 0x1000]
         profiles = self.CurrentNode.GetMappings(False)
         for profile in profiles:
             list_.extend(list(profile))
@@ -1068,8 +1068,8 @@ class NodeManager(object):
                 if dic["type"] is None:
                     dic["type"] = "Unknown"
                     dic["buffer_size"] = ""
-                dic["access"] = nod.AccessType[infos["access"]]
-                dic["save"] = nod.OptionType[dic["save"]]
+                dic["access"] = nod.ACCESS_TYPE[infos["access"]]
+                dic["save"] = nod.OPTION_TYPE[dic["save"]]
                 editor = {"subindex": None, "name": None,
                           "type": None, "value": None,
                           "access": None, "save": "option",
@@ -1107,7 +1107,7 @@ class NodeManager(object):
                             dic["value"] = codecs.encode(dic["value"].encode(), 'hex_codec')
                         elif dic["type"] == "BOOLEAN":
                             editor["value"] = "bool"
-                            dic["value"] = nod.BoolType[dic["value"]]
+                            dic["value"] = nod.BOOL_TYPE[dic["value"]]
                             dic["buffer_size"] = ""
                         result = type_model.match(dic["type"])
                         if result:
@@ -1165,17 +1165,17 @@ class NodeManager(object):
     def GetEntryName(self, index, compute=True):
         if self.CurrentNode:
             return self.CurrentNode.GetEntryName(index, compute)
-        return nod.FindEntryName(index, nod.MappingDictionary, compute)
+        return nod.FindEntryName(index, nod.MAPPING_DICTIONARY, compute)
 
     def GetEntryInfos(self, index, compute=True):
         if self.CurrentNode:
             return self.CurrentNode.GetEntryInfos(index, compute)
-        return nod.FindEntryInfos(index, nod.MappingDictionary, compute)
+        return nod.FindEntryInfos(index, nod.MAPPING_DICTIONARY, compute)
 
     def GetSubentryInfos(self, index, subindex, compute=True):
         if self.CurrentNode:
             return self.CurrentNode.GetSubentryInfos(index, subindex, compute)
-        result = nod.FindSubentryInfos(index, subindex, nod.MappingDictionary, compute)
+        result = nod.FindSubentryInfos(index, subindex, nod.MAPPING_DICTIONARY, compute)
         if result:
             result["user_defined"] = False
         return result
@@ -1183,17 +1183,17 @@ class NodeManager(object):
     def GetTypeIndex(self, typename):
         if self.CurrentNode:
             return self.CurrentNode.GetTypeIndex(typename)
-        return nod.FindTypeIndex(typename, nod.MappingDictionary)
+        return nod.FindTypeIndex(typename, nod.MAPPING_DICTIONARY)
 
     def GetTypeName(self, typeindex):
         if self.CurrentNode:
             return self.CurrentNode.GetTypeName(typeindex)
-        return nod.FindTypeName(typeindex, nod.MappingDictionary)
+        return nod.FindTypeName(typeindex, nod.MAPPING_DICTIONARY)
 
     def GetTypeDefaultValue(self, typeindex):
         if self.CurrentNode:
             return self.CurrentNode.GetTypeDefaultValue(typeindex)
-        return nod.FindTypeDefaultValue(typeindex, nod.MappingDictionary)
+        return nod.FindTypeDefaultValue(typeindex, nod.MAPPING_DICTIONARY)
 
     def GetMapVariableList(self, compute=True):
         if self.CurrentNode:
@@ -1203,12 +1203,12 @@ class NodeManager(object):
     def GetMandatoryIndexes(self):
         if self.CurrentNode:
             return self.CurrentNode.GetMandatoryIndexes()
-        return nod.FindMandatoryIndexes(nod.MappingDictionary)
+        return nod.FindMandatoryIndexes(nod.MAPPING_DICTIONARY)
 
     def GetCustomisableTypes(self):
         return {
             index: [self.GetTypeName(index), valuetype]
-            for index, valuetype in nod.CustomisableTypes
+            for index, valuetype in nod.CUSTOMISABLE_TYPES
         }
 
     def GetCurrentSpecificMenu(self):
