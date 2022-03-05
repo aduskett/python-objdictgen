@@ -28,7 +28,8 @@ import os
 import wx
 import wx.grid
 
-from .. import SCRIPT_DIRECTORY, node as nod
+from .. import node as nod
+from .. import PROFILE_DIRECTORY
 from .. import dbg
 
 
@@ -546,7 +547,7 @@ class UserTypeDialog(wx.Dialog):
         error = []
         message = None
         name = self.Type.GetStringSelection()
-        if name != "":
+        if name:
             valuetype = self.TypeDictionary[name][1]
             if valuetype == 0:
                 try:
@@ -609,7 +610,7 @@ class UserTypeDialog(wx.Dialog):
 
     def RefreshValues(self):
         name = self.Type.GetStringSelection()
-        if name != "":
+        if name:
             valuetype = self.TypeDictionary[name][1]
             if valuetype == 0:
                 self.staticText2.Enable(True)
@@ -762,19 +763,19 @@ class NodeInfosDialog(wx.Dialog):
     def OnOK(self, event):  # pylint: disable=unused-argument
         name = self.NodeName.GetValue()
         message = ""
-        if name != "":
+        if name:
             good = not name[0].isdigit()
             for item in name.split("_"):
                 good &= item.isalnum()
             if not good:
                 message = "Node name can't be undefined or start with a digit and must be composed of alphanumerical characters or underscore!"
-        if message != "":
+        if message:
             try:
                 _ = int(self.NodeID.GetValue(), 16)
             except ValueError as exc:
                 dbg("ValueError: '%s': %s" % (self.NodeID.GetValue(), exc))
                 message = "Node ID must be integer!"
-        if message != "":
+        if message:
             message = wx.MessageDialog(self, message, "ERROR", wx.OK | wx.ICON_ERROR)
             message.ShowModal()
             message.Destroy()
@@ -1026,7 +1027,7 @@ class CreateNodeDialog(wx.Dialog):
         self.Description.SetValue("")
         self.ListProfile = {"None": ""}
         self.Profile.Append("None")
-        self.Directory = os.path.join(SCRIPT_DIRECTORY, "config")
+        self.Directory = PROFILE_DIRECTORY
         for item in sorted(os.listdir(self.Directory)):
             name, extend = os.path.splitext(item)
             if os.path.isfile(os.path.join(self.Directory, item)) and extend == ".prf" and name != "DS-302":
@@ -1039,16 +1040,16 @@ class CreateNodeDialog(wx.Dialog):
     def OnOK(self, event):  # pylint: disable=unused-argument
         name = self.NodeName.GetValue()
         message = ""
-        if name != "":
+        if name:
             if not ((not name[0].isdigit()) and all(item.isalnum() for item in name.split("_"))):
                 message = "Node name can't be undefined or start with a digit and must be composed of alphanumerical characters or underscore!"
-        if message != "":
+        if message:
             try:
                 _ = int(self.NodeID.GetValue(), 16)
             except ValueError as exc:
                 dbg("ValueError: '%s': %s" % (self.NodeID.GetValue(), exc))
                 message = "Node ID must be integer!"
-        if message != "":
+        if message:
             message = wx.MessageDialog(self, message, "ERROR", wx.OK | wx.ICON_ERROR)
             message.ShowModal()
             message.Destroy()
@@ -1059,7 +1060,7 @@ class CreateNodeDialog(wx.Dialog):
     def GetValues(self):
         name = self.NodeName.GetValue()
         nodeid = 0
-        if self.NodeID.GetValue() != "":
+        if self.NodeID.GetValue():
             nodeid = int(self.NodeID.GetValue(), 16)
         type_ = NODE_TYPES_DICT[self.Type.GetStringSelection()]
         description = self.Description.GetValue()
@@ -1067,8 +1068,6 @@ class CreateNodeDialog(wx.Dialog):
 
     def GetProfile(self):
         name = self.Profile.GetStringSelection()
-        if name == "None":
-            name = "None"
         return name, self.ListProfile[name]
 
     def GetNMTManagement(self):
@@ -1212,11 +1211,11 @@ class AddSlaveDialog(wx.Dialog):
 
     def OnOK(self, event):  # pylint: disable=unused-argument
         error = []
-        if self.SlaveName.GetValue() == "":
+        if not self.SlaveName.GetValue():
             error.append("Slave Name")
-        if self.SlaveNodeID.GetValue() == "":
+        if not self.SlaveNodeID.GetValue():
             error.append("Slave Node ID")
-        if self.EDSFile.GetStringSelection() == "":
+        if not self.EDSFile.GetStringSelection():
             error.append("EDS File")
         if len(error) > 0:
             text = ""
@@ -1274,7 +1273,7 @@ class AddSlaveDialog(wx.Dialog):
                     try:
                         self.NodeList.ImportEDSFile(filepath)
                     except Exception as exc:  # pylint: disable=broad-except
-                        dialog = wx.MessageDialog(self, exc, "Error", wx.OK | wx.ICON_ERROR)
+                        dialog = wx.MessageDialog(self, str(exc), "Error", wx.OK | wx.ICON_ERROR)
                         dialog.ShowModal()
                         dialog.Destroy()
                 dialog.Destroy()
@@ -1591,7 +1590,7 @@ class DCFEntryValuesDialog(wx.Dialog):
 
     def SetValues(self, values):
         self.Values = []
-        if values != "":
+        if values:
             data = values[4:]
             current = 0
             for _ in range(nod.BE_to_LE(values[:4])):

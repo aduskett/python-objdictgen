@@ -3,8 +3,6 @@ import os
 from objdictgen.nodemanager import NodeManager
 
 
-BASE = os.path.join(os.path.split(__file__)[0], '..')
-
 def test_create_master():
 
     m1 = NodeManager()
@@ -19,7 +17,7 @@ def test_create_slave():
     m1.CloseCurrent()
 
 
-def test_load():
+def test_load(basepath):
 
     m1 = NodeManager()
-    m1.OpenFileInCurrent(os.path.join(BASE, 'examples', 'example.od'))
+    m1.OpenFileInCurrent(os.path.join(basepath, 'tests', 'od', 'jsontest.od'))

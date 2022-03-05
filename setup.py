@@ -143,6 +143,7 @@ setup(
     # https://packaging.python.org/en/latest/requirements.html
     install_requires=[  # Optional
         'future',
+        'jsonschema',
     ],
 
     # List additional groups of dependencies here (e.g. development
@@ -154,6 +155,7 @@ setup(
     # Similar to `install_requires` above, these must be valid existing
     # projects.
     extras_require={  # Optional
+        'dist': ['build'],
         'dev': ['pylint', 'flake8', 'mypy', 'black'],
         'test': ['pytest', 'coverage', 'pytest-cov', 'pytest-mock'],
     },
@@ -161,7 +163,7 @@ setup(
     # If there are data files included in your packages that need to be
     # installed, specify them here.
     package_data={  # Optional
-        'objdictgen': ['config/*.prf'],
+        'objdictgen': ['config/*.prf', 'schema/*.json'],
     },
 
     # Although 'package_data' is the preferred approach, in some case you may

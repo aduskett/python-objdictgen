@@ -227,7 +227,7 @@ class NodeEditorTemplate(object):
                 self.RefreshBufferState()
                 self.RefreshCurrentIndexList()
             except Exception as exc:  # pylint: disable=broad-except
-                self.ShowErrorMessage(exc)
+                self.ShowErrorMessage(str(exc))
         dialog.Destroy()
 
     def ShowErrorMessage(self, message):

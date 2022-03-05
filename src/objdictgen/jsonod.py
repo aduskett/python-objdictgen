@@ -1,12 +1,15 @@
 import sys
 import os
 import copy
+import re
 from collections import OrderedDict
 import json
+import jsonschema
 
 from .node import Node
 from . import node as nod
-from . import dbg, SCRIPT_DIRECTORY
+from . import SCHEMA_FILE
+from . import dbg
 
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
@@ -40,6 +43,48 @@ PARAM_FIELDS = (
 
 RICH = True
 TEXT_FIELDS = True
+
+
+def remove_jasonc(text):
+    ''' Remove jsonc annotations '''
+    # Copied from https://github.com/NickolaiBeloguzov/jsonc-parser/blob/master/jsonc_parser/parser.py#L11-L39
+    def __re_sub(match):
+        if match.group(2) is not None:
+            return ""
+        else:
+            return match.group(1)
+
+    return re.sub(
+        r"(\".*?\"|\'.*?\')|(/\*.*?\*/|//[^\r\n]*$)",
+        __re_sub,
+        text,
+        flags=re.MULTILINE | re.DOTALL
+    )
+
+
+if sys.version_info[0] >= 3:
+    with open(os.path.join(SCHEMA_FILE), 'r') as f:
+        SCHEMA = json.loads(remove_jasonc(f.read()))
+else:
+    SCHEMA = None
+
+
+def validate_json(jsonobj):
+
+    if SCHEMA:
+        jsonschema.validate(jsonobj, schema=SCHEMA)
+
+    jd = jsonobj
+    if not jd['dictionary']:
+        raise ValueError("No dictionary values")
+
+    for sindex, obj in jd['dictionary'].items():
+
+        index = str_to_number(sindex)
+        if not isinstance(index, int):
+            raise ValueError("Invalid dictionary index '%s'" % sindex)
+        if index <= 0 or index > 0xFFFF:
+            raise ValueError("Invalid dictionary index value '%s'" % index)
 
 
 def deunicodify_hook(pairs):
@@ -109,7 +154,6 @@ def get_all_mappings(node):
             obj = v.copy()
             obj.update({
                 "group": group,
-                # "values": [x.copy() for x in obj['values']]
             })
             mapping[index] = obj
     return mapping
@@ -125,18 +169,16 @@ def get_type_names(mapping):
 
 def compare_profile(profilename, params, menu=None):
     try:
-        profilepath = os.path.join(SCRIPT_DIRECTORY, "config", "%s.prf" % profilename)
-        dsmap, menumap = nod.ImportProfile(profilepath)
+        dsmap, menumap = nod.ImportProfile(profilename)
         identical = all(
             k in dsmap and k in params and dsmap[k] == params[k]
             for k in set(dsmap) | set(params)
         )
         if menu and not menu == menumap:
             raise ValueError("Menu in OD not idenical with profile")
-        # dbg("Identical to %s: %s" % (profilename, identical))
         return identical
 
-    except Exception as exc:  # pylint: disable=broad-except
+    except ValueError as exc:
         dbg("Loading profile failed: %s" % (exc))
         return False
 
@@ -147,24 +189,37 @@ def GenerateFile(filepath, node):
     # with open(filepath.replace(".json", ".raw.json"), "w") as f:
     #     json.dump(jd, f, separators=(',', ': '), indent=2)
 
-    # Make a complete list of the entire mapping
+    # Delete the fields that is not needed becuase the code below will access node directory
+    for k in ("UserMapping", "DS302", "SpecificMenu", "Profile", "ParamsDictionary", "Dictionary"):
+        del jd[k]
+
+    # Rename the top-level fields
+    for k, v in {
+        'ProfileName': 'profile_name',
+        'ID': 'id',
+        'DefaultStringSize': 'default_string_size',
+        'Description': 'description',
+        'Type': 'type',
+        'Name': 'name',
+    }.items():
+        if k in jd:
+            jd[v] = jd.pop(k)
+
+    # Make a complete list of the entire object mapping
     mapping = get_all_mappings(node)
     type_names = get_type_names(mapping)
 
-    # Start with the list of user mappings
+    # Collect the list of user mappings (order preserved)
     dictionary = ODict((
         (k, mapping[k])  # mapping is ok to mutate
         for k in node.UserMapping
     ))
-    del jd["UserMapping"]
 
     # Process the DS-302 profile mapping
-    del jd["DS302"]
-    jd["DS-302"] = False
+    jd["ds-302"] = False
     if node.DS302:
-        # dbg("Have DS302")
         identical = compare_profile("DS-302", node.DS302)
-        jd['DS-302'] = identical
+        jd['ds-302'] = identical
 
         # If profile doesn't match, the DS302 mapping objects is added to the output
         if not identical:
@@ -172,12 +227,10 @@ def GenerateFile(filepath, node):
                 dictionary[index] = mapping[index]
 
     # Process the profile mapping
-    del jd["SpecificMenu"]
-    jd["Profile"] = False
+    jd["profile"] = False
     if node.Profile:
-        # dbg("Have Profile %s" % node.ProfileName)
         identical = compare_profile(node.ProfileName, node.Profile, node.SpecificMenu)
-        jd['Profile'] = identical
+        jd['profile'] = identical
 
         # If profile doesn't match, the profile mapping output is added to the output
         if not identical:
@@ -185,19 +238,19 @@ def GenerateFile(filepath, node):
                 dictionary[index] = mapping[index]
 
     # Process the parameters (comments and UI settings)
-    del jd["ParamsDictionary"]
     for index, paramdict in node.ParamsDictionary.items():
         obj = dictionary.setdefault(index, {})
 
-        # Check the fields in the params dictionary
+        # Check the fields in the params dictionary matches the expectation within
+        # this code. If not, there is a new field that this code doesn't account for.
         for k in paramdict:
             if isinstance(k, int):  # Corresponds to sub-index data
                 for p in paramdict[k]:
                     if p not in PARAM_FIELDS:
-                        raise Exception("Unexpected field '%s' in ParamsDictionary" % p)
-            else:  # Corresponds to "master" data
+                        raise ValueError("Unexpected field '%s' in ParamsDictionary" % p)
+            else:  # Corresponds to object data
                 if k not in PARAM_FIELDS:
-                    raise Exception("Unexpected field '%s' in ParamsDictionary" % k)
+                    raise ValueError("Unexpected field '%s' in ParamsDictionary" % k)
 
         # Make a copy of the parameter dictionary
         params = copy.deepcopy(paramdict)
@@ -214,7 +267,6 @@ def GenerateFile(filepath, node):
             del params[k]
 
     # Process the dictionary (values)
-    del jd["Dictionary"]
     for index, val in node.Dictionary.items():
         obj = dictionary.setdefault(index, {})
         params = obj.setdefault("params", {})
@@ -251,7 +303,7 @@ def GenerateFile(filepath, node):
             # Move index 0 -> index 1 for VAR types
             if struct in (nod.OD.VAR, nod.OD.NVAR):
                 if len(values) != 1:
-                    raise Exception("Unexpected data in values")
+                    raise ValueError("A VAR object unexpectedly contains %s sub-indexes" % len(values))
                 values[1] = values[0]
                 values[0] = {}
 
@@ -259,19 +311,20 @@ def GenerateFile(filepath, node):
             # can be omitted
             else:
                 if values[0] and not values[0] == SUBINDEX0:  # Sanity checking.
-                    raise Exception("Unexpected inequality in sub-index 0")
+                    raise ValueError("Unexpected data in sub-index 0: %s" % values[0])
                 values[0] = {}
 
         # Move data from params into values
         params = obj.pop("params", {})
         if params:
 
-            # REC carries N items which must be added to sub-index 1 values
-            if struct & nod.OD.IdenticalSubindexes:
-                values.setdefault(1, {})["values"] = [  # Note the plural values
-                    params.pop(i + 1)
-                    for i in range(max(params))
-                ]
+            # ARRAY carries N items which must be added to sub-index 1 values
+            if struct in (nod.OD.ARRAY, nod.OD.NARRAY):
+                if max(params) > 0:
+                    values.setdefault(1, {})["values"] = [  # Note the plural values
+                        params.pop(i + 1)
+                        for i in range(max(params))
+                    ]
 
             # Move data from the numbered parameters to values
             for k in list(k for k in params if k != -1):  # list enables mutation of params
@@ -291,8 +344,8 @@ def GenerateFile(filepath, node):
                 obj.update(params.pop(-1))
 
             # At this point, params should be empty
-            if len(params):
-                raise Exception("Unexpected number of remaining parameters: %s" % list(params.keys()))
+            if params:
+                raise ValueError("Unexpected remaining parameters: %s" % params)
 
             # The ParamsDictionary might contain item 0 that has to be moved
             # The keys is be limited to PARAM_FIELDS as it has been checked above
@@ -305,12 +358,19 @@ def GenerateFile(filepath, node):
                     obj.update(values.pop(0))
 
         # Convert values dict to list
-        obj["sub"] = [values[i] for i in sorted(values) if values[i]]
+        values = [values[i] for i in sorted(values) if values[i]]
+        if values:
+            obj["sub"] = values
 
         # Delete empty group values
         if "group" in obj and not obj["group"]:
             del obj["group"]
 
+        # Rename the mandatory field
+        if "need" in obj:
+            obj["mandatory"] = obj.pop("need")
+
+        # Replace numerical struct with symbolic value
         if TEXT_FIELDS:
             obj["struct"] = nod.OD.to_string(struct, struct)
 
@@ -320,10 +380,10 @@ def GenerateFile(filepath, node):
         if RICH and "struct" not in obj:
             obj["__struct"] = nod.OD.to_string(struct, struct)
 
-        # Iterater over the sub-indexes
-        for i, sub in enumerate(obj["sub"]):
+        # Iterater over the sub-indexes (if present)
+        for i, sub in enumerate(obj.get("sub", [])):
 
-            # Replace numeric types with string
+            # Replace numeric type with string value
             if TEXT_FIELDS and "type" in sub:
                 sub["type"] = type_names.get(sub["type"], sub["type"])
 
@@ -346,83 +406,114 @@ def GenerateFile(filepath, node):
                     val["__name"] = info["name"]
 
             # Rearrange order of Dictionary[*]["sub"]["values"]
-            if sub.get('values'):
+            if 'values' in sub:
                 sub["values"] = [
                     copy_in_order(d, (
-                        "name", "__name", "comment",
-                        "buffer_size", "save",
-                        "value"
+                        "name", "__name", "comment", "buffer_size", "save",
+                        "value",
                     ))
                     for d in sub["values"]
                 ]
 
         # Rearrage order of Dictionary[*]["sub"]
-        obj["sub"] = [
-            copy_in_order(d, (
-                "__name", "__type",
-                "name", "comment", "type", "access", "pdo",
-                "nbmax", "value", "values",
-            ))
-            for d in obj["sub"]
-        ]
+        if "sub" in obj:
+            obj["sub"] = [
+                copy_in_order(d, (
+                    "__name", "__type", "name", "comment", "type", "access",
+                    "pdo", "nbmax", "buffer_size", "save", "value", "values",
+                ))
+                for d in obj["sub"]
+            ]
 
-    # Organize the dictionary order, Dictionary[]
-    jd["Dictionary"] = ODict((
+    # Rearrange order of Dictionary[*]
+    # Convert the key to hex
+    jd["dictionary"] = ODict((
         ("0x%04X" % k, copy_in_order(v, (
-            "index", "name", "__name", "struct", "__struct", "size", "need",
-            "group", "default", "callback", "comment", "values", "sub",
+            "index", "name", "__name", "comment", "struct", "__struct", "size",
+            "mandatory", "group", "default", "callback", "buffer_size", "save",
+            "values", "sub",
         )))
         for k, v in dictionary.items()
     ))
 
     # Rearrange the order of the top-level dict
     jd = copy_in_order(jd, (
-        "Name", "Description", "Type", "ID",
-        "ProfileName", "Profile", "DS-302",
-        "DefaultStringSize", "SpecificMenu", "Dictionary",
+        "name", "description", "type", "id", "profile_name", "profile", "ds-302",
+        "default_string_size", "dictionary",
     ))
+
+    # Generate the json string
+    text = json.dumps(jd, separators=(',', ': '), indent=2)
+
+    # Convert the special __ fields to jasonc comments
+    out = re.sub(
+        r'^(\s*)"__(\w+)": "(.*)",$',
+        r'\1// \2: \3',
+        text,
+        flags=re.MULTILINE,
+    )
 
     # Writeout the json
     with open(filepath, "w") as f:
-        json.dump(jd, f, separators=(',', ': '), indent=2)
+        f.write(out)
 
 
 def GenerateNode(filepath):
+
+    # Read the json file
     with open(filepath, "r") as f:
-        if sys.version_info[0] < 3:
-            jd = json.load(f, object_pairs_hook=deunicodify_hook)
-        else:
-            jd = json.load(f)
+        text = f.read()
+
+    # Remove jsonc annotations
+    jsontext = remove_jasonc(text)
+
+    # Load the json, with awareness on ordering in py2
+    if sys.version_info[0] < 3:
+        jd = json.loads(jsontext, object_pairs_hook=deunicodify_hook)
+    else:
+        jd = json.loads(jsontext)
+
+    # Remove all underscore from the file
+    jd = remove_underscore(jd)
+
+    # Validate the input json
+    validate_json(jd)
+
+    # Create default values for optional components
+    jd.setdefault("id", 0)
+    jd.setdefault("profile", False)
+    jd.setdefault("ds-302", False)
 
     # Create the node and fill the most basic data
-    node = Node(name=jd["Name"], type=jd["Type"], id=jd["ID"], description=jd["Description"], profilename=jd["ProfileName"])
+    node = Node(name=jd["name"], type=jd["type"], id=jd["id"],
+                description=jd["description"], profilename=jd["profile_name"])
 
-    if 'DefaultStringSize' in jd:
-        node.DefaultStringSize = jd["DefaultStringSize"]
+    # Restore optional values
+    if 'default_string_size' in jd:
+        node.DefaultStringSize = jd["default_string_size"]
 
     # Load the DS-302 profile
-    if jd.get("DS-302"):
-        profilename = "DS-302"
-        profilepath = os.path.join(SCRIPT_DIRECTORY, "config", "%s.prf" % profilename)
-        dsmap, menumap = nod.ImportProfile(profilepath)
+    if jd.get("ds-302"):
+        dsmap, menumap = nod.ImportProfile("DS-302")
         node.DS302 = dsmap
 
     # Load the custom profile
-    if jd.get("Profile"):
-        profilename = node.ProfileName
-        profilepath = os.path.join(SCRIPT_DIRECTORY, "config", "%s.prf" % profilename)
-        dsmap, menumap = nod.ImportProfile(profilepath)
+    if jd.get("profile"):
+        dsmap, menumap = nod.ImportProfile(node.ProfileName)
         node.Profile = dsmap
         node.SpecificMenu = menumap
 
     # PASS 1: Add the od parameters to the node variable dictionaries
     dictionary = {}
-    for index_str, obj in jd.get("Dictionary", {}).items():
+    for index_str, obj in jd.get("dictionary", {}).items():
         index = str_to_number(index_str)
 
-        # Remove any entries starting with __
-        obj = remove_underscore(obj)
+        # Add the object to the dictionary
         dictionary[index] = obj
+
+        # Rename fields
+        if 'mandatory' in obj:
+            obj['need'] = obj.pop('mandatory')
 
         # Get the type of structure
         if "struct" not in obj:
@@ -443,7 +534,7 @@ def GenerateNode(filepath):
             else:
                 node.UserMapping[index] = obj
 
-    # Make a complete list of the entire mapping
+    # Make a complete list of the entire object mapping
     mapping = get_all_mappings(node)
     type_index = {v: k for k, v in get_type_names(mapping).items()}
 
@@ -453,19 +544,19 @@ def GenerateNode(filepath):
         # Setup vars
         struct = obj["struct"]
         sublist = obj.pop("sub", [])
+        values = None
 
-        # Restore the Dictionary values
-        if struct in (nod.OD.VAR, nod.OD.NVAR):
-            if "value" in sublist[0]:
+        # Restore the Dictionary values (if present)
+        if sublist:
+            if struct in (nod.OD.VAR, nod.OD.NVAR):
                 node.Dictionary[index] = sublist[0].pop("value")
-                values = None
-        elif struct & nod.OD.IdenticalSubindexes:
-            values = [v.pop("value", NA) for v in sublist[0]["values"]]
-        else:
-            values = [v.pop("value", NA) for v in sublist]
+            elif struct in (nod.OD.ARRAY, nod.OD.NARRAY):
+                values = [v.pop("value", NA) for v in sublist[0]["values"]]
+            else:
+                values = [v.pop("value", NA) for v in sublist]
 
-        # Commit the dictionary
-        if isinstance(values, list):
+        # Commit the dictionary if it has any data
+        if values:
             values = [str_to_number(v) for v in values if v is not NA]
             if values:
                 node.Dictionary[index] = values
@@ -494,7 +585,7 @@ def GenerateNode(filepath):
                 params.setdefault(i + offset, {})[k] = sub.pop(k)
 
         # Restore Params values for N equal entries of the same type
-        if struct in (nod.OD.ARRAY, nod.OD.NARRAY):
+        if sublist and struct in (nod.OD.ARRAY, nod.OD.NARRAY):
             for i, sub in enumerate(sublist[0]["values"]):
 
                 # Move parameter fields to params
@@ -502,12 +593,12 @@ def GenerateNode(filepath):
                     params.setdefault(i + 1, {})[k] = sub.pop(k)
 
             # At this point values should be empty
-            nonempty = any(sublist[0].pop("values"))
-            if nonempty:
-                raise Exception("Values is not empty")
+            nonempty = sublist[0].pop("values")
+            if any(nonempty):
+                raise ValueError("Values is not empty: %s" % nonempty)
 
-        # For some reason expects Node() to find params for these types directly
-        # in params
+        # Copy params from index 0 directly into the ParamsDictionary object.
+        # for some reason expects Node() to find params for these types directly
         if struct in (nod.OD.VAR, nod.OD.NVAR):
             if 0 in params:
                 params.update(params.pop(0))

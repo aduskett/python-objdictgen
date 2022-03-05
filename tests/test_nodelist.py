@@ -5,27 +5,20 @@ from objdictgen.nodemanager import NodeManager
 from objdictgen.nodelist import NodeList
 
 
-BASE = os.path.join(os.path.split(__file__)[0], '..')
-
-
-def test_nodelist_create():
+def test_nodelist_create(wd):
     """ Create a new nodelist project """
-
-    shutil.rmtree('tmp.test', True)
-    os.mkdir('tmp.test')
 
     manager = NodeManager()
     nodelist = NodeList(manager)
 
-    nodelist.LoadProject('tmp.test')
+    nodelist.LoadProject('.')
     nodelist.SaveProject()
 
 
-def test_nodelist_load():
+def test_nodelist_load(wd):
     """ Open an existing nodelist """
 
     manager = NodeManager()
     nodelist = NodeList(manager)
 
-    nodelist.LoadProject('tmp.test')
-
+    nodelist.LoadProject('.')

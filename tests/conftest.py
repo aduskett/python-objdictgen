@@ -2,95 +2,84 @@ import sys
 import os
 import glob
 import difflib
-import shutil
 import pytest
+
+import objdictgen.node
 
 
 HERE = os.path.split(__file__)[0]
-REF = os.path.join(HERE, '..', 'examples')
 
-REF = 'od-ref'
-if sys.version_info[0] >= 3:
-    DUT = 'od-test3'
-    OPOSITE = 'od-test2'
-else:
-    DUT = 'od-test2'
-    OPOSITE = 'od-test3'
+# Location of the test OD files
+REF = os.path.join(HERE, 'od')
 
-for f in glob.glob(os.path.join(DUT, '*')):
-    os.remove(f)
-
-for f in glob.glob(os.path.join(REF, '*.od')):
-    shutil.copy(f, DUT)
-
+# Make a list of all .od files in tests/od
 ODFILES = [
-    f.replace('.od', '') for f in glob.glob(os.path.join(DUT, '*.od'))
+    os.path.abspath(f.replace('.od', '')) for f in glob.glob(os.path.join(REF, '*.od'))
 ]
+if os.path.exists(os.path.join(REF, 'extra')):
+    ODFILES.extend([
+        os.path.abspath(f.replace('.od', '')) for f in glob.glob(os.path.join(REF, 'extra', '*.od'))
+    ])
+
+
+@pytest.fixture
+def basepath():
+    """ Fixture returning the base of the project """
+    return os.path.abspath(os.path.join(HERE, '..'))
+
+
+@pytest.fixture
+def wd(tmp_path):
+    """ Fixture that changes the working directory to a temp location """
+    cwd = os.getcwd()
+    os.chdir(str(tmp_path))
+    print("PATH: %s" % os.getcwd())
+    yield os.getcwd()
+    os.chdir(str(cwd))
+
+
+@pytest.fixture
+def profile(monkeypatch):
+    """ Fixture that monkeypatches the profile load directory to include the OD directory
+        for testing
+    """
+    newdirs = [REF]
+    newdirs.extend(objdictgen.node.PROFILE_DIRS)
+    monkeypatch.setattr(objdictgen.node, 'PROFILE_DIRS', newdirs)
+    yield None
+
+
+@pytest.fixture
+def odfile(request, wd, profile):
+    """ Fixture for each of the od files in the test directory """
+    yield request.param
 
 
 def pytest_generate_tests(metafunc):
     if "odfile" in metafunc.fixturenames:
-        metafunc.parametrize("odfile", ODFILES)
+        metafunc.parametrize("odfile", ODFILES, indirect=True)
 
 
 def diff(a, b, predicate=None, **kw):
     if predicate is None:
         predicate = lambda x: True
+    print(a, b)
     with open(a, 'r') as f:
         da = [n.rstrip() for n in f if predicate(n)]
     with open(b, 'r') as f:
         db = [n.rstrip() for n in f if predicate(n)]
-    return difflib.unified_diff(da, db, **kw)
+    out = tuple(difflib.unified_diff(da, db, **kw))
+    if out:
+        print('\n'.join(o.rstrip() for o in out))
+    return not out
 
 
-def diff_ref(a, b=None, **kw):
-    if b is None:
-        b = a
-    return diff(b.replace(DUT, REF), a, **kw)
-
-
-class Helpers:
-    DUT = DUT
-    REF = REF
-    OPOSITE = OPOSITE
+class Fn:
     @staticmethod
     def diff(*a, **kw):
         return diff(*a, **kw)
-    @staticmethod
-    def diff_ref(*a, **kw):
-        return diff_ref(*a, **kw)
 
 
 @pytest.fixture
 def fn():
-    return Helpers
-
-
-class Tempdir(object):
-
-    def __init__(self, path):
-        self.path = path
-
-    @staticmethod
-    def wrdata(f, d):
-        with open(f, 'w') as fd:
-            if d:
-                fd.write(d)
-
-    @staticmethod
-    def chmod(*args, **kwargs):
-        return os.chmod(*args, **kwargs)
-
-    @staticmethod
-    def makedirs(*args, **kwargs):
-        return os.makedirs(*args, **kwargs)
-
-
-@pytest.fixture
-def wd(tmpdir):
-    dir = os.getcwd()
-    os.chdir(tmpdir)
-    print(os.getcwd())
-    print()
-    yield Tempdir(tmpdir)
-    os.chdir(dir)
+    return Fn

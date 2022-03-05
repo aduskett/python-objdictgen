@@ -33,7 +33,7 @@ from .nosis import pickle as nosis
 from . import node as nod
 from . import eds_utils, gen_cfile
 from . import jsonod
-from . import SCRIPT_DIRECTORY, dbg
+from . import dbg
 
 UndoBufferLength = 20
 
@@ -226,12 +226,8 @@ class NodeManager(object):
             addindexlist.append(0x1017)
         for option in options:
             if option == "DS302":
-                ds302path = os.path.join(SCRIPT_DIRECTORY, "config", "DS-302.prf")
-                # Charging DS-302 profile if choosen by user
-                if not os.path.isfile(ds302path):
-                    raise OSError(errno.ENOENT, os.strerror(errno.ENOENT), ds302path)
                 # Import profile
-                mapping, menuentries = nod.ImportProfile(ds302path)
+                mapping, menuentries = nod.ImportProfile("DS-302")
                 self.CurrentNode.DS302 = mapping
                 self.CurrentNode.SpecificMenu.extend(menuentries)
             elif option == "GenSYNC":
@@ -255,7 +251,7 @@ class NodeManager(object):
                     addsubindexlist.append((idx, 8))
         # Add a new buffer
         index = self.AddNodeBuffer(self.CurrentNode.Copy(), False)
-        self.SetCurrentFilePath("")
+        self.SetCurrentFilePath(None)
         # Add Mandatory indexes
         self.ManageEntriesOfCurrent(addindexlist, [])
         for idx, num in addsubindexlist:
@@ -279,7 +275,7 @@ class NodeManager(object):
         # if no filepath given, verify if current node has a filepath defined
         if not filepath:
             filepath = self.GetCurrentFilePath()
-            if filepath == "":
+            if not filepath:
                 return False
 
         # Save node in file
@@ -348,7 +344,7 @@ class NodeManager(object):
         node = eds_utils.GenerateNode(filepath)
         self.CurrentNode = node
         index = self.AddNodeBuffer(self.CurrentNode.Copy(), load)
-        self.SetCurrentFilePath(filepath if load else "")
+        self.SetCurrentFilePath(filepath if load else None)
         return index
 
     def ExportCurrentToEDSFile(self, filepath):
@@ -707,26 +703,17 @@ class NodeManager(object):
                 elif editor == "time":
                     node.SetEntry(index, subindex, value)
                 elif editor == "number":
-                    try:
-                        node.SetEntry(index, subindex, int(value))
-                    except ValueError as exc:
-                        dbg("ValueError: '%s': %s" % (value, exc))
-                        raise  # FIXME: Originial code swallows exception
+                    # Might fail with ValueError if number is malformed
+                    node.SetEntry(index, subindex, int(value))
                 elif editor == "float":
-                    try:
-                        node.SetEntry(index, subindex, float(value))
-                    except ValueError as exc:
-                        dbg("ValueError: '%s': %s" % (value, exc))
-                        raise  # FIXME: Originial code swallows exception
+                    # Might fail with ValueError if number is malformed
+                    node.SetEntry(index, subindex, float(value))
                 elif editor == "domain":
-                    try:
-                        if len(value) % 2 != 0:
-                            value = "0" + value
-                        value = codecs.decode(value, 'hex_codec')
-                        node.SetEntry(index, subindex, value)
-                    except Exception as exc:  # FIXME: Which exception is wanted here?
-                        dbg("Exception: '%s': %s" % (value, exc))
-                        raise  # FIXME: Originial code swallows exception
+                    # Might fail with binascii.Error if hex is malformed
+                    if len(value) % 2 != 0:
+                        value = "0" + value
+                    value = codecs.decode(value, 'hex_codec')
+                    node.SetEntry(index, subindex, value)
                 elif editor == "dcf":
                     node.SetEntry(index, subindex, value)
                 else:
@@ -736,17 +723,14 @@ class NodeManager(object):
                     if type_ not in dic:
                         type_ = node.GetEntry(type_)[1]
                     if dic[type_] == 0:
-                        try:
-                            if value.startswith("$NODEID"):
-                                value = "\"%s\"" % value
-                            elif value.startswith("0x"):
-                                value = int(value, 16)
-                            else:
-                                value = int(value)
-                            node.SetEntry(index, subindex, value)
-                        except Exception as exc:  # Which exception shoulw be used
-                            dbg("Exception: '%s': %s" % (value, exc))
-                            raise  # FIXME: Originial code swallows exception
+                        # Might fail if number is malformed
+                        if value.startswith("$NODEID"):
+                            value = '"%s"' % value
+                        elif value.startswith("0x"):
+                            value = int(value, 16)
+                        else:
+                            value = int(value)
+                        node.SetEntry(index, subindex, value)
                     else:
                         node.SetEntry(index, subindex, value)
             elif name in ["comment", "save", "buffer_size"]:
@@ -757,6 +741,10 @@ class NodeManager(object):
                 elif name == "comment":
                     node.SetParamsEntry(index, subindex, comment=value)
                 elif name == "buffer_size":
+                    # Might fail with ValueError if number is malformed
+                    value = int(value)
+                    if value <= 0:
+                        raise ValueError("Number must be positive")
                     node.SetParamsEntry(index, subindex, buffer_size=value)
             else:
                 if editor == "type":
@@ -876,16 +864,16 @@ class NodeManager(object):
 
     def SetCurrentFilePath(self, filepath):
         self.FilePaths[self.NodeIndex] = filepath
-        if filepath == "":
+        if filepath:
+            self.FileNames[self.NodeIndex] = os.path.splitext(os.path.basename(filepath))[0]
+        else:
             self.LastNewIndex += 1
             self.FileNames[self.NodeIndex] = "Unnamed%d" % self.LastNewIndex
-        else:
-            self.FileNames[self.NodeIndex] = os.path.splitext(os.path.basename(filepath))[0]
 
     def GetCurrentFilePath(self):
         if len(self.FilePaths) > 0:
             return self.FilePaths[self.NodeIndex]
-        return ""
+        return None
 
     def GetCurrentBufferState(self):
         first = self.UndoBuffers[self.NodeIndex].IsFirst()
@@ -1057,8 +1045,8 @@ class NodeManager(object):
                 data.append({"value": values})
                 data[-1].update(params)
             for i, dic in enumerate(data):
-                if dic["buffer_size"] and dic["buffer_size"].isdigit() is not True:
-                    dic["buffer_size"] = ""
+                dic["comment"] = dic["comment"] or ""
+                dic["buffer_size"] = dic["buffer_size"] or ""
                 infos = node.GetSubentryInfos(index, i)
                 if infos["name"] == "Number of Entries":
                     dic["buffer_size"] = ""
@@ -1070,10 +1058,13 @@ class NodeManager(object):
                     dic["buffer_size"] = ""
                 dic["access"] = nod.ACCESS_TYPE[infos["access"]]
                 dic["save"] = nod.OPTION_TYPE[dic["save"]]
-                editor = {"subindex": None, "name": None,
-                          "type": None, "value": None,
-                          "access": None, "save": "option",
-                          "callback": "option", "comment": "string", "buffer_size": "string"}
+                editor = {
+                    "subindex": None, "name": None,
+                    "type": None, "value": None,
+                    "access": None, "save": "option",
+                    "callback": "option", "comment": "string",
+                    "buffer_size": "number",
+                }
                 if isinstance(values, list) and i == 0:
                     if 0x1600 <= index <= 0x17FF or 0x1A00 <= index <= 0x1C00:
                         editor["access"] = "raccess"

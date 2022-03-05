@@ -1,0 +1,285 @@
+{
+  "name": "Master",
+  "description": "Test master node",
+  "type": "master",
+  "id": 0,
+  "profile_name": "Test",
+  "profile": true,
+  "ds-302": true,
+  "dictionary": {
+    "0x2000": {
+      "name": "Var",
+      "struct": "var",
+      "mandatory": false,
+      "callback": true,
+      "sub": [
+        {
+          "name": "Var",
+          "comment": "C0",
+          "type": "UNSIGNED8",
+          "access": "rw",
+          "pdo": true,
+          "buffer_size": 1,
+          "save": true,
+          "value": 12
+        }
+      ]
+    },
+    "0x2001": {
+      "name": "Array",
+      "struct": "array",
+      "mandatory": false,
+      "callback": true,
+      "sub": [
+        {
+          "name": "Array %d[(sub)]",
+          "comment": "C0",
+          "type": "UNSIGNED16",
+          "access": "rw",
+          "pdo": true,
+          "nbmax": 254,
+          "buffer_size": 1,
+          "save": true,
+          "values": [
+            {
+              // name: Array 1
+              "comment": "C1",
+              "buffer_size": 2,
+              "save": true,
+              "value": 256
+            },
+            {
+              // name: Array 2
+              "comment": "C2",
+              "buffer_size": 3,
+              "save": true,
+              "value": 512
+            },
+            {
+              // name: Array 3
+              "comment": "C3",
+              "buffer_size": 4,
+              "save": true,
+              "value": 768
+            }
+          ]
+        }
+      ]
+    },
+    "0x2002": {
+      "name": "Record",
+      "comment": "C0",
+      "struct": "record",
+      "mandatory": false,
+      "callback": true,
+      "buffer_size": 1,
+      "save": true,
+      "sub": [
+        {
+          "name": "Rec1",
+          "comment": "C1",
+          "type": "UNSIGNED8",
+          "access": "rw",
+          "pdo": true,
+          "buffer_size": 2,
+          "save": true,
+          "value": 1
+        },
+        {
+          "name": "Rec2",
+          "comment": "C2",
+          "type": "UNSIGNED16",
+          "access": "rw",
+          "pdo": true,
+          "buffer_size": 3,
+          "save": true,
+          "value": 2
+        },
+        {
+          "name": "Rec3",
+          "comment": "C3",
+          "type": "UNSIGNED32",
+          "access": "rw",
+          "pdo": true,
+          "buffer_size": 4,
+          "save": true,
+          "value": 3
+        }
+      ]
+    },
+    "0x00A0": {
+      "name": "UNSIGNED8[0-100]",
+      "struct": "record",
+      "size": 8,
+      "mandatory": false,
+      "default": 0,
+      "buffer_size": 1,
+      "sub": [
+        {
+          "name": "Type",
+          "type": "UNSIGNED8",
+          "access": "ro",
+          "pdo": false,
+          "buffer_size": 2,
+          "value": 5
+        },
+        {
+          "name": "Minimum Value",
+          "type": "UNSIGNED8",
+          "access": "ro",
+          "pdo": false,
+          "buffer_size": 3,
+          "value": 0
+        },
+        {
+          "name": "Maximum Value",
+          "type": "UNSIGNED8",
+          "access": "ro",
+          "pdo": false,
+          "buffer_size": 4,
+          "value": 100
+        }
+      ]
+    },
+    "0x5000": {
+      // name: Device Type 1
+      "struct": "nvar",
+      "callback": true,
+      "sub": [
+        {
+          // name: Device Type 1 and 0
+          // type: UNSIGNED32
+          "comment": "C0",
+          "buffer_size": 1,
+          "save": true,
+          "value": 0
+        }
+      ]
+    },
+    "0x1400": {
+      // name: Receive PDO 1 Parameter
+      "comment": "C0",
+      "struct": "nrecord",
+      "callback": true,
+      "buffer_size": 1,
+      "save": true,
+      "sub": [
+        {
+          // name: COB ID used by PDO
+          // type: UNSIGNED32
+          "comment": "C1",
+          "buffer_size": 2,
+          "save": true,
+          "value": 385
+        },
+        {
+          // name: Transmission Type
+          // type: UNSIGNED8
+          "comment": "C2",
+          "buffer_size": 3,
+          "save": true,
+          "value": 255
+        },
+        {
+          // name: Inhibit Time
+          // type: UNSIGNED16
+          "comment": "C3",
+          "buffer_size": 4,
+          "save": true,
+          "value": 0
+        },
+        {
+          // name: Compatibility Entry
+          // type: UNSIGNED8
+          "comment": "C4",
+          "buffer_size": 5,
+          "save": true,
+          "value": 0
+        },
+        {
+          // name: Event Timer
+          // type: UNSIGNED16
+          "comment": "C5",
+          "buffer_size": 6,
+          "save": true,
+          "value": 0
+        },
+        {
+          // name: SYNC start value
+          // type: UNSIGNED8
+          "comment": "C6",
+          "buffer_size": 7,
+          "save": true,
+          "value": 0
+        }
+      ]
+    },
+    "0x1600": {
+      // name: Receive PDO 1 Mapping
+      "struct": "narray",
+      "callback": true,
+      "sub": [
+        {
+          // name: PDO 1 Mapping for an application object 1
+          // type: UNSIGNED32
+          "comment": "C0",
+          "buffer_size": 1,
+          "save": true,
+          "values": [
+            {
+              // name: PDO 1 Mapping for an application object 1
+              "comment": "C1",
+              "buffer_size": 2,
+              "save": true,
+              "value": "0x20010210"
+            },
+            {
+              // name: PDO 1 Mapping for an application object 2
+              "comment": "C2",
+              "buffer_size": 3,
+              "save": true,
+              "value": "0x20010110"
+            }
+          ]
+        }
+      ]
+    },
+    "0x1000": {
+      // name: Device Type
+      "struct": "var",
+      "sub": [
+        {
+          // name: Device Type
+          // type: UNSIGNED32
+          "value": 0
+        }
+      ]
+    },
+    "0x1018": {
+      // name: Identity
+      "struct": "record",
+      "sub": [
+        {
+          // name: Vendor ID
+          // type: UNSIGNED32
+          "value": 0
+        },
+        {
+          // name: Product Code
+          // type: UNSIGNED32
+          "value": 0
+        },
+        {
+          // name: Revision Number
+          // type: UNSIGNED32
+          "value": 0
+        },
+        {
+          // name: Serial Number
+          // type: UNSIGNED32
+          "value": 0
+        }
+      ]
+    }
+  }
+}

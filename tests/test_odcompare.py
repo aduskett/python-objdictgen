@@ -2,59 +2,58 @@ import shutil
 import re
 import os
 import sys
-from collections import OrderedDict
 import pytest
 from objdictgen.nodemanager import NodeManager
 
 
-BASE = os.path.join(os.path.split(__file__)[0], '..')
-
-
-def test_load_compare(odfile, fn):
+@pytest.mark.parametrize("suffix", ['.od', '.json', '.eds'])
+def test_load_compare(odfile, suffix, fn):
     # Load the OD
     m1 = NodeManager()
-    m1.OpenFileInCurrent(odfile + '.od')
+    m1.OpenFileInCurrent(odfile + suffix)
 
     # Load the OD a second time and compare it
     m2 = NodeManager()
-    m2.OpenFileInCurrent(odfile + '.od')
+    m2.OpenFileInCurrent(odfile + suffix)
 
     assert m1.CurrentNode.__dict__ == m2.CurrentNode.__dict__
 
 
 def test_odexport(odfile, fn):
+    base, od = os.path.split(odfile)
+
     m1 = NodeManager()
     m1.OpenFileInCurrent(odfile + '.od')
 
     # Save the OD
-    m1.ExportCurrentToODFile(odfile + '.od2')
+    m1.ExportCurrentToODFile(od + '.od')
 
     # Modify the od files to remove unique elements
     RE_ID = re.compile(r'(id|module)="\w+"')
     with open(odfile + '.od', 'r') as fi:
-        with open(odfile + '.od1', 'w') as fo:
+        with open(od + '.od.in', 'w') as fo:
             for line in fi:
                 fo.write(RE_ID.sub('', line))
-    shutil.move(odfile + '.od2', odfile + '.od2_t')
-    with open(odfile + '.od2_t', 'r') as fi:
-        with open(odfile + '.od2', 'w') as fo:
+    shutil.move(od + '.od', od + '.tmp')
+    with open(od + '.tmp', 'r') as fi:
+        with open(od + '.od', 'w') as fo:
             for line in fi:
                 fo.write(RE_ID.sub('', line))
-    os.remove(odfile + '.od2_t')
+    os.remove(od + '.tmp')
 
     # Load the saved OD
     m2 = NodeManager()
-    m2.ImportCurrentFromODFile(odfile + '.od2')
+    m2.ImportCurrentFromODFile(od + '.od')
 
     # Compare the OD master and the OD2 objects
     assert m1.CurrentNode.__dict__ == m2.CurrentNode.__dict__
 
     # Compare the files - The py3 ones are by guarantee different, as the str handling is different
     if sys.version_info[0] < 3:
-        assert not list(fn.diff(odfile + '.od1', odfile + '.od2', n=0))
+        assert fn.diff(od + '.od.in', od + '.od', n=0)
 
 
-def test_odcompare23(odfile, fn):
+def xtest_odcompare23(odfile, fn):
     m1 = NodeManager()
     m1.OpenFileInCurrent(odfile + '.od')
     m1.ExportCurrentToODFile(odfile + '.od2')
@@ -73,28 +72,40 @@ def test_odcompare23(odfile, fn):
 
 
 def test_jsonexport(odfile, fn):
+    base, od = os.path.split(odfile)
+
     m1 = NodeManager()
     m1.OpenFileInCurrent(odfile + '.od')
 
-    m1.ExportCurrentToJsonFile(odfile + '.json')
+    m1.ExportCurrentToJsonFile(od + '.json')
+
+    m2 = NodeManager()
+    m2.OpenFileInCurrent(odfile + '.od')
+
+    # To verify that the export doesn't clobber the object
+    assert m1.CurrentNode.__dict__ == m2.CurrentNode.__dict__
 
 
 def test_cexport(odfile, fn):
+    base, od = os.path.split(odfile)
+
     m1 = NodeManager()
     m1.OpenFileInCurrent(odfile + '.od')
 
-    m1.ExportCurrentToCFile(odfile + '.c')
+    m1.ExportCurrentToCFile(od + '.c')
 
-    assert not list(fn.diff_ref(odfile + '.c'))
-    assert not list(fn.diff_ref(odfile + '.h'))
-    assert not list(fn.diff_ref(odfile + '_objectdefines.h'))
+    assert fn.diff(odfile + '.c', od + '.c', n=0)
+    assert fn.diff(odfile + '.h', od + '.h', n=0)
+    assert fn.diff(odfile + '_objectdefines.h', od + '_objectdefines.h', n=0)
 
 
 def test_edsexport(odfile, fn):
+    base, od = os.path.split(odfile)
+
     m1 = NodeManager()
     m1.OpenFileInCurrent(odfile + '.od')
 
-    m1.ExportCurrentToEDSFile(odfile + '.eds')
+    m1.ExportCurrentToEDSFile(od + '.eds')
 
     def predicate(line):
         for m in ('CreationDate', 'CreationTime', 'ModificationDate', 'ModificationTime'):
@@ -102,17 +113,19 @@ def test_edsexport(odfile, fn):
                 return False
         return True
 
-    assert not list(fn.diff_ref(odfile + '.eds', predicate=predicate))
+    assert fn.diff(odfile + '.eds', od + '.eds', predicate=predicate)
 
 
 def test_edsimport(odfile, fn):
+    base, od = os.path.split(odfile)
+
     m1 = NodeManager()
     m1.OpenFileInCurrent(odfile + '.od')
 
-    m1.ExportCurrentToEDSFile(odfile + '.eds')
+    m1.ExportCurrentToEDSFile(od + '.eds')
 
     m2 = NodeManager()
-    m2.ImportCurrentFromEDSFile(odfile + '.eds')
+    m2.ImportCurrentFromEDSFile(od + '.eds')
 
     # EDS isn't complete enough to compare with an OD-loaded file
     # assert m1.CurrentNode.__dict__ == m2.CurrentNode.__dict__
@@ -133,13 +146,15 @@ def dictify(d):
 
 
 def test_jsonimport(odfile, fn):
+    base, od = os.path.split(odfile)
+
     m1 = NodeManager()
     m1.OpenFileInCurrent(odfile + '.od')
 
-    m1.ExportCurrentToJsonFile(odfile + '.json')
+    m1.ExportCurrentToJsonFile(od + '.json')
 
     m2 = NodeManager()
-    m2.ImportCurrentFromJsonFile(odfile + '.json')
+    m2.ImportCurrentFromJsonFile(od + '.json')
 
     cn1 = dictify(m1.CurrentNode.__dict__)
     cn2 = dictify(m2.CurrentNode.__dict__)

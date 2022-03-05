@@ -1,0 +1,379 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://bitbucket.org/laerdalmedical/levo-objdictgen/od.schema.json",
+    "title": "Object Dictionary",
+    "description": "A Object Dictionary description for canfestival",
+    "type": "object",
+    "properties": {
+        "name": {
+            "description": "The unique identifier for the OD",
+            "type": "string"
+        },
+        "description": {
+            "description": "A description of the OD",
+            "type": "string"
+        },
+        "type": {
+            "description": "Object type",
+            "enum": [
+                "master",
+                "slave"
+            ]
+        },
+        "id": {
+            "description": "Node ID",
+            "type": "integer",
+            "minimum": 0
+        },
+        "profile": {
+            "description": "Does this OD have a profile?",
+            "type": "boolean"
+        },
+        "profile_name": {
+            "type": "string"
+        },
+        "ds-302": {
+            "description": "Does this OD use the DS-301 profile?",
+            "type": "boolean"
+        },
+        "default_string_size": {
+            "type": "integer",
+            "minium": 1
+        },
+        "dictionary": {
+            "description": "Dictionary contents. The key values are the OD value",
+            "type": "object",
+            "patternProperties": {
+                "^(/d+|0x[a-fA-F0-9]+)$": {
+                    "$ref": "#object"
+                }
+            },
+            "additionalProperties": false
+        }
+    },
+    "dependencies": {
+        "profile": { "required": ["profile_name"] }
+    },
+    "required": ["name","description","type","dictionary"],
+    "additionalProperties": false,
+
+    "definitions": {
+
+        "object": {
+            "$id": "#object",
+            "description": "Dictionary object",
+            "type": "object",
+            "properties": {
+                "struct": { "$ref": "#struct" }
+            },
+            "required": ["struct"],
+            "allOf": [
+                {
+                    "if": {
+                        "properties": { "struct": { "enum": ["var", "nvar"] }},
+                        "required": ["struct"]
+                    },
+                    "then": {
+                        "properties": {
+                            "struct": { "$ref": "#struct" },
+                            "name": { "$ref": "#name" },
+                            "mandatory": { "$ref": "#mandatory" },
+                            "callback": { "$ref": "#callback" },
+                            "sub": {
+                                "description": "VAR object item",
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#subvar"
+                                },
+                                "minItems": 1,
+                                "maxItems": 1
+                            }
+                        },
+                        "additionalProperties": false,
+                        "required": ["struct"],
+                        "dependencies": {
+                            "mandatory": { "required": ["name"] }
+                        }
+                    }
+                },{
+                    "if": {
+                        "properties": { "struct": { "enum": ["array", "narray"] }},
+                        "required": ["struct"]
+                    },
+                    "then": {
+                        "properties": {
+                            "struct": { "$ref": "#struct" },
+                            "name": { "$ref": "#name" },
+                            "mandatory": { "$ref": "#mandatory" },
+                            "callback": { "$ref": "#callback" },
+                            "sub": {
+                                "description": "ARRAY object sub items",
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#subarray"
+                                },
+                                "minItems": 1,
+                                "maxItems": 1
+                            }
+                        },
+                        "additionalProperties": false,
+                        "required": ["struct"],
+                        "dependencies": {
+                            "mandatory": { "required": ["name"] }
+                        }
+                    }
+                },{
+                    "if": {
+                        "properties": { "struct": { "enum": ["record", "nrecord"] }},
+                        "required": ["struct"]
+                    },
+                    "then": {
+                        "properties": {
+                            "struct": { "$ref": "#struct" },
+                            "name": { "$ref": "#name" },
+                            "comment": { "$ref": "#comment" },
+                            "mandatory": { "$ref": "#mandatory" },
+                            "callback": { "$ref": "#callback" },
+                            "save": { "$ref": "#save" },
+                            "buffer_size": { "$ref": "#buffersize" },
+                            "size": { "$ref": "#size" },
+                            "default": { "$ref": "#default" },
+                            "sub": {
+                                "description": "RECORD object sub items",
+                                "type": "array",
+                                "items": {
+                                    "$ref": "#subrecord"
+                                },
+                                "minItems": 1
+                            }
+                        },
+                        "additionalProperties": false,
+                        "required": ["struct"],
+                        "dependencies": {
+                            "mandatory": { "required": ["name"] }
+                        }
+                    }
+                }
+            ]
+        },
+
+        "subvar": {
+            "$id": "#subvar",
+            "description": "VAR object item",
+            "type": "object",
+            "properties": {
+                "name": { "$ref": "#name" },
+                "comment": { "$ref": "#comment" },
+                "type": { "$ref": "#type" },
+                "access": { "$ref": "#access" },
+                "pdo": { "$ref": "#pdo" },
+                "save": { "$ref": "#save" },
+                "buffer_size": { "$ref": "#buffersize" },
+                "value": { "$ref": "#value" }
+            },
+            "additionalProperties": false,
+            "required": ["value"],
+            "dependencies": {
+                "name": { "required": ["type", "access", "value"]},
+                "type": { "required": ["name", "access", "value"]},
+                "access": { "required": ["name", "type", "value"]}
+            }
+        },
+
+        "subarray": {
+            "$id": "#subarray",
+            "description": "ARRAY object sub item",
+            "type": "object",
+            "properties": {
+                "name": { "$ref": "#name" },
+                "comment": { "$ref": "#comment" },
+                "type": { "$ref": "#type" },
+                "access": { "$ref": "#access" },
+                "pdo": { "$ref": "#pdo" },
+                "nbmax": { "type": "integer" },
+                "save": { "$ref": "#save" },
+                "buffer_size": { "$ref": "#buffersize" },
+                "values": {
+                    "description": "ARRAY object data values",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#values"
+                    },
+                    "minItems": 1
+                }
+            },
+            "additionalProperties": false,
+            "required": ["values"]
+        },
+
+        "subrecord": {
+            "$id": "#subrecord",
+            "description": "RECORD object item",
+            "type": "object",
+            "properties": {
+                "name": { "$ref": "#name" },
+                "comment": { "$ref": "#comment" },
+                "type": { "$ref": "#type" },
+                "access": { "$ref": "#access" },
+                "pdo": { "$ref": "#pdo" },
+                "save": { "$ref": "#save" },
+                "buffer_size": { "$ref": "#buffersize" },
+                "value": { "$ref": "#value" }
+            },
+            "additionalProperties": false,
+            "required": ["value"]
+        },
+
+        "values": {
+            "$id": "#values",
+            "description": "ARRAY object data values",
+            "type": "object",
+            "properties": {
+                "comment": { "$ref": "#comment" },
+                "save": { "$ref": "#save" },
+                "buffer_size": { "type": "integer" },
+                "value": { "$ref": "#value" }
+            },
+            "requried": ["value"],
+            "additionalProperties": false
+        },
+
+        /* TYPE DEFINITIONS */
+
+        "name": {
+            "$id": "#name",
+            "description": "Unique name of object",
+            "type": "string"
+        },
+
+        "comment": {
+            "$id": "#comment",
+            "description": "Free-text comment"
+        },
+
+        "mandatory": {
+            "$id": "#mandatory",
+            "description": "Set if the object is mandatory in the output",
+            "type": "boolean"
+        },
+
+        "callback": {
+            "$id": "#callback",
+            "description": "Set if callback code shall be generated",
+            "type": "boolean"
+        },
+
+        "pdo": {
+            "$id": "#pdo",
+            "description": "Set if object is usable in a PDO",
+            "type": "boolean"
+        },
+
+        "save": {
+            "$id": "#save",
+            "description": "Save?",
+            "type": "boolean"
+        },
+
+        "buffersize": {
+            "$id": "#buffersize",
+            "description": "Buffersize (for strings)",
+            "oneOf": [
+                {
+                    "type": "integer"
+                },{
+                    "type": "string"
+                }
+            ]
+        },
+
+        "default": {
+            "$id": "#default",
+            "type": "integer"
+        },
+
+        "size": {
+            "$id": "#size",
+            "type": "integer"
+        },
+
+        "struct": {
+            "$id": "#struct",
+            "description": "Object structure type",
+            "enum": [
+                "var", "nvar",
+                "array", "narray",
+                "record", "nrecord"
+            ]
+        },
+
+        "type": {
+            "$id": "#type",
+            "description": "Object type",
+            "anyOf": [
+                {
+                    "enum": [
+                        "BOOLEAN",
+                        "INTEGER8",
+                        "INTEGER16",
+                        "INTEGER32",
+                        "UNSIGNED8",
+                        "UNSIGNED16",
+                        "UNSIGNED32",
+                        "REAL32",
+                        "VISIBLE_STRING",
+                        "OCTET_STRING",
+                        "UNICODE_STRING",
+                        "DOMAIN",
+                        "INTEGER24",
+                        "REAL64",
+                        "INTEGER40",
+                        "INTEGER48",
+                        "INTEGER56",
+                        "INTEGER64",
+                        "UNSIGNED24",
+                        "UNSIGNED40",
+                        "UNSIGNED48",
+                        "UNSIGNED56",
+                        "UNSIGNED64"
+                    ]
+                },
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 4095
+                }
+            ]
+        },
+
+        "access": {
+            "$id": "#access",
+            "description": "Access rights",
+            "enum": [
+                "ro",
+                "rw",
+                "wo"
+            ]
+        },
+
+        "value": {
+            "$id": "#value",
+            "description": "Object data content",
+            "oneOf": [
+                {
+                    "type": "integer"
+                },
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "boolean"
+                }
+            ]
+        }
+
+    }
+}

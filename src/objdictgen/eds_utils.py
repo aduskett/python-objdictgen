@@ -32,7 +32,6 @@ from past.builtins import long
 from future.utils import raise_from
 
 from . import node as nod
-from . import dbg, SCRIPT_DIRECTORY
 
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
@@ -239,7 +238,7 @@ def ParseCPJFile(filepath):
                             raise ValueError("Keyname '%s' not recognised for section '[%s]'" % (keyname, section_name))
 
                 # All lines that are not empty and are neither a comment neither not a valid assignment
-                elif assignment.strip() != "":
+                elif assignment.strip():
                     raise ValueError("'%s' is not a valid CPJ line" % assignment.strip())
 
             if "Number" not in topology:
@@ -362,6 +361,7 @@ def ParseEDSFile(filepath):
                         computed_value = value
 
                     # Add value to values dictionary
+                    # NOTE! The value can be 0 that must be added to the output
                     if computed_value != "":
                         # If entry is an index or a subindex
                         if is_entry:
@@ -375,7 +375,7 @@ def ParseEDSFile(filepath):
                         else:
                             values[keyname.upper()] = computed_value
             # All lines that are not empty and are neither a comment neither not a valid assignment
-            elif assignment.strip() != "":
+            elif assignment.strip():
                 raise ValueError("'%s' is not a valid EDS line" % assignment.strip())
 
         # If entry is an index or a subindex
@@ -687,15 +687,16 @@ def GenerateNode(filepath, nodeid=0):
     # If profile is not DS-301 or DS-302
     if profilenb not in [0, 301, 302]:
         # Compile Profile name and path to .prf file
-        profilename = "DS-%d" % profilenb
-        profilepath = os.path.join(SCRIPT_DIRECTORY, "config", "%s.prf" % profilename)
-        # Verify that profile is available
-        if os.path.isfile(profilepath):
+        try:
             # Import profile
-            mapping, menuentries = nod.ImportProfile(profilepath)
+            profilename = "DS-%d" % profilenb
+            mapping, menuentries = nod.ImportProfile(profilename)
             node.ProfileName = profilename
             node.Profile = mapping
             node.SpecificMenu = menuentries
+        except ValueError:
+            # Loading profile failed and it will be silently ignored
+            pass
 
     # Read all entries in the EDS dictionary
     for entry, values in eds_dict.items():

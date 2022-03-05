@@ -578,7 +578,7 @@ class EditingPanel(wx.SplitterWindow):
         if self.Editable:
             self.SubindexGrid.SetGridCursor(0, 0)
             selected = self.IndexChoice.GetStringSelection()
-            if selected != "":
+            if selected:
                 choice = INDEXCHOICE_OPTIONS_DICT.get(selected, None)
                 if choice is not None:
                     if INDEXCHOICE_OPTIONS[choice][1] == 0:

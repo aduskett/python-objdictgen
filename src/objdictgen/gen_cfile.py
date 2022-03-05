@@ -28,9 +28,9 @@ import os
 
 from . import node as nod
 
-RE_WORD_MODEL = re.compile(r'([a-zA-Z_0-9]*)')
-RE_TYPE_MODEL = re.compile(r'([\_A-Z]*)([0-9]*)')
-RE_RANGE_MODEL = re.compile(r'([\_A-Z]*)([0-9]*)\[([\-0-9]*)-([\-0-9]*)\]')
+RE_WORD = re.compile(r'([a-zA-Z_0-9]*)')
+RE_TYPE = re.compile(r'([\_A-Z]*)([0-9]*)')
+RE_RANGE = re.compile(r'([\_A-Z]*)([0-9]*)\[([\-0-9]*)-([\-0-9]*)\]')
 
 CATEGORIES = [("SDO_SVR", 0x1200, 0x127F), ("SDO_CLT", 0x1280, 0x12FF),
               ("PDO_RCV", 0x1400, 0x15FF), ("PDO_RCV_MAP", 0x1600, 0x17FF),
@@ -56,7 +56,7 @@ def UnDigitName(name):
 
 # Format a string for making a C++ variable
 def FormatName(name):
-    wordlist = [word for word in RE_WORD_MODEL.findall(name) if word != '']
+    wordlist = [word for word in RE_WORD.findall(name) if word]
     return "_".join(wordlist)
 
 
@@ -65,7 +65,7 @@ def GetValidTypeInfos(context, typename, items=None):
     items = items or []
     if typename in context.internal_types:
         return context.internal_types[typename]
-    result = RE_TYPE_MODEL.match(typename)
+    result = RE_TYPE.match(typename)
     if result:
         values = result.groups()
         if values[0] == "UNSIGNED" and int(values[1]) in [i * 8 for i in range(1, 9)]:
@@ -78,7 +78,7 @@ def GetValidTypeInfos(context, typename, items=None):
             size = context.default_string_size
             for item in items:
                 size = max(size, len(item))
-            if values[1] != "":
+            if values[1]:
                 size = max(size, int(values[1]))
             typeinfos = ("UNS8", size, "visible_string", False)
         elif values[0] == "DOMAIN":
@@ -90,12 +90,12 @@ def GetValidTypeInfos(context, typename, items=None):
             typeinfos = ("UNS8", None, "boolean", False)
         else:
             # FIXME: The !!! is for special UI handling
-            raise ValueError("""!!! '%s' isn't a valid type for CanFestival.""" % typename)
+            raise ValueError("!!! '%s' isn't a valid type for CanFestival." % typename)
         if typeinfos[2] not in ["visible_string", "domain"]:
             context.internal_types[typename] = typeinfos
     else:
         # FIXME: The !!! is for special UI handling
-        raise ValueError("""!!! '%s' isn't a valid type for CanFestival.""" % typename)
+        raise ValueError("!!! '%s' isn't a valid type for CanFestival." % typename)
     return typeinfos
 
 
@@ -121,7 +121,7 @@ def GetTypeName(node, typenumber):
     typename = node.GetTypeName(typenumber)
     if typename is None:
         # FIXME: The !!! is for special UI handling
-        raise ValueError("""!!! Datatype with value '0x%4.4X' isn't defined in CanFestival.""" % typenumber)
+        raise ValueError("!!! Datatype with value '0x%4.4X' isn't defined in CanFestival." % typenumber)
     return typename
 
 
@@ -168,7 +168,7 @@ def GenerateFileContent(node, headerfilepath, pointers_dict=None):
     num = 0
     for index in rangelist:
         rangename = node.GetEntryName(index)
-        result = RE_RANGE_MODEL.match(rangename)
+        result = RE_RANGE.match(rangename)
         if result:
             num += 1
             typeindex = node.GetEntry(index, 1)
@@ -223,7 +223,7 @@ def GenerateFileContent(node, headerfilepath, pointers_dict=None):
                     raise ValueError("Domain variable not initialized, index: 0x%04X, subindex: 0x00" % index)
             texts["subIndexType"] = typeinfos[0]
             if typeinfos[1] is not None:
-                if params_infos["buffer_size"] != "":
+                if params_infos["buffer_size"]:
                     texts["suffixe"] = "[%s]" % params_infos["buffer_size"]
                 else:
                     texts["suffixe"] = "[%d]" % typeinfos[1]
@@ -299,7 +299,7 @@ def GenerateFileContent(node, headerfilepath, pointers_dict=None):
                         typeinfos = GetValidTypeInfos(context, typename, [values[subindex]])
                         texts["subIndexType"] = typeinfos[0]
                         if typeinfos[1] is not None:
-                            if params_infos["buffer_size"] != "":
+                            if params_infos["buffer_size"]:
                                 texts["suffixe"] = "[%s]" % params_infos["buffer_size"]
                             else:
                                 texts["suffixe"] = "[%d]" % typeinfos[1]
@@ -356,7 +356,7 @@ def GenerateFileContent(node, headerfilepath, pointers_dict=None):
                 else:
                     name = "%s_obj%04X_%s" % (texts["NodeName"], texts["index"], FormatName(subentry_infos["name"]))
             if typeinfos[2] == "visible_string":
-                if params_infos["buffer_size"] != "":
+                if params_infos["buffer_size"]:
                     sizeof = params_infos["buffer_size"]
                 else:
                     sizeof = str(max(len(values[subindex]), context.default_string_size))
@@ -384,7 +384,7 @@ def GenerateFileContent(node, headerfilepath, pointers_dict=None):
                     + re.sub(r"[^\w]", "_", subentry_infos["name"])
                     + "_sIdx "
                     + str(format(subindex, "#04x")))
-                if "" != params_infos["comment"]:
+                if params_infos["comment"]:
                     headerObjectDefinitionContent += "    /* " + params_infos["comment"] + " */\n"
                 else:
                     headerObjectDefinitionContent += "\n"

@@ -34,7 +34,9 @@ from .exception import AddExceptHook
 from .networkeditortemplate import NetworkEditorTemplate
 from ..nodelist import NodeList
 from ..nodemanager import NodeManager
-from .. import SCRIPT_DIRECTORY, __version__, dbg
+from .. import SCRIPT_DIRECTORY
+from .. import __version__
+from .. import dbg
 
 
 def usage():
@@ -284,7 +286,7 @@ class NetworkEdit(wx.Frame, NetworkEditorTemplate):
                     self.RefreshProfileMenu()
                     self.RefreshMainMenu()
                 except Exception as exc:  # pylint: disable=broad-except
-                    message = wx.MessageDialog(self, exc, "ERROR", wx.OK | wx.ICON_ERROR)
+                    message = wx.MessageDialog(self, str(exc), "ERROR", wx.OK | wx.ICON_ERROR)
                     message.ShowModal()
                     message.Destroy()
 
@@ -312,7 +314,7 @@ class NetworkEdit(wx.Frame, NetworkEditorTemplate):
                     self.RefreshProfileMenu()
                     self.RefreshMainMenu()
                 except Exception as exc:  # pylint: disable=broad-except
-                    message = wx.MessageDialog(self, exc, "Error", wx.OK | wx.ICON_ERROR)
+                    message = wx.MessageDialog(self, str(exc), "Error", wx.OK | wx.ICON_ERROR)
                     message.ShowModal()
                     message.Destroy()
         dialog.Destroy()
@@ -324,7 +326,7 @@ class NetworkEdit(wx.Frame, NetworkEditorTemplate):
             try:
                 self.NodeList.SaveProject()
             except Exception as exc:  # pylint: disable=broad-except
-                message = wx.MessageDialog(self, exc, "Error", wx.OK | wx.ICON_ERROR)
+                message = wx.MessageDialog(self, str(exc), "Error", wx.OK | wx.ICON_ERROR)
                 message.ShowModal()
                 message.Destroy()
 
@@ -338,7 +340,7 @@ class NetworkEdit(wx.Frame, NetworkEditorTemplate):
                     try:
                         self.NodeList.SaveProject()
                     except Exception as exc:  # pylint: disable=broad-except
-                        message = wx.MessageDialog(self, exc, "Error", wx.OK | wx.ICON_ERROR)
+                        message = wx.MessageDialog(self, str(exc), "Error", wx.OK | wx.ICON_ERROR)
                         message.ShowModal()
                         message.Destroy()
                 elif answer == wx.ID_NO:

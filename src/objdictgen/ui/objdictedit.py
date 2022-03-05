@@ -34,8 +34,10 @@ from .exception import AddExceptHook
 from . import nodeeditortemplate as net
 from . import subindextable as sit
 from . import commondialogs as cdia
-from .. import SCRIPT_DIRECTORY, nodemanager as nman
-from .. import __version__, dbg
+from .. import nodemanager as nman
+from .. import SCRIPT_DIRECTORY
+from .. import __version__
+from .. import dbg
 
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
@@ -382,26 +384,25 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
             options = dialog.GetOptions()
             try:
                 index = self.Manager.CreateNewNode(name, id_, nodetype, description, profile, filepath, nmt, options)
+                new_editingpanel = sit.EditingPanel(self.FileOpened, self, self.Manager)
+                new_editingpanel.SetIndex(index)
+                self.FileOpened.AddPage(new_editingpanel, "")
+                self.FileOpened.SetSelection(self.FileOpened.GetPageCount() - 1)
+                self.EditMenu.Enable(ID_OBJDICTEDITEDITMENUDS302PROFILE, False)
+                if "DS302" in options:
+                    self.EditMenu.Enable(ID_OBJDICTEDITEDITMENUDS302PROFILE, True)
+                self.RefreshBufferState()
+                self.RefreshProfileMenu()
+                self.RefreshMainMenu()
             except Exception as exc:  # pylint: disable=broad-except
-                message = wx.MessageDialog(self, exc, "ERROR", wx.OK | wx.ICON_ERROR)
+                message = wx.MessageDialog(self, str(exc), "ERROR", wx.OK | wx.ICON_ERROR)
                 message.ShowModal()
                 message.Destroy()
-
-            new_editingpanel = sit.EditingPanel(self.FileOpened, self, self.Manager)
-            new_editingpanel.SetIndex(index)
-            self.FileOpened.AddPage(new_editingpanel, "")
-            self.FileOpened.SetSelection(self.FileOpened.GetPageCount() - 1)
-            self.EditMenu.Enable(ID_OBJDICTEDITEDITMENUDS302PROFILE, False)
-            if "DS302" in options:
-                self.EditMenu.Enable(ID_OBJDICTEDITEDITMENUDS302PROFILE, True)
-            self.RefreshBufferState()
-            self.RefreshProfileMenu()
-            self.RefreshMainMenu()
         dialog.Destroy()
 
     def OnOpenMenu(self, event):  # pylint: disable=unused-argument
         filepath = self.Manager.GetCurrentFilePath()
-        if filepath != "":
+        if filepath:
             directory = os.path.dirname(filepath)
         else:
             directory = os.getcwd()
@@ -424,7 +425,7 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
                     self.RefreshProfileMenu()
                     self.RefreshMainMenu()
                 except Exception as exc:  # pylint: disable=broad-except
-                    message = wx.MessageDialog(self, exc, "Error", wx.OK | wx.ICON_ERROR)
+                    message = wx.MessageDialog(self, str(exc), "Error", wx.OK | wx.ICON_ERROR)
                     message.ShowModal()
                     message.Destroy()
         dialog.Destroy()
@@ -447,16 +448,16 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
             else:
                 self.RefreshBufferState()
         except Exception as exc:  # pylint: disable=broad-except
-            message = wx.MessageDialog(self, exc, "Error", wx.OK | wx.ICON_ERROR)
+            message = wx.MessageDialog(self, str(exc), "Error", wx.OK | wx.ICON_ERROR)
             message.ShowModal()
             message.Destroy()
 
     def SaveAs(self):
         filepath = self.Manager.GetCurrentFilePath()
-        if filepath != "":
+        if filepath:
             directory, filename = os.path.split(filepath)
         else:
-            directory, filename = os.getcwd(), "%s.od" % self.Manager.GetCurrentNodeInfos()[0]
+            directory, filename = os.getcwd(), "%s.json" % self.Manager.GetCurrentNodeInfos()[0]
         dialog = wx.FileDialog(self, "Choose a file", directory, filename, "OD files (*.json;*.od;*.eds)|*.json;*.od;*.eds|All files|*.*", wx.SAVE | wx.OVERWRITE_PROMPT | wx.CHANGE_DIR)
         if dialog.ShowModal() == wx.ID_OK:
             filepath = dialog.GetPath()
@@ -469,7 +470,7 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
                     self.Manager.SaveCurrentInFile(filepath)
                     self.RefreshBufferState()
                 except Exception as exc:  # pylint: disable=broad-except
-                    message = wx.MessageDialog(self, exc, "Error", wx.OK | wx.ICON_ERROR)
+                    message = wx.MessageDialog(self, str(exc), "Error", wx.OK | wx.ICON_ERROR)
                     message.ShowModal()
                     message.Destroy()
         dialog.Destroy()
@@ -518,7 +519,7 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
                     message.ShowModal()
                     message.Destroy()
                 except Exception as exc:  # pylint: disable=broad-except
-                    message = wx.MessageDialog(self, exc, "Error", wx.OK | wx.ICON_ERROR)
+                    message = wx.MessageDialog(self, str(exc), "Error", wx.OK | wx.ICON_ERROR)
                     message.ShowModal()
                     message.Destroy()
             else:
@@ -545,7 +546,7 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
                     message.ShowModal()
                     message.Destroy()
                 except Exception as exc:  # pylint: disable=broad-except
-                    message = wx.MessageDialog(self, exc, "Error", wx.OK | wx.ICON_ERROR)
+                    message = wx.MessageDialog(self, str(exc), "Error", wx.OK | wx.ICON_ERROR)
                     message.ShowModal()
                     message.Destroy()
         dialog.Destroy()
@@ -568,7 +569,7 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
                     message.ShowModal()
                     message.Destroy()
                 except Exception as exc:  # pylint: disable=broad-except
-                    message = wx.MessageDialog(self, exc, "Error", wx.OK | wx.ICON_ERROR)
+                    message = wx.MessageDialog(self, str(exc), "Error", wx.OK | wx.ICON_ERROR)
                     message.ShowModal()
                     message.Destroy()
         dialog.Destroy()

@@ -25,6 +25,7 @@ from builtins import chr
 from builtins import object
 from builtins import range
 
+import os
 import sys
 import re
 import copy
@@ -33,6 +34,7 @@ from past.builtins import execfile
 from future.utils import raise_from
 
 from .nosis import pickle as nosis
+from . import PROFILE_DIRECTORY
 from . import dbg
 
 if sys.version_info[0] >= 3:
@@ -41,6 +43,9 @@ if sys.version_info[0] >= 3:
 else:
     ODict = OrderedDict
 
+
+# Directories to load profiles from
+PROFILE_DIRS = (PROFILE_DIRECTORY, )
 
 #
 # Dictionary of translation between access symbol and their signification
@@ -53,7 +58,7 @@ CUSTOMISABLE_TYPES = [
     (0x09, 1), (0x0A, 1), (0x0B, 1), (0x10, 0), (0x11, 0), (0x12, 0), (0x13, 0),
     (0x14, 0), (0x15, 0), (0x16, 0), (0x18, 0), (0x19, 0), (0x1A, 0), (0x1B, 0),
 ]
-DEFAULT_PARAMS = {"comment": "", "save": False, "buffer_size": ""}
+DEFAULT_PARAMS = {"comment": None, "save": False, "buffer_size": None}
 
 # ------------------------------------------------------------------------------
 #                      Dictionary Mapping and Organisation
@@ -206,7 +211,7 @@ MAPPING_DICTIONARY = {
     0x1013: {"name": "High Resolution Timestamp", "struct": OD.VAR, "need": False, "values":
              [{"name": "High Resolution Time Stamp", "type": 0x07, "access": 'rw', "pdo": True}]},
     0x1014: {"name": "Emergency COB ID", "struct": OD.VAR, "need": False, "values":
-             [{"name": "Emergency COB ID", "type": 0x07, "access": 'rw', "pdo": False, "default": "\"$NODEID+0x80\""}]},
+             [{"name": "Emergency COB ID", "type": 0x07, "access": 'rw', "pdo": False, "default": '"$NODEID+0x80"'}]},
     0x1015: {"name": "Inhibit Time Emergency", "struct": OD.VAR, "need": False, "values":
              [{"name": "Inhibit Time Emergency", "type": 0x06, "access": 'rw', "pdo": False}]},
     0x1016: {"name": "Consumer Heartbeat Time", "struct": OD.ARRAY, "need": False, "values":
@@ -261,8 +266,8 @@ MAPPING_DICTIONARY = {
     # -- Server SDO Parameters
     0x1200: {"name": "Server SDO Parameter", "struct": OD.RECORD, "need": False, "values":
              [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
-              {"name": "COB ID Client to Server (Receive SDO)", "type": 0x07, "access": 'ro', "pdo": False, "default": "\"$NODEID+0x600\""},
-              {"name": "COB ID Server to Client (Transmit SDO)", "type": 0x07, "access": 'ro', "pdo": False, "default": "\"$NODEID+0x580\""}]},
+              {"name": "COB ID Client to Server (Receive SDO)", "type": 0x07, "access": 'ro', "pdo": False, "default": '"$NODEID+0x600"'},
+              {"name": "COB ID Server to Client (Transmit SDO)", "type": 0x07, "access": 'ro', "pdo": False, "default": '"$NODEID+0x580"'}]},
     0x1201: {"name": "Additional Server SDO %d Parameter[(idx)]", "struct": OD.NRECORD, "incr": 1, "nbmax": 0x7F, "need": False, "values":
              [{"name": "Number of Entries", "type": 0x05, "access": 'ro', "pdo": False},
               {"name": "COB ID Client to Server (Receive SDO)", "type": 0x07, "access": 'ro', "pdo": False},
@@ -321,19 +326,35 @@ def GetIndexRange(index):
 # ------------------------------------------------------------------------------
 #                         Load mapping
 # ------------------------------------------------------------------------------
-def ImportProfile(filepath):
+def ImportProfile(profilename):
     # Import profile
+
+    # Test if the profilename is a filepath which can be used directly. If not
+    # treat it as the name
+    # The UI use full filenames, while all other uses use profile names
+    profilepath = profilename
+    if not os.path.exists(profilepath):
+        fname = "%s.prf" % profilename
+        try:
+            profilepath = next(
+                os.path.join(base, fname)
+                for base in PROFILE_DIRS
+                if os.path.exists(os.path.join(base, fname))
+            )
+        except StopIteration:
+            raise_from(ValueError("Unable to load profile '%s': '%s': No such file or directory" % (profilename, fname)), None)
+
     # Mapping and AddMenuEntries are expected to be defined by the execfile
     # The profiles requires some vars to be set
     # pylint: disable=unused-variable
     try:
-        dbg("EXECFILE %s" % (filepath,))
-        execfile(filepath)  # FIXME: Using execfile is unsafe
+        dbg("EXECFILE %s" % (profilepath,))
+        execfile(profilepath)  # FIXME: Using execfile is unsafe
         # pylint: disable=undefined-variable
         return Mapping, AddMenuEntries  # noqa: F821
     except Exception as exc:  # pylint: disable=broad-except
         dbg("EXECFILE FAILED: %s" % exc)
-        raise_from(ValueError("Loading profile '%s' failed: %s" % (filepath, exc)), exc)
+        raise_from(ValueError("Loading profile '%s' failed: %s" % (profilepath, exc)), exc)
         return None  # To satisfy linter only
 
 

@@ -1,0 +1,186 @@
+{
+  "name": "Master",
+  "description": "Test master node minimal",
+  "type": "master",
+  "id": 0,
+  "profile_name": "Test",
+  "profile": true,
+  "ds-302": false,
+  "default_string_size": 10,
+  "dictionary": {
+    "0x2000": {
+      "name": "Var",
+      "struct": "var",
+      "mandatory": false,
+      "sub": [
+        {
+          "name": "Var",
+          "type": "UNSIGNED8",
+          "access": "rw",
+          "pdo": true,
+          "value": 12
+        }
+      ]
+    },
+    "0x2001": {
+      "name": "Array",
+      "struct": "array",
+      "mandatory": false,
+      "sub": [
+        {
+          "name": "Array %d[(sub)]",
+          "type": "UNSIGNED16",
+          "access": "rw",
+          "pdo": true,
+          "nbmax": 254,
+          "values": [
+            {
+              // name: Array 1
+              "value": 256
+            },
+            {
+              // name: Array 2
+              "value": 512
+            },
+            {
+              // name: Array 3
+              "value": 768
+            }
+          ]
+        }
+      ]
+    },
+    "0x2002": {
+      "name": "Record",
+      "struct": "record",
+      "mandatory": false,
+      "sub": [
+        {
+          "name": "Undefined",
+          "type": "UNSIGNED8",
+          "access": "rw",
+          "pdo": true,
+          "value": 1
+        },
+        {
+          "name": "Undefined",
+          "type": "UNSIGNED16",
+          "access": "rw",
+          "pdo": true,
+          "value": 2
+        },
+        {
+          "name": "Undefined",
+          "type": "UNSIGNED32",
+          "access": "rw",
+          "pdo": true,
+          "value": 3
+        }
+      ]
+    },
+    "0x5000": {
+      // name: Device Type 1
+      "struct": "nvar",
+      "sub": [
+        {
+          // name: Device Type 1 and 0
+          // type: UNSIGNED32
+          "value": 0
+        }
+      ]
+    },
+    "0x1400": {
+      // name: Receive PDO 1 Parameter
+      "struct": "nrecord",
+      "sub": [
+        {
+          // name: COB ID used by PDO
+          // type: UNSIGNED32
+          "value": 385
+        },
+        {
+          // name: Transmission Type
+          // type: UNSIGNED8
+          "value": 255
+        },
+        {
+          // name: Inhibit Time
+          // type: UNSIGNED16
+          "value": 0
+        },
+        {
+          // name: Compatibility Entry
+          // type: UNSIGNED8
+          "value": 0
+        },
+        {
+          // name: Event Timer
+          // type: UNSIGNED16
+          "value": 0
+        },
+        {
+          // name: SYNC start value
+          // type: UNSIGNED8
+          "value": 0
+        }
+      ]
+    },
+    "0x1600": {
+      // name: Receive PDO 1 Mapping
+      "struct": "narray",
+      "sub": [
+        {
+          // name: PDO 1 Mapping for an application object 1
+          // type: UNSIGNED32
+          "values": [
+            {
+              // name: PDO 1 Mapping for an application object 1
+              "value": "0x20010210"
+            },
+            {
+              // name: PDO 1 Mapping for an application object 2
+              "value": "0x20010110"
+            }
+          ]
+        }
+      ]
+    },
+    "0x1000": {
+      // name: Device Type
+      "struct": "var",
+      "sub": [
+        {
+          // name: Device Type
+          // type: UNSIGNED32
+          "value": 0
+        }
+      ]
+    },
+    "0x1018": {
+      // name: Identity
+      "struct": "record",
+      "sub": [
+        {
+          // name: Vendor ID
+          // type: UNSIGNED32
+          "value": 0
+        },
+        {
+          // name: Product Code
+          // type: UNSIGNED32
+          "value": 0
+        },
+        {
+          // name: Revision Number
+          // type: UNSIGNED32
+          "value": 0
+        },
+        {
+          // name: Serial Number
+          // type: UNSIGNED32
+          "value": 0
+        }
+      ]
+    }
+  }
+}

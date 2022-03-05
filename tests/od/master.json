@@ -1,0 +1,59 @@
+{
+  "name": "Master",
+  "description": "Test master node",
+  "type": "master",
+  "id": 0,
+  "profile_name": "None",
+  "profile": false,
+  "ds-302": false,
+  "dictionary": {
+    "0x1000": {
+      // name: Device Type
+      "struct": "var",
+      "sub": [
+        {
+          // name: Device Type
+          // type: UNSIGNED32
+          "value": 0
+        }
+      ]
+    },
+    "0x1018": {
+      // name: Identity
+      "struct": "record",
+      "sub": [
+        {
+          // name: Vendor ID
+          // type: UNSIGNED32
+          "value": 10
+        },
+        {
+          // name: Product Code
+          // type: UNSIGNED32
+          "value": 11
+        },
+        {
+          // name: Revision Number
+          // type: UNSIGNED32
+          "value": 12
+        },
+        {
+          // name: Serial Number
+          // type: UNSIGNED32
+          "value": 13
+        }
+      ]
+    },
+    "0x1001": {
+      // name: Error Register
+      "struct": "var",
+      "sub": [
+        {
+          // name: Error Register
+          // type: UNSIGNED8
+          "value": 0
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,8 @@
+global Mapping, AddMenuEntries
+
+Mapping = {
+    0x5000: {"name": "Device Type %d[(idx)]", "struct": OD.NVAR, "incr": 1, "nbmax": 0x200, "need": False, "values":
+             [{"name": "Device Type %d and %d[(idx,sub)]", "type": 0x07, "access": 'ro', "pdo": True}]},
+}
+
+AddMenuEntries = []

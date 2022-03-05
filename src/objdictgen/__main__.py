@@ -84,7 +84,7 @@ def write_od(filename, node):
         node.ExportCurrentToJsonFile(filename)
 
 
-def main():
+def main(args=None):
 
     parser = ArgumentParser(
         prog="odg",
@@ -132,15 +132,22 @@ def main():
     ''')
     subp.add_argument('dir', nargs="?", help="Project directory")
 
-    # -- COMPARE --
-    subp = subparser.add_parser('compare', help='''
-        Compare OD
+    # -- DIFF --
+    subp = subparser.add_parser('diff', help='''
+        Diff OD
     ''')
     subp.add_argument('od1', **opt_od)
     subp.add_argument('od2', **opt_od)
 
+    # -- DUMP --
+    subp = subparser.add_parser('dump', help='''
+        Debug dump
+    ''')
+    subp.add_argument('od', **opt_od)
+    subp.add_argument('out', default=None, help="Output file")
+
     # Parse command-line arguments
-    opts = parser.parse_args()
+    opts = parser.parse_args(args)
 
     # Read OD
     od = None
@@ -185,8 +192,14 @@ def main():
         from .nodelist import main as _main  # pylint: disable=import-outside-toplevel
         _main(opts.dir)
 
-    # -- COMPARE command --
-    elif opts.command == "compare":
+    # -- DUMP command --
+    if opts.command == "dump":
+
+        with open(opts.out, 'w') as f:
+            json.dump(od.CurrentNode.__dict__, f, separators=(',', ': '), indent=2)
+
+    # -- DIFF command --
+    elif opts.command == "diff":
 
         try:
             od1 = read_od(opts.od1)
@@ -270,7 +283,7 @@ def main():
                 })
 
             w = {
-                k: max(len(v[k]) for v in lines)
+                k: max(len(v[k]) for v in lines) or ''
                 for k in lines[0]
             }
             out = "        {i:%ss}  {access:%ss}  {pdo:%ss}  {name:%ss}  {type:%ss}  {value:%ss}  {comment}" % (

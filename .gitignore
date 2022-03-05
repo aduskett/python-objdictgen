@@ -6,9 +6,8 @@
 build/
 htmlcov/
 .coverage
-.pylintrc
 tmp*/
-bug_report*.txt
+dist/
 
 *.pyc
 *.bak
@@ -16,10 +15,10 @@ bug_report*.txt
 __*
 !__*__.py
 
-objdictgen.new
-objdictgen.mod
-objdictgen.orig
-mirror-canfestival-3-asc/
-od-*/
-runall*.sh
-results-*.diff
+tests/od/extra
+tests/od/*.c
+tests/od/*.h
+tests/od/*.eds
+
+objdictgen.*
+bug_report*.txt

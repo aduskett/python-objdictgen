@@ -136,7 +136,7 @@ class StreamWriter(object):
     - write a compressed file
     - create an uncompressed memory stream
     - create a compressed memory stream
-        """
+    """
     def __init__(self, iohandle=None, compress=None):
 
         if iohandle:
@@ -230,10 +230,11 @@ def _pickle_toplevel_obj(xml_list, py_obj, deepcopy):
     klass_tag = klass.__name__
 
     # Generate the XML string
-    if klass not in CLASS_STORE.values():
-        extra = '%smodule="%s" class="%s"' % (famtype, klass.__module__, klass_tag)
-    else:
-        extra = '%s class="%s"' % (famtype, klass_tag)
+    # if klass not in CLASS_STORE.values():
+    module = klass.__module__.replace('objdictgen.', '')  # Workaround to be backwards compatible
+    extra = '%smodule="%s" class="%s"' % (famtype, module, klass_tag)
+    # else:
+    #     extra = '%s class="%s"' % (famtype, klass_tag)
 
     xml_list.append('<?xml version="1.0"?>\n'
                     + '<!DOCTYPE PyObject SYSTEM "PyObjects.dtd">\n')
