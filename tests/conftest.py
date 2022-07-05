@@ -1,9 +1,10 @@
-import sys
 import os
 import glob
 import difflib
 import pytest
+import attr
 
+import objdictgen
 import objdictgen.node
 
 
@@ -16,10 +17,26 @@ REF = os.path.join(HERE, 'od')
 ODFILES = [
     os.path.abspath(f.replace('.od', '')) for f in glob.glob(os.path.join(REF, '*.od'))
 ]
-if os.path.exists(os.path.join(REF, 'extra')):
+if os.path.exists(os.path.join(REF, 'legacy')):
     ODFILES.extend([
-        os.path.abspath(f.replace('.od', '')) for f in glob.glob(os.path.join(REF, 'extra', '*.od'))
+        os.path.abspath(f.replace('.od', '')) for f in glob.glob(os.path.join(REF, 'legacy', '*.od'))
     ])
+
+@attr.s
+class ODFile(object):
+    filename = attr.ib()
+    def __str__(self):
+        return self.filename
+    def __add__(self, other):
+        return self.filename + other
+    @property
+    def name(self):
+        return os.path.split(self.filename)[1]
+    @property
+    def relpath(self):
+        return os.path.relpath(self.filename, REF)
+
+ODFILES = [ODFile(x) for x in ODFILES]
 
 
 @pytest.fixture
@@ -43,21 +60,24 @@ def profile(monkeypatch):
     """ Fixture that monkeypatches the profile load directory to include the OD directory
         for testing
     """
-    newdirs = [REF]
-    newdirs.extend(objdictgen.node.PROFILE_DIRS)
-    monkeypatch.setattr(objdictgen.node, 'PROFILE_DIRS', newdirs)
+    newdirs = []
+    newdirs.extend(objdictgen.PROFILE_DIRECTORIES)
+    newdirs.append(REF)
+    monkeypatch.setattr(objdictgen, 'PROFILE_DIRECTORIES', newdirs)
     yield None
 
 
 @pytest.fixture
-def odfile(request, wd, profile):
+def odfile(request, profile):
     """ Fixture for each of the od files in the test directory """
     yield request.param
 
 
 def pytest_generate_tests(metafunc):
     if "odfile" in metafunc.fixturenames:
-        metafunc.parametrize("odfile", ODFILES, indirect=True)
+        metafunc.parametrize("odfile", ODFILES, ids=[
+            o.relpath for o in ODFILES
+        ], indirect=True)
 
 
 def diff(a, b, predicate=None, **kw):

@@ -9,9 +9,9 @@ import objdictgen.__main__
 #     assert not d
 
 
-def test_objdictgen(mocker, odfile, fn):
+def test_objdictgen(wd, mocker, odfile, fn):
     """ Test that objdictgen generates equal output as reference """
-    base, od = os.path.split(odfile)
+    od = odfile.name
 
     mocker.patch("sys.argv", [
         "objdictgen",
@@ -21,6 +21,7 @@ def test_objdictgen(mocker, odfile, fn):
 
     objdictgen.__main__.main_objdictgen()
 
-    assert fn.diff(odfile + '.c', od + '.c', n=0)
-    assert fn.diff(odfile + '.h', od + '.h', n=0)
-    assert fn.diff(odfile + '_objectdefines.h', od + '_objectdefines.h', n=0)
+    if os.path.exists(odfile + '.c'):
+        assert fn.diff(odfile + '.c', od + '.c', n=0)
+        assert fn.diff(odfile + '.h', od + '.h', n=0)
+        assert fn.diff(odfile + '_objectdefines.h', od + '_objectdefines.h', n=0)

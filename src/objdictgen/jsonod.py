@@ -483,6 +483,7 @@ def GenerateNode(filepath):
     jd.setdefault("id", 0)
     jd.setdefault("profile", False)
     jd.setdefault("ds-302", False)
+    jd.setdefault("profile_name", "None")
 
     # Create the node and fill the most basic data
     node = Node(name=jd["name"], type=jd["type"], id=jd["id"],

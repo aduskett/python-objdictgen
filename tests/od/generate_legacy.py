@@ -1,43 +1,68 @@
 import sys
 import os
-import glob
-from types import *
-
+import argparse
+import shutil
+# import glob
 
 if sys.version_info[0] >= 3:
     raise Exception("The legacy objdictgen must be run with py2")
 
-if len(sys.argv) < 2:
-    raise Exception("Missing directory to legacy objdictgen")
+parser = argparse.ArgumentParser()
+parser.add_argument("objdictgen_dir", help="Directory to legacy objdictgen sources")
+parser.add_argument("od_dir", help="Directory to ODs")
+opts = parser.parse_args()
 
-sys.path.insert(0, os.path.abspath(sys.argv[1]))
+here = os.path.dirname(os.path.abspath(__file__))
+
+legacy = os.path.join(here, 'legacy')
+if not os.path.exists(legacy):
+    os.mkdir(legacy)
+
+sys.path.insert(0, os.path.abspath(opts.objdictgen_dir))
 
 from nodemanager import *
 
-def convert(fname):
+def convert(path):
+    ipath, fname = os.path.split(path)
+    #opath = os.path.join(ipath, 'legacy')
+    opath = ipath
     base = fname.replace('.od', '')
 
     manager = NodeManager()
     print("Reading %s" % fname)
-    result = manager.OpenFileInCurrent(base + '.od')
+    result = manager.OpenFileInCurrent(os.path.join(ipath, base + '.od'))
     if isinstance(result, (StringType, UnicodeType)):
         print(result)
         sys.exit(1)
 
     print("    Writing c")
-    result = manager.ExportCurrentToCFile(base + '.c')
+    result = manager.ExportCurrentToCFile(os.path.join(opath, base + '.c'))
     if isinstance(result, (UnicodeType, StringType)):
         print(result)
         sys.exit(1)
 
     print("    Writing eds")
-    result = manager.ExportCurrentToEDSFile(base + '.eds')
+    result = manager.ExportCurrentToEDSFile(os.path.join(opath, base + '.eds'))
     if isinstance(result, (UnicodeType, StringType)):
         print(result)
         sys.exit(1)
 
-os.chdir(os.path.abspath(os.path.split(__file__)[0]))
-for fname in glob.glob('*.od'):
-    convert(fname)
-for fname in glob.glob(os.path.join('extra', '*.od')):
-    convert(fname)
+
+for root, dirs, files in os.walk(opts.od_dir):
+    for fname in files:
+        if not fname.endswith('.od'):
+            continue
+
+        dst = os.path.join(here, 'legacy', fname)
+        shutil.copyfile(os.path.join(root, fname), dst)
+
+        try:
+            convert(dst)
+        except Exception as err:
+            print("FAILED: %s" %(err,))
+
+# for fname in glob.glob(os.path.join(here, '*.od')):
+#     try:
+#         convert(fname)
+#     except Exception as err:
+#         print("FAILED: %s" %(err,))

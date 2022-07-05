@@ -29,7 +29,7 @@ import wx
 import wx.grid
 
 from .. import node as nod
-from .. import PROFILE_DIRECTORY
+from .. import PROFILE_DIRECTORIES
 from .. import dbg
 
 
@@ -1027,12 +1027,13 @@ class CreateNodeDialog(wx.Dialog):
         self.Description.SetValue("")
         self.ListProfile = {"None": ""}
         self.Profile.Append("None")
-        self.Directory = PROFILE_DIRECTORY
-        for item in sorted(os.listdir(self.Directory)):
-            name, extend = os.path.splitext(item)
-            if os.path.isfile(os.path.join(self.Directory, item)) and extend == ".prf" and name != "DS-302":
-                self.ListProfile[name] = os.path.join(self.Directory, item)
-                self.Profile.Append(name)
+        self.Directory = PROFILE_DIRECTORIES[-1]
+        for pdir in PROFILE_DIRECTORIES:
+            for item in sorted(os.listdir(pdir)):
+                name, extend = os.path.splitext(item)
+                if os.path.isfile(os.path.join(self.Directory, item)) and extend == ".prf" and name != "DS-302":
+                    self.ListProfile[name] = os.path.join(self.Directory, item)
+                    self.Profile.Append(name)
         self.Profile.Append("Other")
         self.Profile.SetStringSelection("None")
         self.NodeName.SetFocus()

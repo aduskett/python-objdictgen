@@ -144,6 +144,7 @@ setup(
     install_requires=[  # Optional
         'future',
         'jsonschema',
+        'colorama',
     ],
 
     # List additional groups of dependencies here (e.g. development
@@ -157,7 +158,7 @@ setup(
     extras_require={  # Optional
         'dist': ['build'],
         'dev': ['pylint', 'flake8', 'mypy', 'black'],
-        'test': ['pytest', 'coverage', 'pytest-cov', 'pytest-mock'],
+        'test': ['pytest', 'coverage', 'pytest-cov', 'pytest-mock', 'attrs'],
     },
 
     # If there are data files included in your packages that need to be

@@ -477,10 +477,6 @@ def GenerateFileContent(node, filepath):
     fileContent += "ModificationDate=%s\n" % strftime("%m-%d-%Y", current_time)
     fileContent += "ModifiedBy=CANFestival\n"
 
-    have_1018 = node.GetEntry(0x1018)
-    if not have_1018:
-        raise ValueError("OD does't have mandatory index 0x1018")
-
     # Generate DeviceInfo section
     fileContent += "\n[DeviceInfo]\n"
     fileContent += "VendorName=CANFestival\n"

@@ -1,12 +1,20 @@
 from __future__ import absolute_import
+import json
 import sys
 import getopt
 from argparse import ArgumentParser
+import logging
+from colorama import init, Fore, Style
 
 from . import nodemanager as nman
 from . import node as nod
 from . import jsonod
 from . import __version__, dbg
+
+init()
+log = logging.getLogger()
+log.setLevel(logging.INFO)
+log.addHandler(logging.StreamHandler(sys.stdout))
 
 
 def usage_objdictgen():
@@ -103,7 +111,8 @@ def main(args=None):
         Generate
     ''')
     subp.add_argument('--index', '-i', action="append",
-                      help="OD Index to include")
+                      help="OD Index to include. Filter out the rest.")
+    subp.add_argument('--correct', action="store_true", help="Correct any inconsistency errors in OD before generate output")
     subp.add_argument('od', **opt_od)
     subp.add_argument('out', default=None, help="Output file")
 
@@ -124,7 +133,8 @@ def main(args=None):
         List
     ''')
     subp.add_argument('od', **opt_od)
-    subp.add_argument('--nosub', action="store_true", help="Do not list sub-index")
+    subp.add_argument('--short', action="store_true", help="Do not list sub-index")
+    subp.add_argument('--unselected', '--unsel', action="store_true", help="Include unselected profile params")
 
     # -- NODELIST --
     subp = subparser.add_parser('nodelist', help='''
@@ -154,11 +164,19 @@ def main(args=None):
     if 'od' in opts and not isinstance(opts.od, list):
         try:
             od = read_od(opts.od)
+
+            if opts.command not in ("gen", ):
+                # Inform about inconsistencies in node
+                od.CurrentNode.Validate(correct=False)
+
         except OSError as exc:
             parser.error("%s: %s" % (exc.__class__.__name__, str(exc)))
 
     # -- GEN command --
     if opts.command == "gen":
+
+        # Inform about inconsistencies in node and possibly correct contents
+        od.CurrentNode.Validate(correct=opts.correct)
 
         # If index is specified, strip away everything else
         if opts.index:
@@ -207,29 +225,46 @@ def main(args=None):
         except OSError as exc:
             parser.error("%s: %s" % (exc.__class__.__name__, str(exc)))
 
-        node1 = od1.CurrentNode.GetDict()
-        node2 = od2.CurrentNode.GetDict()
+        changes = od1.CurrentNode.Compare(od2.CurrentNode)
+        for change in changes:
+            print(change)
 
-        equal = node1 == node2
-        print("OD '%s' and '%s' are %s" % (
-            opts.od1,
-            opts.od2,
-            "EQUAL" if equal else "NOT EQUAL"
-        ))
-        sys.exit(0 if equal else 1)
+        sys.exit(1 if changes else 0)
 
     # -- LIST command --
     elif opts.command == "list":
 
         node = od.CurrentNode
 
+        profiles = []
+        if node.DS302:
+            if jsonod.compare_profile("DS-302", node.DS302):
+                extra = "DS-302"
+            else:
+                extra = "DS-302 (not equal)"
+            profiles.append(extra)
+
+        if node.Profile:
+            if jsonod.compare_profile(node.ProfileName, node.Profile, node.SpecificMenu):
+                extra = node.ProfileName
+            else:
+                extra = "%s (not equal)" % node.ProfileName
+            profiles.append(extra)
+
+        print("File:      %s" % (od.GetCurrentFilePath()))
+        print("Name:      %s  [%s]  %s" % (node.Name, node.Type.upper(), node.Description))
+        print("Profiles:  %s" % (", ".join(profiles) or None))
+        if node.ID:
+            print("ID:        %s" % (node.ID))
+        print("")
+
         index_range = None
-        for k in sorted(node.Dictionary):
+        for k in sorted(node.GetAllParameters()):
 
             for ir in nod.INDEX_RANGES:
                 if ir["min"] <= k <= ir["max"] and ir != index_range:
                     index_range = ir
-                    print(ir["description"])
+                    print(Fore.YELLOW + ir["description"] + Style.RESET_ALL)
 
             obj = node.GetEntryInfos(k)
             name = node.GetEntryName(k)
@@ -246,13 +281,24 @@ def main(args=None):
                 flags.append("Profile")
             if node.HasEntryCallbacks(k):
                 flags.append('CB')
+            if k not in node.Dictionary:
+                if k in node.DS302 or k in node.Profile:
+                    flags.append("Unselected")
+                    if not opts.unselected:
+                        continue
+                else:
+                    flags.append(Fore.RED + " *MISSING* " + Style.RESET_ALL)
             flag = ''
             if flags:
                 flag = '  ' + ','.join(flags)
 
-            print("    0x%04X (%d)  %s   [%s]%s" % (k, k, name, struct, flag))
+            print("    %s0x%04X (%d)  %s%s   [%s]%s" % (Fore.GREEN, k, k, name, Style.RESET_ALL, struct, flag))
 
-            if opts.nosub:
+            if opts.short:
+                continue
+
+            if k not in node.Dictionary:
+                print("")
                 continue
 
             values = node.GetEntry(k, aslist=True)

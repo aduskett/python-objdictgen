@@ -8,6 +8,10 @@ from objdictgen.nodemanager import NodeManager
 
 @pytest.mark.parametrize("suffix", ['.od', '.json', '.eds'])
 def test_load_compare(odfile, suffix, fn):
+
+    if not os.path.exists(odfile + suffix):
+        pytest.skip("File not found")
+
     # Load the OD
     m1 = NodeManager()
     m1.OpenFileInCurrent(odfile + suffix)
@@ -19,8 +23,8 @@ def test_load_compare(odfile, suffix, fn):
     assert m1.CurrentNode.__dict__ == m2.CurrentNode.__dict__
 
 
-def test_odexport(odfile, fn):
-    base, od = os.path.split(odfile)
+def test_odexport(wd, odfile, fn):
+    od = odfile.name
 
     m1 = NodeManager()
     m1.OpenFileInCurrent(odfile + '.od')
@@ -71,8 +75,8 @@ def xtest_odcompare23(odfile, fn):
     assert m1.CurrentNode.__dict__ == m2.CurrentNode.__dict__
 
 
-def test_jsonexport(odfile, fn):
-    base, od = os.path.split(odfile)
+def test_jsonexport(wd, odfile, fn):
+    od = odfile.name
 
     m1 = NodeManager()
     m1.OpenFileInCurrent(odfile + '.od')
@@ -86,21 +90,22 @@ def test_jsonexport(odfile, fn):
     assert m1.CurrentNode.__dict__ == m2.CurrentNode.__dict__
 
 
-def test_cexport(odfile, fn):
-    base, od = os.path.split(odfile)
+def test_cexport(wd, odfile, fn):
+    od = odfile.name
 
     m1 = NodeManager()
     m1.OpenFileInCurrent(odfile + '.od')
 
     m1.ExportCurrentToCFile(od + '.c')
 
-    assert fn.diff(odfile + '.c', od + '.c', n=0)
-    assert fn.diff(odfile + '.h', od + '.h', n=0)
-    assert fn.diff(odfile + '_objectdefines.h', od + '_objectdefines.h', n=0)
+    if os.path.exists(odfile + '.c'):
+        assert fn.diff(odfile + '.c', od + '.c', n=0)
+        assert fn.diff(odfile + '.h', od + '.h', n=0)
+        assert fn.diff(odfile + '_objectdefines.h', od + '_objectdefines.h', n=0)
 
 
-def test_edsexport(odfile, fn):
-    base, od = os.path.split(odfile)
+def test_edsexport(wd, odfile, fn):
+    od = odfile.name
 
     m1 = NodeManager()
     m1.OpenFileInCurrent(odfile + '.od')
@@ -113,14 +118,18 @@ def test_edsexport(odfile, fn):
                 return False
         return True
 
-    assert fn.diff(odfile + '.eds', od + '.eds', predicate=predicate)
+    if os.path.exists(odfile + '.eds'):
+        assert fn.diff(odfile + '.eds', od + '.eds', predicate=predicate)
 
 
-def test_edsimport(odfile, fn):
-    base, od = os.path.split(odfile)
+def test_edsimport(wd, odfile, fn):
+    od = odfile.name
 
     m1 = NodeManager()
     m1.OpenFileInCurrent(odfile + '.od')
+
+    # Need this to fix any incorrect ODs which cause EDS import error
+    #m1.Validate(correct=True)
 
     m1.ExportCurrentToEDSFile(od + '.eds')
 
@@ -145,11 +154,14 @@ def dictify(d):
     return d
 
 
-def test_jsonimport(odfile, fn):
-    base, od = os.path.split(odfile)
+def test_jsonimport(wd, odfile, fn):
+    od = odfile.name
 
     m1 = NodeManager()
     m1.OpenFileInCurrent(odfile + '.od')
+
+    # Need this to fix any incorrect ODs which cause import error
+    #m1.Validate(correct=True)
 
     m1.ExportCurrentToJsonFile(od + '.json')
 

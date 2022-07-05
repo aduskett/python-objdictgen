@@ -196,28 +196,9 @@ class NodeList(object):
         except Exception as exc:  # pylint: disable=broad-except
             raise_from(ValueError("Fail to save node list in '%s'" % (cpjpath)), exc)
 
-    def GetSlaveNodeEntry(self, nodeid, index, subindex=None):
-        if nodeid not in self.SlaveNodes:
-            raise ValueError("Node 0x%2.2X doesn't exist" % nodeid)
-        self.SlaveNodes[nodeid]["Node"].ID = nodeid
-        return self.SlaveNodes[nodeid]["Node"].GetEntry(index, subindex)
-
-    def GetMasterNodeEntry(self, index, subindex=None):
-        return self.Manager.GetCurrentEntry(index, subindex)
-
-    def SetMasterNodeEntry(self, index, subindex=None, value=None):
-        self.Manager.SetCurrentEntry(index, subindex, value)
-
     def GetOrderNumber(self, nodeid):
         nodeindexes = list(sorted(self.SlaveNodes))
         return nodeindexes.index(nodeid) + 1
-
-    def GetNodeByOrder(self, order):
-        if order > 0:
-            nodeindexes = list(sorted(self.SlaveNodes))
-            if order <= len(nodeindexes):
-                return self.SlaveNodes[nodeindexes[order - 1]]["Node"]
-        return None
 
     def IsCurrentEntry(self, index):
         if self.CurrentSelected is not None:

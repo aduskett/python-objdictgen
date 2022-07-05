@@ -379,6 +379,10 @@ class NodeManager(object):
         self.SetCurrentFilePath(filepath)
         return index
 
+    def Validate(self, correct=False):
+        if self.CurrentNode:
+            self.CurrentNode.Validate(correct)
+
 # ------------------------------------------------------------------------------
 #                        Add Entries to Current Functions
 # ------------------------------------------------------------------------------
@@ -1134,7 +1138,7 @@ class NodeManager(object):
     def AddToDCF(self, node_id, index, subindex, size, value):
         if self.CurrentNode.IsEntry(0x1F22, node_id):
             dcf_value = self.CurrentNode.GetEntry(0x1F22, node_id)
-            if dcf_value != "":
+            if dcf_value:
                 nbparams = nod.BE_to_LE(dcf_value[:4])
             else:
                 nbparams = 0

@@ -3,17 +3,21 @@ import glob
 
 from objdictgen.nodemanager import NodeManager
 
+here = os.path.dirname(os.path.abspath(__file__))
+
 def convert(fname):
     base = fname.replace('.od', '')
 
     manager = NodeManager()
     print("Reading %s" % fname)
     manager.OpenFileInCurrent(base + '.od')
+
     print("    Writing json")
     manager.ExportCurrentToJsonFile(base + '.json')
 
-os.chdir(os.path.abspath(os.path.split(__file__)[0]))
-for fname in glob.glob('*.od'):
-    convert(fname)
-for fname in glob.glob(os.path.join('extra', '*.od')):
+os.chdir(here)
+
+# for fname in glob.glob('*.od'):
+#     convert(fname)
+for fname in glob.glob(os.path.join('legacy', '*.od')):
     convert(fname)

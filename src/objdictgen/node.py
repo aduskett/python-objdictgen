@@ -32,10 +32,11 @@ import copy
 from collections import OrderedDict
 from past.builtins import execfile
 from future.utils import raise_from
+import pprint
 
 from .nosis import pickle as nosis
-from . import PROFILE_DIRECTORY
-from . import dbg
+from . import PROFILE_DIRECTORIES
+from . import dbg, warning
 
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
@@ -43,9 +44,6 @@ if sys.version_info[0] >= 3:
 else:
     ODict = OrderedDict
 
-
-# Directories to load profiles from
-PROFILE_DIRS = (PROFILE_DIRECTORY, )
 
 #
 # Dictionary of translation between access symbol and their signification
@@ -338,7 +336,7 @@ def ImportProfile(profilename):
         try:
             profilepath = next(
                 os.path.join(base, fname)
-                for base in PROFILE_DIRS
+                for base in PROFILE_DIRECTORIES
                 if os.path.exists(os.path.join(base, fname))
             )
         except StopIteration:
@@ -682,58 +680,60 @@ class Node(object):
         Returns the value of the entry asked. If the entry has the value "count", it
         returns the number of subindex in the entry except the first.
         """
-        if index in self.Dictionary:
-            if subindex is None:
-                if isinstance(self.Dictionary[index], list):
-                    return [len(self.Dictionary[index])] + [
-                        self.CompileValue(value, index, compute)
-                        for value in self.Dictionary[index]
-                    ]
-                if aslist:
-                    return [self.CompileValue(self.Dictionary[index], index, compute)]
-                return self.CompileValue(self.Dictionary[index], index, compute)
-            if subindex == 0:
-                if isinstance(self.Dictionary[index], list):
-                    return len(self.Dictionary[index])
-                return self.CompileValue(self.Dictionary[index], index, compute)
-            if isinstance(self.Dictionary[index], list) and 0 < subindex <= len(self.Dictionary[index]):
-                return self.CompileValue(self.Dictionary[index][subindex - 1], index, compute)
-        return None
+        if index not in self.Dictionary:
+            raise KeyError("Index 0x%04x does not exist" % index)
+        if subindex is None:
+            if isinstance(self.Dictionary[index], list):
+                return [len(self.Dictionary[index])] + [
+                    self.CompileValue(value, index, compute)
+                    for value in self.Dictionary[index]
+                ]
+            if aslist:
+                return [self.CompileValue(self.Dictionary[index], index, compute)]
+            return self.CompileValue(self.Dictionary[index], index, compute)
+        if subindex == 0:
+            if isinstance(self.Dictionary[index], list):
+                return len(self.Dictionary[index])
+            return self.CompileValue(self.Dictionary[index], index, compute)
+        if isinstance(self.Dictionary[index], list) and 0 < subindex <= len(self.Dictionary[index]):
+            return self.CompileValue(self.Dictionary[index][subindex - 1], index, compute)
+        raise ValueError("Invalid subindex %s for index 0x%04x" % (subindex, index))
 
     def GetParamsEntry(self, index, subindex=None, aslist=False):
         """
         Returns the value of the entry asked. If the entry has the value "count", it
         returns the number of subindex in the entry except the first.
         """
-        if index in self.Dictionary:
-            if subindex is None:
-                if isinstance(self.Dictionary[index], list):
-                    if index in self.ParamsDictionary:
-                        result = []
-                        for i in range(len(self.Dictionary[index]) + 1):
-                            line = DEFAULT_PARAMS.copy()
-                            if i in self.ParamsDictionary[index]:
-                                line.update(self.ParamsDictionary[index][i])
-                            result.append(line)
-                        return result
-                    return [DEFAULT_PARAMS.copy() for i in range(len(self.Dictionary[index]) + 1)]
-                result = DEFAULT_PARAMS.copy()
+        if index not in self.Dictionary:
+            raise KeyError("Index 0x%04x does not exist" % index)
+        if subindex is None:
+            if isinstance(self.Dictionary[index], list):
                 if index in self.ParamsDictionary:
-                    result.update(self.ParamsDictionary[index])
-                if aslist:
-                    return [result]
-                return result
-            if subindex == 0 and not isinstance(self.Dictionary[index], list):
-                result = DEFAULT_PARAMS.copy()
-                if index in self.ParamsDictionary:
-                    result.update(self.ParamsDictionary[index])
-                return result
-            if isinstance(self.Dictionary[index], list) and 0 <= subindex <= len(self.Dictionary[index]):
-                result = DEFAULT_PARAMS.copy()
-                if index in self.ParamsDictionary and subindex in self.ParamsDictionary[index]:
-                    result.update(self.ParamsDictionary[index][subindex])
-                return result
-        return None
+                    result = []
+                    for i in range(len(self.Dictionary[index]) + 1):
+                        line = DEFAULT_PARAMS.copy()
+                        if i in self.ParamsDictionary[index]:
+                            line.update(self.ParamsDictionary[index][i])
+                        result.append(line)
+                    return result
+                return [DEFAULT_PARAMS.copy() for i in range(len(self.Dictionary[index]) + 1)]
+            result = DEFAULT_PARAMS.copy()
+            if index in self.ParamsDictionary:
+                result.update(self.ParamsDictionary[index])
+            if aslist:
+                return [result]
+            return result
+        if subindex == 0 and not isinstance(self.Dictionary[index], list):
+            result = DEFAULT_PARAMS.copy()
+            if index in self.ParamsDictionary:
+                result.update(self.ParamsDictionary[index])
+            return result
+        if isinstance(self.Dictionary[index], list) and 0 <= subindex <= len(self.Dictionary[index]):
+            result = DEFAULT_PARAMS.copy()
+            if index in self.ParamsDictionary and subindex in self.ParamsDictionary[index]:
+                result.update(self.ParamsDictionary[index][subindex])
+            return result
+        raise ValueError("Invalid subindex %s for index 0x%04x" % (subindex, index))
 
     def HasEntryCallbacks(self, index):
         entry_infos = self.GetEntryInfos(index)
@@ -1099,7 +1099,7 @@ class Node(object):
             return True
         if 0xA0 <= index < 0x100:
             result = self.GetEntry(index, 1)
-            if result is not None and result in (0x9, 0xA, 0xB):
+            if result in (0x9, 0xA, 0xB):
                 return True
         return False
 
@@ -1108,7 +1108,7 @@ class Node(object):
             return True
         if 0xA0 <= index < 0x100:
             result = self.GetEntry(index, 1)
-            if result is not None and result in (0x8, 0x11):
+            if result in (0x8, 0x11):
                 return True
         return False
 
@@ -1137,21 +1137,17 @@ class Node(object):
                         try:
                             if int(self.ParamsDictionary[index][subindex]["buffer_size"]) <= 8:
                                 return (index << 16) + (subindex << 8) + size * int(self.ParamsDictionary[index][subindex]["buffer_size"])
-                            return None  # String size is too big to fit in a PDO
-                        except KeyError as exc:
-                            dbg("KeyError: %s" % exc)
-                            raise  # FIXME: Original code swallows the exception
-                            # return None  # No string length found and default string size is too big to fit in a PDO
+                            raise ValueError("String size too big to fit in a PDO")
+                        except KeyError:
+                            raise_from(ValueError("No string length found and default string size too big to fit in a PDO"), None)
                 else:
                     if self.IsStringType(self.UserMapping[index]["values"][subindex]["type"]):
                         try:
                             if int(self.ParamsDictionary[index][subindex]["buffer_size"]) <= 8:
                                 return (index << 16) + (subindex << 8) + size * int(self.ParamsDictionary[index][subindex]["buffer_size"])
-                            return None  # String size is too big to fit in a PDO
-                        except KeyError as exc:
-                            dbg("KeyError: %s" % exc)
-                            raise   # FIXME: Original code swallows the exception
-                            # return None  # No string length found and default string size is too big to fit in a PDO
+                            raise ValueError("String size too big to fit in a PDO")
+                        except KeyError:
+                            raise_from(ValueError("No string length found and default string size too big to fit in a PDO"), None)
                 return (index << 16) + (subindex << 8) + size
         return None
 
@@ -1177,6 +1173,100 @@ class Node(object):
         """
         list_ = ["None"] + [self.GenerateMapName(name, index, subindex) for index, subindex, size, name in self.GetMapVariableList()]
         return ",".join(list_)
+
+    def GetAllParameters(self):
+
+        dictionary = set(self.UserMapping.keys())
+        dictionary.update(self.Dictionary.keys())
+        dictionary.update(self.ParamsDictionary.keys())
+        if self.Profile:
+            dictionary.update(self.Profile.keys())
+        if self.DS302:
+            dictionary.update(self.DS302.keys())
+        return dictionary
+
+
+# ------------------------------------------------------------------------------
+#                            Comparison and checks
+# ------------------------------------------------------------------------------
+
+    def Compare(self, other):
+
+        changes = []
+        for attr in (
+            "Name", "Type", "ID", "Description", "ProfileName", "SpecificMenu",
+            "DefaultStringSize"
+        ):
+            if getattr(self, attr) != getattr(other, attr):
+                changes.append("%s differ. '%s' in LEFT, '%s' in RIGHT" %(attr, getattr(self, attr), getattr(other, attr)))
+
+        def compare(a, b, changes, name):
+            for k in set(a.keys()) | set(b.keys()):
+                if k not in a:
+                    changes.append("%s for 0x%04X not in LEFT" % (name, k))
+                if k not in b:
+                    changes.append("%s for 0x%04X not in RIGHT" % (name, k))
+                if k in a and k in b and a[k] != b[k]:
+                    pa = ["        " + t for t in pprint.pformat(a[k]).splitlines()]
+                    pb = ["        " + t for t in pprint.pformat(b[k]).splitlines()]
+                    changes.append("""%s for 0x%04X differ
+    In LEFT:
+%s
+
+    In RIGHT:
+%s
+""" % (name, k, "\n".join(pa), "\n".join(pb)))
+
+        compare(self.Dictionary, other.Dictionary, changes, 'Value')
+        compare(self.DS302, other.DS302, changes, 'DS302 entry')
+        compare(self.Profile, other.Profile, changes, 'Profile entry')
+        compare(self.ParamsDictionary, other.ParamsDictionary, changes, 'Parameter')
+        compare(self.UserMapping, other.UserMapping, changes, 'User mapping')
+
+        return changes
+
+
+    def Validate(self, correct=False):
+
+        params = set(sorted(self.Dictionary.keys()))
+        params.update(self.ParamsDictionary.keys())
+
+        for k in sorted(params):
+
+            name = self.GetEntryName(k)
+            if k not in self.Dictionary:
+                warning("WARNING: 0x%04x (%d) '%s': Parameter without any value" % (k, k, name))
+                if correct:
+                    del self.ParamsDictionary[k]
+                continue
+
+            values = self.GetEntry(k, aslist=True)
+            entries = self.GetParamsEntry(k, aslist=True)
+
+            for i, (value, entry) in enumerate(zip(values, entries)):
+                info = self.GetSubentryInfos(k, i)
+                info.update(entry)
+
+                if not info['name']:
+                    warning("WARNING: 0x%04x (%d) '%s': Sub-parameter %02d has no name" % (k, k, name, i))
+                    if correct:
+                        self.UserMapping[k]['values'][i]['name'] = 'Subindex %02x' %(i, )
+
+
+def diff_dict(name, a, b):
+    diff = []
+    for k in set(a.keys()) | set(b.keys()):
+        kn = "%s['%s']" %(name, k)
+        if k not in a:
+            diff.append(('only_right', kn, b[k]))
+        elif k not in b:
+            diff.append(('only_left', kn, a[k]))
+        elif a[k] != b[k]:
+            if isinstance(a, dict) and isinstance(b, dict):
+                diff.append(diff_dict(kn, a[k], b[k]))
+            else:
+                diff.append(('differ', kn, a[k], b[k]))
+    return diff
 
 
 def BE_to_LE(value):

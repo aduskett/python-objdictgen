@@ -1,10 +1,12 @@
 import sys
 import re
 from past.builtins import long
+import logging
 
+log = logging.getLogger('objdictgen.nosis')
 
 def dbg(msg):  # pylint: disable=unused-argument
-    print(">> %s" % (msg,))
+    log.debug(">> %s" % (msg,))
 
 
 pat_fl = r'[-+]?(((((\d+)?[.]\d+|\d+[.])|\d+)[eE][+-]?\d+)|((\d+)?[.]\d+|\d+[.]))'
