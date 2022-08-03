@@ -14,9 +14,9 @@ opts = parser.parse_args()
 
 here = os.path.dirname(os.path.abspath(__file__))
 
-legacy = os.path.join(here, 'legacy')
-if not os.path.exists(legacy):
-    os.mkdir(legacy)
+extra = os.path.join(here, 'extra')
+if not os.path.exists(extra):
+    os.mkdir(extra)
 
 sys.path.insert(0, os.path.abspath(opts.objdictgen_dir))
 
@@ -24,7 +24,7 @@ from nodemanager import *
 
 def convert(path):
     ipath, fname = os.path.split(path)
-    #opath = os.path.join(ipath, 'legacy')
+    #opath = os.path.join(ipath, 'extra')
     opath = ipath
     base = fname.replace('.od', '')
 
@@ -53,7 +53,7 @@ for root, dirs, files in os.walk(opts.od_dir):
         if not fname.endswith('.od'):
             continue
 
-        dst = os.path.join(here, 'legacy', fname)
+        dst = os.path.join(here, 'extra', fname)
         shutil.copyfile(os.path.join(root, fname), dst)
 
         try:

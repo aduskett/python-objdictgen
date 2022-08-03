@@ -25,8 +25,9 @@ class NodeEditorTemplate(object):
         self.BusId = None
         self.Closing = False
 
-    def SetBusId(self, bus_id):
-        self.BusId = bus_id
+    # FIXME: Unused. Delete this?
+    # def SetBusId(self, bus_id):
+    #     self.BusId = bus_id
 
     def GetBusId(self):
         return self.BusId

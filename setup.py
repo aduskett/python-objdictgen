@@ -103,6 +103,7 @@ setup(
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         #'Programming Language :: Python :: 3 :: Only',
     ],
 
@@ -145,6 +146,7 @@ setup(
         'future',
         'jsonschema',
         'colorama',
+        'deepdiff',
     ],
 
     # List additional groups of dependencies here (e.g. development
@@ -157,7 +159,7 @@ setup(
     # projects.
     extras_require={  # Optional
         'dist': ['build'],
-        'dev': ['pylint', 'flake8', 'mypy', 'black'],
+        'dev': ['pylint', 'flake8', 'mypy'],
         'test': ['pytest', 'coverage', 'pytest-cov', 'pytest-mock', 'attrs'],
     },
 

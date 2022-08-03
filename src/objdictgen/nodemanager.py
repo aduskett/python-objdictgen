@@ -27,7 +27,6 @@ from builtins import range
 import os
 import re
 import codecs
-import errno
 
 from .nosis import pickle as nosis
 from . import node as nod
@@ -263,14 +262,18 @@ class NodeManager(object):
         Open a file and store it in a new buffer
         """
         if isXml(filepath):
+            dbg("Loading XML OD '%s'" % filepath)
             return self.ImportCurrentFromODFile(filepath)
         if isEds(filepath):
+            dbg("Loading EDS '%s'" % filepath)
             return self.ImportCurrentFromEDSFile(filepath, True)
+        dbg("Loading JSON OD '%s'" % filepath)
         return self.ImportCurrentFromJsonFile(filepath)
 
-    def SaveCurrentInFile(self, filepath=None):
+    def SaveCurrentInFile(self, filepath=None, filetype=None, sort=False,
+                          internal=False, validate=True):
         """
-        Save current node in  a file
+        Save current node in a file
         """
         # if no filepath given, verify if current node has a filepath defined
         if not filepath:
@@ -279,17 +282,28 @@ class NodeManager(object):
                 return False
 
         # Save node in file
-        low = filepath.lower() if filepath else ''
-        if low.endswith('.od'):
-            self.ExportCurrentToODFile(filepath)
-        elif low.endswith('.eds'):
-            self.ExportCurrentToEDSFile(filepath)
-        elif low.endswith('.json'):
-            self.ExportCurrentToJsonFile(filepath)
+        ext = os.path.splitext(filepath.lower())[1].lstrip('.')
+        if filetype:
+            ext = filetype.lower()
 
-        self.SetCurrentFilePath(filepath)
+        if ext == 'od':
+            dbg("Writing XML OD '%s'" % filepath)
+            self.ExportCurrentToODFile(filepath)
+        elif ext == 'eds':
+            dbg("Writing EDS '%s'" % filepath)
+            self.ExportCurrentToEDSFile(filepath)
+        elif ext == 'json':
+            dbg("Writing JSON OD '%s'" % filepath)
+            self.ExportCurrentToJsonFile(filepath, sort=sort, internal=internal, validate=validate)
+        elif ext == 'c':
+            dbg("Writing C files '%s'" % filepath)
+            self.ExportCurrentToCFile(filepath)
+        else:
+            raise ValueError("Unknown file suffix, unable to write file")
+
         # Update saved state in buffer
-        self.UndoBuffers[self.NodeIndex].CurrentSaved()
+        if ext != 'c':
+            self.UndoBuffers[self.NodeIndex].CurrentSaved()
         return True
 
     def CloseCurrent(self, ignore=False):
@@ -334,7 +348,8 @@ class NodeManager(object):
         """
         # Save node in file
         with open(filepath, "w") as f:
-            nosis.xmldump(f, self.CurrentNode)
+            # Never generate an od with IndexOrder in it
+            nosis.xmldump(f, self.CurrentNode, omit=('IndexOrder', ))
 
     def ImportCurrentFromEDSFile(self, filepath, load=False):
         """
@@ -357,14 +372,15 @@ class NodeManager(object):
         """
         Build the C definition of Object Dictionary for current node
         """
-        if self.CurrentNode:
-            gen_cfile.GenerateFile(filepath, self.CurrentNode)
+        if not self.CurrentNode:
+            raise ValueError("No node loaded")
+        gen_cfile.GenerateFile(filepath, self.CurrentNode)
 
-    def ExportCurrentToJsonFile(self, filepath):
+    def ExportCurrentToJsonFile(self, filepath, sort=False, internal=False, validate=True):
         """
         Export JSON
         """
-        jsonod.GenerateFile(filepath, self.CurrentNode)
+        jsonod.GenerateFile(filepath, self.CurrentNode, sort=sort, internal=internal, validate=validate)
 
     def ImportCurrentFromJsonFile(self, filepath):
         """
@@ -379,9 +395,10 @@ class NodeManager(object):
         self.SetCurrentFilePath(filepath)
         return index
 
-    def Validate(self, correct=False):
-        if self.CurrentNode:
-            self.CurrentNode.Validate(correct)
+    def Validate(self, fix=False):
+        if not self.CurrentNode:
+            raise ValueError("No node loaded")
+        return self.CurrentNode.Validate(fix)
 
 # ------------------------------------------------------------------------------
 #                        Add Entries to Current Functions
@@ -723,7 +740,7 @@ class NodeManager(object):
                 else:
                     subentry_infos = self.GetSubentryInfos(index, subindex)
                     type_ = subentry_infos["type"]
-                    dic = nod.CUSTOMISABLE_TYPES
+                    dic = {k: v for k, v in nod.CUSTOMISABLE_TYPES}
                     if type_ not in dic:
                         type_ = node.GetEntry(type_)[1]
                     if dic[type_] == 0:
@@ -849,8 +866,9 @@ class NodeManager(object):
         self.FilePaths.pop(index)
         self.FileNames.pop(index)
 
-    def GetCurrentNodeIndex(self):
-        return self.NodeIndex
+    # FIXME: Unused. Delete this?
+    # def GetCurrentNodeIndex(self):
+    #     return self.NodeIndex
 
     def GetCurrentFilename(self):
         return self.GetFilename(self.NodeIndex)
@@ -943,10 +961,11 @@ class NodeManager(object):
             return self.CurrentNode.Name
         return ""
 
-    def GetCurrentNodeCopy(self):
-        if self.CurrentNode:
-            return self.CurrentNode.Copy()
-        return None
+    # FIXME: Unused. Delete this?
+    # def GetCurrentNodeCopy(self):
+    #     if self.CurrentNode:
+    #         return self.CurrentNode.Copy()
+    #     return None
 
     def GetCurrentNodeID(self, node=None):  # pylint: disable=unused-argument
         if self.CurrentNode:
@@ -988,22 +1007,24 @@ class NodeManager(object):
             return self.CurrentNode.IsEntry(index)
         return False
 
-    def GetCurrentEntry(self, index, subindex=None, compute=True):
-        if self.CurrentNode:
-            return self.CurrentNode.GetEntry(index, subindex, compute)
-        return None
+    # FIXME: Unused. Delete this?
+    # def GetCurrentEntry(self, index, subindex=None, compute=True):
+    #     if self.CurrentNode:
+    #         return self.CurrentNode.GetEntry(index, subindex, compute)
+    #     return None
 
-    def GetCurrentParamsEntry(self, index, subindex=None):
-        if self.CurrentNode:
-            return self.CurrentNode.GetParamsEntry(index, subindex)
-        return None
+    # FIXME: Unused. Delete this?
+    # def GetCurrentParamsEntry(self, index, subindex=None):
+    #     if self.CurrentNode:
+    #         return self.CurrentNode.GetParamsEntry(index, subindex)
+    #     return None
 
     def GetCurrentValidIndexes(self, min_, max_):
-        validindexes = []
-        for index in self.CurrentNode.GetIndexes():
-            if min_ <= index <= max_:
-                validindexes.append((self.GetEntryName(index), index))
-        return validindexes
+        return [
+            (self.GetEntryName(index), index)
+            for index in self.CurrentNode.GetIndexes()
+            if min_ <= index <= max_
+        ]
 
     def GetCurrentValidChoices(self, min_, max_):
         validchoices = []

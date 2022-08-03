@@ -36,7 +36,7 @@ from . import subindextable as sit
 from . import commondialogs as cdia
 from .. import nodemanager as nman
 from .. import SCRIPT_DIRECTORY
-from .. import __version__
+from .. import ODG_VERSION
 from .. import dbg
 
 if sys.version_info[0] >= 3:
@@ -375,7 +375,8 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
 # ------------------------------------------------------------------------------
 
     def OnNewMenu(self, event):  # pylint: disable=unused-argument
-        self.FilePath = ""
+        # FIXME: Unused. Delete this?
+        # self.FilePath = ""
         dialog = cdia.CreateNodeDialog(self)
         if dialog.ShowModal() == wx.ID_OK:
             name, id_, nodetype, description = dialog.GetValues()
@@ -581,7 +582,7 @@ def uimain(args):
     wx.InitAllImageHandlers()
 
     # Install a exception handle for bug reports
-    AddExceptHook(os.getcwd(), __version__)
+    AddExceptHook(os.getcwd(), ODG_VERSION)
 
     frame = ObjdictEdit(None, filesopen=args)
 

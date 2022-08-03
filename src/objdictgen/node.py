@@ -30,9 +30,10 @@ import sys
 import re
 import copy
 from collections import OrderedDict
+import traceback
 from past.builtins import execfile
 from future.utils import raise_from
-import pprint
+import colorama
 
 from .nosis import pickle as nosis
 from . import PROFILE_DIRECTORIES
@@ -44,6 +45,8 @@ if sys.version_info[0] >= 3:
 else:
     ODict = OrderedDict
 
+Fore = colorama.Fore
+Style = colorama.Style
 
 #
 # Dictionary of translation between access symbol and their signification
@@ -352,6 +355,7 @@ def ImportProfile(profilename):
         return Mapping, AddMenuEntries  # noqa: F821
     except Exception as exc:  # pylint: disable=broad-except
         dbg("EXECFILE FAILED: %s" % exc)
+        dbg(traceback.format_exc())
         raise_from(ValueError("Loading profile '%s' failed: %s" % (profilepath, exc)), exc)
         return None  # To satisfy linter only
 
@@ -364,11 +368,11 @@ def FindTypeIndex(typename, mappingdictionary):
     """
     Return the index of the typename given by searching in mappingdictionary
     """
-    testdic = {}
-    for index, values in mappingdictionary.items():
-        if index < 0x1000:
-            testdic[values["name"]] = index
-    return testdic.get(typename)
+    return {
+        values["name"]: index
+        for index, values in mappingdictionary.items()
+        if index < 0x1000
+    }.get(typename)
 
 
 def FindTypeName(typeindex, mappingdictionary):
@@ -470,7 +474,6 @@ def FindMapVariableList(mappingdictionary, node, compute=True):
     """
     Return the list of variables that can be mapped defined in mappingdictionary
     """
-    list_ = []
     for index in mappingdictionary:
         if node.IsEntry(index):
             for subindex, values in enumerate(mappingdictionary[index]["values"]):
@@ -483,13 +486,12 @@ def FindMapVariableList(mappingdictionary, node, compute=True):
                             computed_name = name
                             if compute:
                                 computed_name = StringFormat(computed_name, 1, i + 1)
-                            list_.append((index, i + 1, infos["size"], computed_name))
+                            yield (index, i + 1, infos["size"], computed_name)
                     else:
                         computed_name = name
                         if compute:
                             computed_name = StringFormat(computed_name, 1, subindex)
-                        list_.append((index, subindex, infos["size"], computed_name))
-    return list_
+                        yield (index, subindex, infos["size"], computed_name)
 
 
 def FindMandatoryIndexes(mappingdictionary):
@@ -570,6 +572,7 @@ class Node(object):
         self.ParamsDictionary = ODict()
         self.DS302 = ODict()
         self.UserMapping = ODict()
+        self.IndexOrder = []
 
     def GetMappings(self, userdefinedtoo=True):
         """
@@ -688,9 +691,11 @@ class Node(object):
                     self.CompileValue(value, index, compute)
                     for value in self.Dictionary[index]
                 ]
+            result = self.CompileValue(self.Dictionary[index], index, compute)
+            # This option ensures that the function consistently returns a list
             if aslist:
-                return [self.CompileValue(self.Dictionary[index], index, compute)]
-            return self.CompileValue(self.Dictionary[index], index, compute)
+                return [result]
+            return result
         if subindex == 0:
             if isinstance(self.Dictionary[index], list):
                 return len(self.Dictionary[index])
@@ -720,6 +725,7 @@ class Node(object):
             result = DEFAULT_PARAMS.copy()
             if index in self.ParamsDictionary:
                 result.update(self.ParamsDictionary[index])
+            # This option ensures that the function consistently returns a list
             if aslist:
                 return [result]
             return result
@@ -884,14 +890,15 @@ class Node(object):
             i += incr
         self.Dictionary.pop(i)
 
-    def RemoveUserType(self, index):
-        type_ = self.GetEntry(index, 1)
-        for i in self.UserMapping:  # pylint: disable=consider-using-dict-items
-            for value in self.UserMapping[i]["values"]:
-                if value["type"] == index:
-                    value["type"] = type_
-        self.RemoveMappingEntry(index)
-        self.RemoveEntry(index)
+    # FIXME: Unused. Delete this?
+    # def RemoveUserType(self, index):
+    #     type_ = self.GetEntry(index, 1)
+    #     for i in self.UserMapping:  # pylint: disable=consider-using-dict-items
+    #         for value in self.UserMapping[i]["values"]:
+    #             if value["type"] == index:
+    #                 value["type"] = type_
+    #     self.RemoveMappingEntry(index)
+    #     self.RemoveEntry(index)
 
     def Copy(self):
         """
@@ -902,50 +909,141 @@ class Node(object):
     def GetDict(self):
         return copy.deepcopy(self.__dict__)
 
+    def GetIndexDict(self, index):
+        ''' Return a dict representation of the index '''
+        obj = {}
+        if index in self.Dictionary:
+            obj['dictionary'] = self.Dictionary[index]
+        if index in self.ParamsDictionary:
+            obj['params'] = self.ParamsDictionary[index]
+        if index in self.Profile:
+            obj['profile'] = self.Profile[index]
+        if index in self.DS302:
+            obj['ds302'] = self.DS302[index]
+        if index in self.UserMapping:
+            obj['user'] = self.UserMapping[index]
+        if index in MAPPING_DICTIONARY:
+            obj['built-in'] = MAPPING_DICTIONARY[index]
+        base = self.GetBaseIndex(index)
+        if base != index:
+            obj['base'] = base
+        return copy.deepcopy(obj)
+
     def GetIndexes(self):
         """
         Return a sorted list of indexes in Object Dictionary
         """
         return list(sorted(self.Dictionary))
 
-    def Print(self):
+    def PrintGen(self, keys=None, short=False, compact=False, unused=False, verbose=False, raw=False):
         """
         Print the Dictionary values
         """
-        print(self.PrintString())
 
-    def PrintString(self):
-        result = ""
-        for index in sorted(self.Dictionary):
-            name = self.GetEntryName(index)
-            values = self.Dictionary[index]
-            if isinstance(values, list):
-                result += "%04X (%s):\n" % (index, name)
-                for subidx, value in enumerate(values):
-                    subentry_infos = self.GetSubentryInfos(index, subidx + 1)
-                    if index == 0x1F22 and value:
-                        nb_params = BE_to_LE(value[:4])
-                        data = value[4:]
-                        value = "%d arg defined" % nb_params
-                        i = 0
-                        count = 1
-                        while i < len(data):
-                            value += "\n%04X %02X, arg %d: " % (index, subidx + 1, count)
-                            value += "%04X" % BE_to_LE(data[i:i + 2])
-                            value += " %02X" % BE_to_LE(data[i + 2:i + 3])
-                            size = BE_to_LE(data[i + 3:i + 7])
-                            value += " %08X" % size
-                            value += (" %0" + "%d" % (size * 2) + "X") % BE_to_LE(data[i + 7:i + 7 + size])
-                            i += 7 + size
-                            count += 1
-                    elif isinstance(value, int):
-                        value = "%X" % value
-                    result += "%04X %02X (%s): %s\n" % (index, subidx + 1, subentry_infos["name"], value)
-            else:
-                if isinstance(values, int):
-                    values = "%X" % values
-                result += "%04X (%s): %s\n" % (index, name, values)
-        return result
+        # Get the indexes to print and determine the order
+        keys = keys or self.GetAllParameters(sort=True)
+
+        index_range = None
+        for k in keys:
+
+            obj = self.GetEntryInfos(k)
+            if not obj:
+                continue
+
+            # Get the node flags
+            flags = self.GetEntryFlags(k)
+            if 'Unused' in flags and not unused:
+                continue
+
+            # Print the parameter range header
+            ir = GetIndexRange(k)
+            if index_range != ir:
+                index_range = ir
+                if not compact:
+                    yield (Fore.YELLOW + ir["description"] + Style.RESET_ALL)
+
+            # Replace flags for formatting
+            for i, flag in enumerate(flags):
+                if flag == 'Missing':
+                    flags[i] = Fore.RED + ' *MISSING* ' + Style.RESET_ALL
+
+            # Print formattings
+            fmt = {
+                'key': "%s0x%04x (%d)%s" %(Fore.GREEN, k, k, Style.RESET_ALL),
+                'name': self.GetEntryName(k),
+                'struct': ODStructTypes.to_string(obj.get('struct'), '???').upper(),
+                'flags': "  %s%s%s" %(Fore.CYAN, ', '.join(flags), Style.RESET_ALL) if flags else '',
+                'pre': '    ' if not compact else '',
+            }
+
+            # ** PRINT PARAMETER **
+            yield ("{pre}{key}  {name}   [{struct}]{flags}".format(**fmt))
+
+            # Omit printing sub index data if:
+            if short or k not in self.Dictionary:
+                continue
+
+            infos = []
+            for info in self.GetAllSubentryInfos(k, compute=not raw):
+
+                # Prepare data for printing
+
+                i = info['subindex']
+                typename = self.GetTypeName(info['type'])
+                value = info['value']
+
+                # Special formatting on value
+                if isinstance(value, str):
+                    value = '"' + value + '"'
+                elif i and index_range and index_range["name"] in ('rpdom', 'tpdom'):
+                    index, subindex, _ = self.GetMapIndex(value)
+                    pdo = self.GetSubentryInfos(index, subindex)
+                    suffix = '???' if value else ''
+                    if pdo:
+                        suffix = '%s' % (pdo["name"],)
+                    value = "0x%x  %s" % (value, suffix)
+                elif i and value and (k in (4120, ) or 'COB ID' in info["name"]):
+                    value = "0x%x" % (value)
+                else:
+                    value = str(value)
+
+                comment = info['comment'] or ''
+                if comment:
+                    comment = Fore.LIGHTBLACK_EX + ('/* %s */' % info.get('comment')) + Style.RESET_ALL
+
+                # Omit printing this subindex if:
+                if not verbose and i == 0 and fmt['struct'] in ('RECORD', 'NRECORD', 'ARRAY', 'NARRAY') and not comment:
+                    continue
+
+                # Print formatting
+                infos.append({
+                    'i': "%02d" % i,
+                    'access': info['access'],
+                    'pdo': 'P' if info['pdo'] else ' ',
+                    'name': info['name'],
+                    'type': typename,
+                    'value': value,
+                    'comment': comment,
+                    'pre': fmt['pre'],
+                })
+
+            # Calculate the max width for each of the columns
+            w = {
+                col: max(len(str(row[col])) for row in infos) or ''
+                for col in infos[0]
+            }
+
+            # Generate a format string based on the calculcated column widths
+            fmt = "{pre}    {i:%ss}  {access:%ss}  {pdo:%ss}  {name:%ss}  {type:%ss}  {value:%ss}  {comment}" % (
+                         w["i"],  w["access"],  w["pdo"],  w["name"],  w["type"],  w["value"]  # noqa: E126, E241
+            )
+
+            # Print each line using the generated format string
+            for info in infos:
+                yield (fmt.format(**info))
+
+            if not compact and infos:
+                yield ("")
 
     def CompileValue(self, value, index, compute=True):
         if isinstance(value, (str, unicode)) and '$NODEID' in value.upper():
@@ -1037,6 +1135,41 @@ class Node(object):
             return r301
         return result
 
+    def GetEntryFlags(self, index):
+        flags = []
+        info = self.GetEntryInfos(index)
+        if not info:
+            return flags
+
+        if info.get('need'):
+            flags.append("Mandatory")
+        if index in self.UserMapping:
+            flags.append("User")
+        if index in self.DS302:
+            flags.append("DS-302")
+        if index in self.Profile:
+            flags.append("Profile")
+        if self.HasEntryCallbacks(index):
+            flags.append('CB')
+        if index not in self.Dictionary:
+            if index in self.DS302 or index in self.Profile:
+                flags.append("Unused")
+            else:
+                flags.append("Missing")
+        return flags
+
+    def GetAllSubentryInfos(self, index, compute=True):
+        values = self.GetEntry(index, compute=compute, aslist=True)
+        entries = self.GetParamsEntry(index, aslist=True)
+        for i, (value, entry) in enumerate(zip(values, entries)):
+            info = {
+                'subindex': i,
+                'value': value,
+            }
+            info.update(self.GetSubentryInfos(index, i))
+            info.update(entry)
+            yield info
+
     def GetTypeIndex(self, typename):
         result = None
         mappings = self.GetMappings()
@@ -1071,7 +1204,7 @@ class Node(object):
         return result
 
     def GetMapVariableList(self, compute=True):
-        list_ = FindMapVariableList(MAPPING_DICTIONARY, self, compute)
+        list_ = list(FindMapVariableList(MAPPING_DICTIONARY, self, compute))
         for mapping in self.GetMappings():
             list_.extend(FindMapVariableList(mapping, self, compute))
         list_.sort()
@@ -1084,11 +1217,10 @@ class Node(object):
         return list_
 
     def GetCustomisableTypes(self):
-        dic = {}
-        for index, valuetype in CUSTOMISABLE_TYPES:
-            name = self.GetTypeName(index)
-            dic[index] = [name, valuetype]
-        return dic
+        return {
+            index: (self.GetTypeName(index), valuetype)
+            for index, valuetype in CUSTOMISABLE_TYPES
+        }
 
 # ------------------------------------------------------------------------------
 #                            Type helper functions
@@ -1174,61 +1306,43 @@ class Node(object):
         list_ = ["None"] + [self.GenerateMapName(name, index, subindex) for index, subindex, size, name in self.GetMapVariableList()]
         return ",".join(list_)
 
-    def GetAllParameters(self):
+    def GetAllParameters(self, sort=False):
+        """ Get a list of all the parameters """
 
-        dictionary = set(self.UserMapping.keys())
-        dictionary.update(self.Dictionary.keys())
-        dictionary.update(self.ParamsDictionary.keys())
+        order = list(self.UserMapping.keys())
+        order += [k for k in self.Dictionary.keys() if k not in order]
+        order += [k for k in self.ParamsDictionary.keys() if k not in order]
         if self.Profile:
-            dictionary.update(self.Profile.keys())
+            order += [k for k in self.Profile.keys() if k not in order]
         if self.DS302:
-            dictionary.update(self.DS302.keys())
-        return dictionary
+            order += [k for k in self.DS302.keys() if k not in order]
+
+        if sort:
+            order = sorted(order)
+
+        # Is there a recorded order that should supersede the above sequence?
+        # Node might not contain IndexOrder if read from legacy od file
+        elif hasattr(self, 'IndexOrder'):
+            # Pick k from IndexOrder which is present in order
+            keys = [k for k in self.IndexOrder if k in order]
+            # Append any missing k from order that is not in IndexOrder
+            keys += (k for k in order if k not in keys)
+            order = keys
+
+        return order
 
 
 # ------------------------------------------------------------------------------
 #                            Comparison and checks
 # ------------------------------------------------------------------------------
 
-    def Compare(self, other):
+    def Validate(self, fix=False):
+        ''' Verify any inconsistencies when loading an OD. The function will
+            attempt to fix the data if the correct flag is enabled.
+        '''
 
-        changes = []
-        for attr in (
-            "Name", "Type", "ID", "Description", "ProfileName", "SpecificMenu",
-            "DefaultStringSize"
-        ):
-            if getattr(self, attr) != getattr(other, attr):
-                changes.append("%s differ. '%s' in LEFT, '%s' in RIGHT" %(attr, getattr(self, attr), getattr(other, attr)))
-
-        def compare(a, b, changes, name):
-            for k in set(a.keys()) | set(b.keys()):
-                if k not in a:
-                    changes.append("%s for 0x%04X not in LEFT" % (name, k))
-                if k not in b:
-                    changes.append("%s for 0x%04X not in RIGHT" % (name, k))
-                if k in a and k in b and a[k] != b[k]:
-                    pa = ["        " + t for t in pprint.pformat(a[k]).splitlines()]
-                    pb = ["        " + t for t in pprint.pformat(b[k]).splitlines()]
-                    changes.append("""%s for 0x%04X differ
-    In LEFT:
-%s
-
-    In RIGHT:
-%s
-""" % (name, k, "\n".join(pa), "\n".join(pb)))
-
-        compare(self.Dictionary, other.Dictionary, changes, 'Value')
-        compare(self.DS302, other.DS302, changes, 'DS302 entry')
-        compare(self.Profile, other.Profile, changes, 'Profile entry')
-        compare(self.ParamsDictionary, other.ParamsDictionary, changes, 'Parameter')
-        compare(self.UserMapping, other.UserMapping, changes, 'User mapping')
-
-        return changes
-
-
-    def Validate(self, correct=False):
-
-        params = set(sorted(self.Dictionary.keys()))
+        # Because the sorted() is used below, using set() here is of no importance
+        params = set(self.Dictionary.keys())
         params.update(self.ParamsDictionary.keys())
 
         for k in sorted(params):
@@ -1236,7 +1350,7 @@ class Node(object):
             name = self.GetEntryName(k)
             if k not in self.Dictionary:
                 warning("WARNING: 0x%04x (%d) '%s': Parameter without any value" % (k, k, name))
-                if correct:
+                if fix:
                     del self.ParamsDictionary[k]
                 continue
 
@@ -1249,24 +1363,8 @@ class Node(object):
 
                 if not info['name']:
                     warning("WARNING: 0x%04x (%d) '%s': Sub-parameter %02d has no name" % (k, k, name, i))
-                    if correct:
+                    if fix:
                         self.UserMapping[k]['values'][i]['name'] = 'Subindex %02x' %(i, )
-
-
-def diff_dict(name, a, b):
-    diff = []
-    for k in set(a.keys()) | set(b.keys()):
-        kn = "%s['%s']" %(name, k)
-        if k not in a:
-            diff.append(('only_right', kn, b[k]))
-        elif k not in b:
-            diff.append(('only_left', kn, a[k]))
-        elif a[k] != b[k]:
-            if isinstance(a, dict) and isinstance(b, dict):
-                diff.append(diff_dict(kn, a[k], b[k]))
-            else:
-                diff.append(('differ', kn, a[k], b[k]))
-    return diff
 
 
 def BE_to_LE(value):
@@ -1277,6 +1375,8 @@ def BE_to_LE(value):
     @return: a string containing the value converted
     """
 
+    # FIXME: The function title is confusing as the input data type (str) is
+    # different than the output (int)
     return int("".join(["%2.2X" % ord(char) for char in reversed(value)]), 16)
 
 
@@ -1288,6 +1388,8 @@ def LE_to_BE(value, size):
     @return: a string containing the value converted
     """
 
+    # FIXME: The function title is confusing as the input data type (int) is
+    # different than the output (str)
     data = ("%" + str(size * 2) + "." + str(size * 2) + "X") % value
     list_car = [data[i:i + 2] for i in range(0, len(data), 2)]
     list_car.reverse()

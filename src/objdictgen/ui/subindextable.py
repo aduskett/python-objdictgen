@@ -140,8 +140,9 @@ class SubindexTable(wx.grid.PyGridTableBase):
             return self.colnames[col]
         return None
 
-    def GetRowLabelValues(self, row, translate=True):  # pylint: disable=unused-argument
-        return row
+    # FIXME: Unused. Delete this?
+    # def GetRowLabelValues(self, row, translate=True):  # pylint: disable=unused-argument
+    #     return row
 
     def GetValue(self, row, col, translate=True):  # pylint: disable=unused-argument
         if row < self.GetNumberRows():
@@ -301,8 +302,9 @@ class SubindexTable(wx.grid.PyGridTableBase):
     def SetCurrentIndex(self, index):
         self.CurrentIndex = index
 
-    def AppendRow(self, row_content):
-        self.data.append(row_content)
+    # FIXME: Unused. Delete this?
+    # def AppendRow(self, row_content):
+    #     self.data.append(row_content)
 
     def Empty(self):
         self.data = []

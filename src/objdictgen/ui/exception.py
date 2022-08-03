@@ -10,7 +10,8 @@ import wx
 #                               Exception Handler
 # ------------------------------------------------------------------------------
 
-MAX_TRACEBACK_LIST_SIZE = 20
+# FIXME: Unused. Delete this?
+# MAX_TRACEBACK_LIST_SIZE = 20
 
 
 def Display_Exception_Dialog(e_type, e_value, e_tb):

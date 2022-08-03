@@ -20,4 +20,4 @@ def test_create_slave():
 def test_load(basepath):
 
     m1 = NodeManager()
-    m1.OpenFileInCurrent(os.path.join(basepath, 'tests', 'od', 'jsontest.od'))
+    m1.OpenFileInCurrent(os.path.join(basepath, 'tests', 'od', 'master.od'))

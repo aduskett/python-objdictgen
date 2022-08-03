@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<!DOCTYPE PyObject SYSTEM "PyObjects.dtd">
+<PyObject module="node" class="Node" id="1907919957168">
+<attr name="Name" type="string">Null</attr>
+<attr name="Type" type="string">master</attr>
+<attr name="ID" type="numeric" value="0" />
+<attr name="Description" type="string"></attr>
+<attr name="ProfileName" type="string">None</attr>
+<attr name="Profile" type="dict" id="1907902099264" >
+</attr>
+<attr name="SpecificMenu" type="list" id="1907945531392" >
+</attr>
+<attr name="Dictionary" type="dict" id="1907945526912" >
+</attr>
+<attr name="ParamsDictionary" type="dict" id="1907945536384" >
+</attr>
+<attr name="DS302" type="dict" id="1907945534592" >
+</attr>
+<attr name="UserMapping" type="dict" id="1907945536576" >
+</attr>
+</PyObject>

@@ -3,7 +3,8 @@ import logging
 
 log = logging.getLogger('objdictgen')
 
-__version__ = "3.1"
+ODG_PROGRAM = "odg"
+ODG_VERSION = "3.2"
 
 SCRIPT_DIRECTORY = os.path.split(__file__)[0]
 
@@ -12,9 +13,6 @@ odgdir = os.environ.get('ODG_PROFILE_DIR')
 if odgdir:
     PROFILE_DIRECTORIES.append(odgdir)
 
-SCHEMA_FILE = os.path.join(SCRIPT_DIRECTORY, 'schema', 'od.schema.json')
-
-
 def dbg(msg):  # pylint: disable=unused-argument
-    log.debug(">> %s" % (msg,))
+    log.debug(">> %s", msg)
 warning = log.warning

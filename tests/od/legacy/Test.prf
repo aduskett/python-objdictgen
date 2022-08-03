@@ -1,0 +1,29 @@
+global Mapping, AddMenuEntries
+
+Mapping = {
+    0x5000 : {"name" : "Global Interrupt Enable Digital (VAR)", "struct" : var, "need" : False, "values" :
+                [{"name" : "Global Interrupt Enable Digital", "type" : 0x01, "access" : 'rw', "pdo" : False}]},
+
+    0x5100 : {"name" : "Software position limit (RECORD)", "struct" : array, "need" : False, "values" :
+                [{"name" : "Number of entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
+                 {"name" : "Minimal position limit", "type" : 0x04, "access" : 'rw', "pdo" : False},
+                 {"name" : "Maximal position limit", "type" : 0x04, "access" : 'rw', "pdo" : False}]},
+
+    0x5200 : {"name" : "Acceleration Value (ARRAY)", "struct" : rec, "need" : False, "values" :
+                [{"name" : "Number of Available Channels", "type" : 0x05, "access" : 'ro', "pdo" : False},
+                 {"name" : "Acceleration Value Channel %d[(sub)]", "type" : 0x03, "access" : 'ro', "pdo" : True, "nbmax" : 0xFE}]},
+
+    0x5300: {"name": "Test profile %d[(idx)] (NVAR)", "struct": plurivar, "incr": 2, "nbmax": 0x10, "need": False, "values":
+             [{"name": "Device Type %d and %d[(idx,sub)]", "type": 0x07, "access": 'ro', "pdo": True}]},
+
+    0x5400 : {"name" : "CAM%d Low Limit[(idx)] (NARRAY)", "struct" : plurirec, "incr" : 2, "need" : False, "nbmax" : 0x10, "values" :
+                [{"name" : "Number of Available Channels", "type" : 0x05, "access" : 'ro', "pdo" : False},
+                 {"name" : "CAM%d Low Limit Channel %d[(idx,sub)]", "type" : 0x04, "access" : 'rw', "pdo" : False, "nbmax" : 0xFE}]},
+
+    0x5500 : {"name" : "AL %d Action[(idx)] (NRECORD)", "struct" : pluriarray, "incr" : 2, "need" : False, "nbmax" : 16,  "values" :
+                [{"name" : "Number of Entries", "type" : 0x05, "access" : 'ro', "pdo" : False},
+                 {"name" : "AL %d Action %d[(idx,sub)]", "type" : 0x05, "access" : 'rw', "pdo" : False, "nbmax" : 0x6}]},
+
+}
+
+AddMenuEntries = []

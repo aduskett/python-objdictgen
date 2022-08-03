@@ -11,16 +11,12 @@ import objdictgen.node
 HERE = os.path.split(__file__)[0]
 
 # Location of the test OD files
-REF = os.path.join(HERE, 'od')
+ODDIR = os.path.join(HERE, 'od')
 
 # Make a list of all .od files in tests/od
-ODFILES = [
-    os.path.abspath(f.replace('.od', '')) for f in glob.glob(os.path.join(REF, '*.od'))
-]
-if os.path.exists(os.path.join(REF, 'legacy')):
-    ODFILES.extend([
-        os.path.abspath(f.replace('.od', '')) for f in glob.glob(os.path.join(REF, 'legacy', '*.od'))
-    ])
+ODFILES = list(glob.glob(os.path.join(ODDIR, '*.od')))
+ODFILES.extend(glob.glob(os.path.join(ODDIR, 'extra', '*.od')))
+
 
 @attr.s
 class ODFile(object):
@@ -34,9 +30,22 @@ class ODFile(object):
         return os.path.split(self.filename)[1]
     @property
     def relpath(self):
-        return os.path.relpath(self.filename, REF)
+        return os.path.relpath(self.filename, ODDIR)
 
-ODFILES = [ODFile(x) for x in ODFILES]
+ODFILES = [ODFile(os.path.abspath(x.replace('.od', ''))) for x in ODFILES]
+
+def pytest_generate_tests(metafunc):
+    ''' Special fixture generators '''
+    if "odfile" in metafunc.fixturenames:
+        metafunc.parametrize("odfile", ODFILES, ids=[
+            o.relpath for o in ODFILES
+        ], indirect=True)
+
+
+@pytest.fixture
+def oddir():
+    """ Fixture returning the path for the od test directory """
+    return os.path.abspath(os.path.join(ODDIR))
 
 
 @pytest.fixture
@@ -50,7 +59,7 @@ def wd(tmp_path):
     """ Fixture that changes the working directory to a temp location """
     cwd = os.getcwd()
     os.chdir(str(tmp_path))
-    print("PATH: %s" % os.getcwd())
+    # print("PATH: %s" % os.getcwd())
     yield os.getcwd()
     os.chdir(str(cwd))
 
@@ -62,7 +71,7 @@ def profile(monkeypatch):
     """
     newdirs = []
     newdirs.extend(objdictgen.PROFILE_DIRECTORIES)
-    newdirs.append(REF)
+    newdirs.append(ODDIR)
     monkeypatch.setattr(objdictgen, 'PROFILE_DIRECTORIES', newdirs)
     yield None
 
@@ -71,13 +80,6 @@ def profile(monkeypatch):
 def odfile(request, profile):
     """ Fixture for each of the od files in the test directory """
     yield request.param
-
-
-def pytest_generate_tests(metafunc):
-    if "odfile" in metafunc.fixturenames:
-        metafunc.parametrize("odfile", ODFILES, ids=[
-            o.relpath for o in ODFILES
-        ], indirect=True)
 
 
 def diff(a, b, predicate=None, **kw):

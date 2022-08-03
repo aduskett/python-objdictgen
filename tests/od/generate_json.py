@@ -12,12 +12,14 @@ def convert(fname):
     print("Reading %s" % fname)
     manager.OpenFileInCurrent(base + '.od')
 
+    manager.CurrentNode.Validate(fix=True)
+
     print("    Writing json")
-    manager.ExportCurrentToJsonFile(base + '.json')
+    manager.ExportCurrentToJsonFile(base + '.json', sort=True)
 
 os.chdir(here)
 
 # for fname in glob.glob('*.od'):
 #     convert(fname)
-for fname in glob.glob(os.path.join('legacy', '*.od')):
+for fname in glob.glob(os.path.join('extra', '*.od')):
     convert(fname)

@@ -189,11 +189,11 @@ def StreamReader(stream):
     return stream
 
 
-def xmldump(iohandle=None, obj=None, binary=0, deepcopy=None):
+def xmldump(iohandle=None, obj=None, binary=0, deepcopy=None, omit=None):
     "Create the XML representation as a string."
     if deepcopy is None:
         deepcopy = 0
-    return _pickle_toplevel_obj(StreamWriter(iohandle, binary), obj, deepcopy)
+    return _pickle_toplevel_obj(StreamWriter(iohandle, binary), obj, deepcopy, omit)
 
 
 def xmlload(filehandle):
@@ -204,7 +204,7 @@ def xmlload(filehandle):
 # -- support functions
 
 
-def _pickle_toplevel_obj(xml_list, py_obj, deepcopy):
+def _pickle_toplevel_obj(xml_list, py_obj, deepcopy, omit=None):
     "handle the top object -- add XML header, etc."
 
     # Store the ref id to the pickling object (if not deepcopying)
@@ -246,7 +246,7 @@ def _pickle_toplevel_obj(xml_list, py_obj, deepcopy):
     else:
         xml_list.append('<PyObject %s>\n' % (extra))
 
-    pickle_instance(py_obj, xml_list, level=0, deepcopy=deepcopy)
+    pickle_instance(py_obj, xml_list, level=0, deepcopy=deepcopy, omit=omit)
     xml_list.append('</PyObject>\n')
 
     # returns None if xml_list is a fileobj, but caller should
@@ -254,7 +254,7 @@ def _pickle_toplevel_obj(xml_list, py_obj, deepcopy):
     return xml_list.getvalue()
 
 
-def pickle_instance(obj, list_, level=0, deepcopy=0):
+def pickle_instance(obj, list_, level=0, deepcopy=0, omit=None):
     """Pickle the given object into a <PyObject>
 
     Add XML tags to list. Level is indentation (for aesthetic reasons)
@@ -275,6 +275,8 @@ def pickle_instance(obj, list_, level=0, deepcopy=0):
         # don't need it as a single object - save keys/vals as
         # first-level attributes
         for key, val in stuff.items():
+            if omit and key in omit:
+                continue
             list_.append(_attr_tag(key, val, level, deepcopy))
     else:
         raise ValueError("'%s.__dict__' is not a dict" % (obj))

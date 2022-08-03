@@ -14,8 +14,11 @@ dist/
 *.whl
 __*
 !__*__.py
+_tmp*
 
-tests/od/legacy
+tests/od/extra*
+/*.od
+/*.json
 
 objdictgen.*
 fw-can-shared

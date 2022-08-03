@@ -59,18 +59,20 @@ class NodeList(object):
             root_path = self.Root
         return os.path.join(root_path, "eds")
 
-    def SetRoot(self, newrootpath):
-        if os.path.isdir(newrootpath):
-            self.Root = newrootpath
-            self.Manager.SetCurrentFilePath(os.path.join(self.Root, "master.od"))
-            return True
-        return False
+    # FIXME: Unused. Delete this?
+    # def SetRoot(self, newrootpath):
+    #     if os.path.isdir(newrootpath):
+    #         self.Root = newrootpath
+    #         self.Manager.SetCurrentFilePath(os.path.join(self.Root, "master.od"))
+    #         return True
+    #     return False
 
     def GetMasterNodeID(self):
         return self.Manager.GetCurrentNodeID()
 
-    def GetSlaveNumber(self):
-        return len(self.SlaveNodes)
+    # FIXME: Unused. Delete this?
+    # def GetSlaveNumber(self):
+    #     return len(self.SlaveNodes)
 
     def GetSlaveName(self, idx):
         return self.SlaveNodes[idx]["Name"]
@@ -273,9 +275,11 @@ def main(projectdir):
 
     nodelist.LoadProject(projectdir)
     print("MasterNode :")
-    manager.CurrentNode.Print()
+    for list in manager.CurrentNode.PrintGen(raw=True):
+        print(list)
     print()
     for nodeid, node in nodelist.SlaveNodes.items():
         print("SlaveNode name=%s id=0x%2.2X :" % (node["Name"], nodeid))
-        node["Node"].Print()
+        for list in node["Node"].PrintGen():
+            print(list)
         print()

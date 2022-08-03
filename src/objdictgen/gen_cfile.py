@@ -31,6 +31,8 @@ from . import node as nod
 RE_WORD = re.compile(r'([a-zA-Z_0-9]*)')
 RE_TYPE = re.compile(r'([\_A-Z]*)([0-9]*)')
 RE_RANGE = re.compile(r'([\_A-Z]*)([0-9]*)\[([\-0-9]*)-([\-0-9]*)\]')
+RE_STARTS_WITH_DIGIT = re.compile(r'^(\d.*)')
+RE_NOTW = re.compile(r"[^\w]")
 
 CATEGORIES = [("SDO_SVR", 0x1200, 0x127F), ("SDO_CLT", 0x1280, 0x12FF),
               ("PDO_RCV", 0x1400, 0x15FF), ("PDO_RCV_MAP", 0x1600, 0x17FF),
@@ -44,14 +46,6 @@ class CFileContext(object):
     def __init__(self):
         self.internal_types = {}
         self.default_string_size = 10
-
-
-# Verify that the name does not start with a digit
-def UnDigitName(name):
-    start_with_digit = re.compile(r'^(\d.*)')
-    if start_with_digit.match(name):
-        return start_with_digit.sub(r'_\1', name)
-    return name
 
 
 # Format a string for making a C++ variable
@@ -110,11 +104,6 @@ def ComputeValue(type_, value):
     if value < 0:
         return "-0x%X" % (-value), "\t/* %s */" % str(value)
     return "0x%X" % value, "\t/* %s */" % str(value)
-
-
-def WriteFile(filepath, content):
-    with open(filepath, "wb") as f:
-        f.write(content.encode('utf-8'))
 
 
 def GetTypeName(node, typenumber):
@@ -231,7 +220,7 @@ def GenerateFileContent(node, headerfilepath, pointers_dict=None):
                 texts["suffixe"] = ""
             texts["value"], texts["comment"] = ComputeValue(typeinfos[2], values)
             if index in variablelist:
-                texts["name"] = UnDigitName(FormatName(subentry_infos["name"]))
+                texts["name"] = RE_STARTS_WITH_DIGIT.sub(r'_\1', FormatName(subentry_infos["name"]))
                 strDeclareHeader += "extern %(subIndexType)s %(name)s%(suffixe)s;\t\t/* Mapped at index 0x%(index)04X, subindex 0x00*/\n" % texts
                 mappedVariableContent += "%(subIndexType)s %(name)s%(suffixe)s = %(value)s;\t\t/* Mapped at index 0x%(index)04X, subindex 0x00 */\n" % texts
             else:
@@ -262,7 +251,7 @@ def GenerateFileContent(node, headerfilepath, pointers_dict=None):
                     texts["type_suffixe"] = ""
                 texts["length"] = values[0]
                 if index in variablelist:
-                    texts["name"] = UnDigitName(FormatName(entry_infos["name"]))
+                    texts["name"] = RE_STARTS_WITH_DIGIT.sub(r'_\1', FormatName(entry_infos["name"]))
                     texts["values_count"] = str(len(values) - 1)
                     strDeclareHeader += "extern %(subIndexType)s %(name)s[%(values_count)s]%(suffixe)s;\t\t/* Mapped at index 0x%(index)04X, subindex 0x01 - 0x%(length)02X */\n" % texts
                     mappedVariableContent += "%(subIndexType)s %(name)s[]%(suffixe)s =\t\t/* Mapped at index 0x%(index)04X, subindex 0x01 - 0x%(length)02X */\n  {\n" % texts
@@ -288,7 +277,7 @@ def GenerateFileContent(node, headerfilepath, pointers_dict=None):
                     strindex += "                    };\n"
             else:
 
-                texts["parent"] = UnDigitName(FormatName(entry_infos["name"]))
+                texts["parent"] = RE_STARTS_WITH_DIGIT.sub(r'_\1', FormatName(entry_infos["name"]))
                 # Entry type is RECORD
                 for subindex, value in enumerate(values):
                     texts["subindex"] = subindex
@@ -314,9 +303,9 @@ def GenerateFileContent(node, headerfilepath, pointers_dict=None):
                             strindex += "                    %(subIndexType)s %(NodeName)s_obj%(index)04X_%(name)s%(suffixe)s = %(value)s;%(comment)s\n" % texts
         headerObjectDefinitionContent += (
             "\n#define "
-            + re.sub(r"[^\w]", "_", texts["NodeName"])
+            + RE_NOTW.sub("_", texts["NodeName"])
             + "_"
-            + re.sub(r"[^\w]", "_", texts["EntryName"])
+            + RE_NOTW.sub("_", texts["EntryName"])
             + "_Idx "
             + str(format(texts["index"], "#04x"))
             + "\n")
@@ -369,7 +358,7 @@ def GenerateFileContent(node, headerfilepath, pointers_dict=None):
                 save = "|TO_BE_SAVE"
             else:
                 save = ""
-            strindex += "                       { %s%s, %s, %s, (void*)&%s, NULL }%s\n" % (subentry_infos["access"].upper(), save, typeinfos[2], sizeof, UnDigitName(name), sep)
+            strindex += "                       { %s%s, %s, %s, (void*)&%s, NULL }%s\n" % (subentry_infos["access"].upper(), save, typeinfos[2], sizeof, RE_STARTS_WITH_DIGIT.sub(r'_\1', name), sep)
             pointer_name = pointers_dict.get((index, subindex), None)
             if pointer_name is not None:
                 pointedVariableContent += "%s* %s = &%s;\n" % (typeinfos[0], pointer_name, name)
@@ -377,11 +366,11 @@ def GenerateFileContent(node, headerfilepath, pointers_dict=None):
                 generateSubIndexArrayComment = True
                 headerObjectDefinitionContent += (
                     "#define "
-                    + re.sub(r"[^\w]", "_", texts["NodeName"])
+                    + RE_NOTW.sub("_", texts["NodeName"])
                     + "_"
-                    + re.sub(r"[^\w]", "_", texts["EntryName"])
+                    + RE_NOTW.sub("_", texts["EntryName"])
                     + "_"
-                    + re.sub(r"[^\w]", "_", subentry_infos["name"])
+                    + RE_NOTW.sub("_", subentry_infos["name"])
                     + "_sIdx "
                     + str(format(subindex, "#04x")))
                 if params_infos["comment"]:
@@ -393,11 +382,11 @@ def GenerateFileContent(node, headerfilepath, pointers_dict=None):
                 # Generate Number_of_Entries_sIdx define and write comment about not generating defines for the rest of the array objects
                 headerObjectDefinitionContent += (
                     "#define "
-                    + re.sub(r"[^\w]", "_", texts["NodeName"])
+                    + RE_NOTW.sub("_", texts["NodeName"])
                     + "_"
-                    + re.sub(r"[^\w]", "_", texts["EntryName"])
+                    + RE_NOTW.sub("_", texts["EntryName"])
                     + "_"
-                    + re.sub(r"[^\w]", "_", subentry_infos["name"])
+                    + RE_NOTW.sub("_", subentry_infos["name"])
                     + "_sIdx " + str(format(subindex, "#04x"))
                     + "\n")
                 headerObjectDefinitionContent += "/* subindex define not generated for array objects */\n"
@@ -660,9 +649,18 @@ extern CO_Data %(NodeName)s_Data;
 
 def GenerateFile(filepath, node, pointers_dict=None):
     pointers_dict = pointers_dict or {}
-    headerfilepath = os.path.splitext(filepath)[0] + ".h"
-    objectdefinitionheaderpath = os.path.splitext(filepath)[0] + "_objectdefines.h"
-    content, header, header_defs = GenerateFileContent(node, os.path.split(headerfilepath)[1], pointers_dict)
-    WriteFile(filepath, content)
-    WriteFile(headerfilepath, header)
-    WriteFile(objectdefinitionheaderpath, header_defs)
+    filebase = os.path.splitext(filepath)[0]
+    headerfilepath = filebase + ".h"
+    content, header, header_defs = GenerateFileContent(node, os.path.basename(headerfilepath), pointers_dict)
+
+    # Write main .c contents
+    with open(filepath, "wb") as f:
+        f.write(content.encode('utf-8'))
+
+    # Write header file
+    with open(headerfilepath, "wb") as f:
+        f.write(header.encode('utf-8'))
+
+    # Write object definitions header
+    with open(filebase + "_objectdefines.h", "wb") as f:
+        f.write(header_defs.encode('utf-8'))

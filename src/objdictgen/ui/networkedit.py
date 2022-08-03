@@ -35,7 +35,7 @@ from .networkeditortemplate import NetworkEditorTemplate
 from ..nodelist import NodeList
 from ..nodemanager import NodeManager
 from .. import SCRIPT_DIRECTORY
-from .. import __version__
+from .. import ODG_VERSION
 from .. import dbg
 
 
@@ -182,7 +182,8 @@ class NetworkEdit(wx.Frame, NetworkEditorTemplate):
         self.NetworkMenu = wx.Menu(title='')
         self.EditMenu = wx.Menu(title='')
         self.AddMenu = wx.Menu(title='')
-        self.HelpMenu = wx.Menu(title='')
+        # FIXME: Unused. Delete this?
+        # self.HelpMenu = wx.Menu(title='')
 
         self._init_coll_MenuBar_Menus(self.MenuBar)
         if self.ModeSolo:
@@ -217,7 +218,8 @@ class NetworkEdit(wx.Frame, NetworkEditorTemplate):
         else:
             NetworkEditorTemplate.__init__(self, nodelist, self, False)
         self._init_ctrls(parent)
-        self.HtmlFrameOpened = []
+        # FIXME: Unused. Delete this?
+        # self.HtmlFrameOpened = []
 
         icon = wx.Icon(os.path.join(SCRIPT_DIRECTORY, "ui", "networkedit.ico"), wx.BITMAP_TYPE_ICO)
         self.SetIcon(icon)
@@ -250,10 +252,11 @@ class NetworkEdit(wx.Frame, NetworkEditorTemplate):
             self._onclose()
         event.Skip()
 
-    def OnChar(self, event):
-        if event.ControlDown() and event.GetKeyCode() == 83 and getattr(self, "_onsave", None) is not None:
-            self._onsave()
-        # event.Skip()
+    # FIXME: Unused. Delete this?
+    # def OnChar(self, event):
+    #     if event.ControlDown() and event.GetKeyCode() == 83 and getattr(self, "_onsave", None) is not None:
+    #         self._onsave()
+    #     # event.Skip()
 
     def OnQuitMenu(self, event):  # pylint: disable=unused-argument
         self.Close()
@@ -419,7 +422,7 @@ def uimain(project):
     wx.InitAllImageHandlers()
 
     # Install a exception handle for bug reports
-    AddExceptHook(os.getcwd(), __version__)
+    AddExceptHook(os.getcwd(), ODG_VERSION)
 
     frame = NetworkEdit(None, projectOpen=project)
 
