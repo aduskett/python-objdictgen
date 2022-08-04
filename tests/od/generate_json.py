@@ -1,7 +1,14 @@
 import os
 import glob
+import sys
+import logging
 
 from objdictgen.nodemanager import NodeManager
+
+# Initalize the python logger to simply output to stdout
+log = logging.getLogger()
+log.setLevel(logging.DEBUG)
+log.addHandler(logging.StreamHandler(sys.stdout))
 
 here = os.path.dirname(os.path.abspath(__file__))
 

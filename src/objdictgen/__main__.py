@@ -104,20 +104,19 @@ def main(debugopts, args=None):
     ''', **kw)
     subp.add_argument('od', **opt_od)
     subp.add_argument('out', default=None, help="Output file")
-    subp.add_argument('--index', '-i', action="append",
-                      help="OD Index to include. Filter out the rest.")
-    subp.add_argument('--fix', action="store_true", help="Fix any inconsistency errors in OD before generate output")
-    subp.add_argument('--nosort', action="store_true", help="Don't order of parameters in output OD")
+    subp.add_argument('-i', '--index', action="append", help="OD Index to include. Filter out the rest.")
+    subp.add_argument('-f', '--fix', action="store_true", help="Fix any inconsistency errors in OD before generate output")
     subp.add_argument('-t', '--type', choices=['od', 'eds', 'json', 'c'], help="Select output file type")
     subp.add_argument('--internal', action="store_true", help="Store in internal format (json only)")
-    subp.add_argument('--novalidate', action="store_true", help="Don't validate input files before diff")
+    subp.add_argument('--nosort', action="store_true", help="Don't order of parameters in output OD")
+    subp.add_argument('--novalidate', action="store_true", help="Don't validate files before conversion")
     subp.add_argument('-D', '--debug', **opt_debug)
 
     # -- DIFF --
     kw = dict(aliases=['compare']) if sys.version_info[0] >= 3 else {}
     subp = subparser.add_parser('diff', help='''
-        Diff OD
-    ''')
+        Compare OD files
+    ''', **kw)
     subp.add_argument('od1', **opt_od)
     subp.add_argument('od2', **opt_od)
     subp.add_argument('--internal', action="store_true", help="Diff internal object")
@@ -138,13 +137,13 @@ def main(debugopts, args=None):
     ''')
     subp.add_argument('od', nargs="+", help="Object dictionary")
     subp.add_argument('-i', '--index', action="append", help="Specify parameter index to show")
-    subp.add_argument('--short', action="store_true", help="Do not list sub-index")
-    subp.add_argument('--unused', action="store_true", help="Include unused profile parameters")
+    subp.add_argument('--all', action="store_true", help="Show all subindexes, including subindex 0")
     subp.add_argument('--asis', action="store_true", help="Do not sort output")
-    subp.add_argument('--raw', action="store_true", help="Show raw parameter values")
-    subp.add_argument('--all', action="store_true", help="Show all subindexes")
     subp.add_argument('--compact', action="store_true", help="Compact listing")
     subp.add_argument('--header', action="store_true", help="List header only")
+    subp.add_argument('--raw', action="store_true", help="Show raw parameter values")
+    subp.add_argument('--short', action="store_true", help="Do not list sub-index")
+    subp.add_argument('--unused', action="store_true", help="Include unused profile parameters")
     subp.add_argument('-D', '--debug', **opt_debug)
 
     # -- NETWORK --
@@ -219,6 +218,13 @@ def main(debugopts, args=None):
             validate=not opts.novalidate,
         )
 
+        if diffs:
+            errcode = 1
+            print("{}: '{}' and '{}' differ".format(ODG_PROGRAM, opts.od1, opts.od2))
+        else:
+            errcode = 0
+            print("{}: '{}' and '{}' are equal".format(ODG_PROGRAM, opts.od1, opts.od2))
+
         def _pprint(text):
             for line in pformat(text).splitlines():
                 print("       ", line)
@@ -246,6 +252,8 @@ def main(debugopts, args=None):
         for index in sorted(diffs):
             print("{}Index 0x{:04x} ({}){}".format(Fore.GREEN, index, index, Style.RESET_ALL))
             _printlines(diffs[index])
+
+        parser.exit(errcode)
 
 
     # -- EDIT command --
@@ -314,7 +322,7 @@ def main(debugopts, args=None):
                 continue
 
             # Print the parameters
-            for line in node.PrintGen(keys=keys, short=opts.short, compact=opts.compact, unused=opts.unused, verbose=opts.all, raw=opts.raw):
+            for line in node.PrintParams(keys=keys, short=opts.short, compact=opts.compact, unused=opts.unused, verbose=opts.all, raw=opts.raw):
                 print(line)
 
 

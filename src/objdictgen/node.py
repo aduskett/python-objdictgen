@@ -922,11 +922,10 @@ class Node(object):
             obj['ds302'] = self.DS302[index]
         if index in self.UserMapping:
             obj['user'] = self.UserMapping[index]
-        if index in MAPPING_DICTIONARY:
-            obj['built-in'] = MAPPING_DICTIONARY[index]
-        base = self.GetBaseIndex(index)
-        if base != index:
-            obj['base'] = base
+        if index in maps.MAPPING_DICTIONARY:
+            obj['built-in'] = maps.MAPPING_DICTIONARY[index]
+        obj['base'] = self.GetBaseIndex(index)
+        obj['groups'] = tuple(g for g in ('profile', 'ds302', 'user', 'built-in') if g in obj)
         return copy.deepcopy(obj)
 
     def GetIndexes(self):
@@ -935,9 +934,9 @@ class Node(object):
         """
         return list(sorted(self.Dictionary))
 
-    def PrintGen(self, keys=None, short=False, compact=False, unused=False, verbose=False, raw=False):
+    def PrintParams(self, keys=None, short=False, compact=False, unused=False, verbose=False, raw=False):
         """
-        Print the Dictionary values
+        Generator for printing the dictionary values
         """
 
         # Get the indexes to print and determine the order
@@ -1026,6 +1025,9 @@ class Node(object):
                     'comment': comment,
                     'pre': fmt['pre'],
                 })
+
+            if not infos:
+                continue
 
             # Calculate the max width for each of the columns
             w = {

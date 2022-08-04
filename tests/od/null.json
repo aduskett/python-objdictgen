@@ -1,0 +1,13 @@
+{
+  "$id": "od data",
+  "$version": "1",
+  "$description": "Canfestival object dictionary data",
+  "$tool": "odg 3.2",
+  "$date": "2022-08-04T18:50:58.487801",
+  "name": "Null",
+  "description": "",
+  "type": "master",
+  "id": 0,
+  "profile_name": "None",
+  "dictionary": []
+}

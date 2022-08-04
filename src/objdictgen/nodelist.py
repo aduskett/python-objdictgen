@@ -275,7 +275,7 @@ def main(projectdir):
 
     nodelist.LoadProject(projectdir)
     print("MasterNode :")
-    for list in manager.CurrentNode.PrintGen(raw=True):
+    for list in manager.CurrentNode.PrintParams(raw=True):
         print(list)
     print()
     for nodeid, node in nodelist.SlaveNodes.items():

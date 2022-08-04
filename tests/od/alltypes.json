@@ -1,0 +1,419 @@
+{
+  "$id": "od data",
+  "$version": "1",
+  "$description": "Canfestival object dictionary data",
+  "$tool": "odg 3.2",
+  "$date": "2022-08-04T18:48:51.783802",
+  "name": "Alltypes",
+  "description": "All types",
+  "type": "master",
+  "id": 0,
+  "profile_name": "None",
+  "dictionary": [
+    {
+      "index": "0x1000",  // 4096
+      "name": "Device Type",
+      "struct": 1,
+      "group": "built-in",
+      "need": true,
+      "sub": [
+        {
+          "name": "Device Type",
+          "type": 7,
+          "access": "ro",
+          "pdo": false,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "index": "0x1001",  // 4097
+      "name": "Error Register",
+      "struct": 1,
+      "group": "built-in",
+      "need": true,
+      "sub": [
+        {
+          "name": "Error Register",
+          "type": 5,
+          "access": "ro",
+          "pdo": true,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "index": "0x1018",  // 4120
+      "name": "Identity",
+      "struct": 3,
+      "group": "built-in",
+      "need": true,
+      "sub": [
+        {
+          "name": "Number of Entries",
+          "type": 5,
+          "access": "ro",
+          "pdo": false
+        },
+        {
+          "name": "Vendor ID",
+          "type": 7,
+          "access": "ro",
+          "pdo": false,
+          "value": 0
+        },
+        {
+          "name": "Product Code",
+          "type": 7,
+          "access": "ro",
+          "pdo": false,
+          "value": 0
+        },
+        {
+          "name": "Revision Number",
+          "type": 7,
+          "access": "ro",
+          "pdo": false,
+          "value": 0
+        },
+        {
+          "name": "Serial Number",
+          "type": 7,
+          "access": "ro",
+          "pdo": false,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "index": "0x2001",  // 8193
+      "name": "BOOLEAN",
+      "struct": 1,
+      "need": false,
+      "sub": [
+        {
+          "name": "BOOLEAN",
+          "type": 1,
+          "access": "rw",
+          "pdo": true,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "index": "0x2002",  // 8194
+      "name": "INTEGER8",
+      "struct": 1,
+      "need": false,
+      "sub": [
+        {
+          "name": "INTEGER8",
+          "type": 2,
+          "access": "rw",
+          "pdo": true,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "index": "0x2003",  // 8195
+      "name": "INTEGER16",
+      "struct": 1,
+      "need": false,
+      "sub": [
+        {
+          "name": "INTEGER16",
+          "type": 3,
+          "access": "rw",
+          "pdo": true,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "index": "0x2004",  // 8196
+      "name": "INTEGER32",
+      "struct": 1,
+      "need": false,
+      "sub": [
+        {
+          "name": "INTEGER32",
+          "type": 4,
+          "access": "rw",
+          "pdo": true,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "index": "0x2005",  // 8197
+      "name": "UNSIGNED8",
+      "struct": 1,
+      "need": false,
+      "sub": [
+        {
+          "name": "UNSIGNED8",
+          "type": 5,
+          "access": "rw",
+          "pdo": true,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "index": "0x2006",  // 8198
+      "name": "UNSIGNED16",
+      "struct": 1,
+      "need": false,
+      "sub": [
+        {
+          "name": "UNSIGNED16",
+          "type": 6,
+          "access": "rw",
+          "pdo": true,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "index": "0x2007",  // 8199
+      "name": "UNSIGNED32",
+      "struct": 1,
+      "need": false,
+      "sub": [
+        {
+          "name": "UNSIGNED32",
+          "type": 7,
+          "access": "rw",
+          "pdo": true,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "index": "0x2008",  // 8200
+      "name": "REAL32",
+      "struct": 1,
+      "need": false,
+      "sub": [
+        {
+          "name": "REAL32",
+          "type": 8,
+          "access": "rw",
+          "pdo": true,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "index": "0x2009",  // 8201
+      "name": "VISIBLE_STRING",
+      "struct": 1,
+      "need": false,
+      "sub": [
+        {
+          "name": "VISIBLE_STRING",
+          "type": 9,
+          "access": "rw",
+          "pdo": true,
+          "value": ""
+        }
+      ]
+    },
+    {
+      "index": "0x200A",  // 8202
+      "name": "OCTET_STRING",
+      "struct": 1,
+      "need": false,
+      "sub": [
+        {
+          "name": "OCTET_STRING",
+          "type": 10,
+          "access": "rw",
+          "pdo": true,
+          "value": ""
+        }
+      ]
+    },
+    {
+      "index": "0x200F",  // 8207
+      "name": "DOMAIN",
+      "struct": 1,
+      "need": false,
+      "sub": [
+        {
+          "name": "DOMAIN",
+          "type": 15,
+          "access": "rw",
+          "pdo": true,
+          "value": "@ABCD"
+        }
+      ]
+    },
+    {
+      "index": "0x2010",  // 8208
+      "name": "INTEGER24",
+      "struct": 1,
+      "need": false,
+      "sub": [
+        {
+          "name": "INTEGER24",
+          "type": 16,
+          "access": "rw",
+          "pdo": true,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "index": "0x2011",  // 8209
+      "name": "REAL64",
+      "struct": 1,
+      "need": false,
+      "sub": [
+        {
+          "name": "REAL64",
+          "type": 17,
+          "access": "rw",
+          "pdo": true,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "index": "0x2012",  // 8210
+      "name": "INTEGER40",
+      "struct": 1,
+      "need": false,
+      "sub": [
+        {
+          "name": "INTEGER40",
+          "type": 18,
+          "access": "rw",
+          "pdo": true,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "index": "0x2013",  // 8211
+      "name": "INTEGER48",
+      "struct": 1,
+      "need": false,
+      "sub": [
+        {
+          "name": "INTEGER48",
+          "type": 19,
+          "access": "rw",
+          "pdo": true,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "index": "0x2014",  // 8212
+      "name": "INTEGER56",
+      "struct": 1,
+      "need": false,
+      "sub": [
+        {
+          "name": "INTEGER56",
+          "type": 20,
+          "access": "rw",
+          "pdo": true,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "index": "0x2015",  // 8213
+      "name": "INTEGER64",
+      "struct": 1,
+      "need": false,
+      "sub": [
+        {
+          "name": "INTEGER64",
+          "type": 21,
+          "access": "rw",
+          "pdo": true,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "index": "0x2016",  // 8214
+      "name": "UNSIGNED24",
+      "struct": 1,
+      "need": false,
+      "sub": [
+        {
+          "name": "UNSIGNED24",
+          "type": 22,
+          "access": "rw",
+          "pdo": true,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "index": "0x2018",  // 8216
+      "name": "UNSIGNED40",
+      "struct": 1,
+      "need": false,
+      "sub": [
+        {
+          "name": "UNSIGNED40",
+          "type": 24,
+          "access": "rw",
+          "pdo": true,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "index": "0x2019",  // 8217
+      "name": "UNSIGNED48",
+      "struct": 1,
+      "need": false,
+      "sub": [
+        {
+          "name": "UNSIGNED48",
+          "type": 25,
+          "access": "rw",
+          "pdo": true,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "index": "0x201A",  // 8218
+      "name": "UNSIGNED56",
+      "struct": 1,
+      "need": false,
+      "sub": [
+        {
+          "name": "UNSIGNED56",
+          "type": 26,
+          "access": "rw",
+          "pdo": true,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "index": "0x201B",  // 8219
+      "name": "UNSIGNED64",
+      "struct": 1,
+      "need": false,
+      "sub": [
+        {
+          "name": "UNSIGNED64",
+          "type": 27,
+          "access": "rw",
+          "pdo": true,
+          "value": 0
+        }
+      ]
+    }
+  ]
+}

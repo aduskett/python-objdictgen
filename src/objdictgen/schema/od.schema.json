@@ -17,6 +17,10 @@
                 1, "1"
             ]
         },
+        "$description": {
+            "description": "Description about the file",
+            "type": "string"
+        },
         "$tool": {
             "description": "Tool that generated this file (optional)",
             "type": "string"
@@ -83,33 +87,34 @@
             "description": "Dictionary object",
             "type": "object",
             "if": {
-                "properties": { "base": { "$ref": "#base" }},
-                "required": ["base"]
+                "properties": { "repeat": { "$ref": "#repeat", "const": true }},
+                "required": ["repeat"]
             },
             "then": {
-                "description": "Dictionary object (wihout definition)",
+                "description": "Repeated dictionary object",
                 "properties": {
                     "index": { "$ref": "#index" },
-                    "base": { "$ref": "#index" },
+                    "repeat": { "$ref": "#repeat" },
                     "struct": { "$ref": "#struct" },
                     "callback": { "$ref": "#callback" },
+                    "unused": { "$ref": "#unused" },
                     "sub": {
-                        "description": "Sub object items (without definition)",
+                        "description": "Sub object items in repeated parameter",
                         "type": "array",
                         "items": {
-                            "$ref": "#subitem_base"
+                            "$ref": "#subitem_repeat"
                         },
-                        "minItems": 1
+                        "minItems": 0
                     }
                 },
-                "required": ["index", "base", "struct", "sub"],
+                "required": ["index", "repeat", "struct", "sub"],
                 "additionalProperties": false
             },
             "else": {
                 "description": "Dictionary object",
                 "properties": {
                     "index": { "$ref": "#index" },
-                    "base": { "$ref": "#index" },
+                    "repeat": { "$ref": "#repeat" },
                     "name": { "$ref": "#name" },
                     "struct": { "$ref": "#struct" },
                     "group": { "$ref": "#group" },
@@ -117,6 +122,7 @@
                     "need": { "$ref": "#mandatory" },
                     "profile_callback": { "$ref": "#callback" },
                     "callback": { "$ref": "#callback" },
+                    "unused": { "$ref": "#unused" },
                     "default": { "$ref": "#default" },
                     "size": { "$ref": "#size" },
                     "incr": { "$ref": "#incr" },
@@ -128,7 +134,7 @@
                         "items": {
                             "$ref": "#subitem"
                         },
-                        "minItems": 1
+                        "minItems": 0
                     }
                 },
                 "required": ["index", "name", "struct", "sub"],
@@ -166,8 +172,8 @@
         },
 
         "subitem_base": {
-            "$id": "#subitem_base",
-            "description": "Sub object item (without definition)",
+            "$id": "#subitem_repeat",
+            "description": "Sub object item in repeated parameter",
             "type": "object",
             "properties": {
                 "comment": { "$ref": "#comment" },
@@ -187,6 +193,7 @@
                 "type": { "$ref": "#type" },
                 "access": { "$ref": "#access" },
                 "pdo": { "$ref": "#pdo" },
+                "nbmin": { "$ref": "#nbmin" },
                 "nbmax": { "$ref": "#nbmax" },
                 "default": { "$ref": "#value" }
             },
@@ -264,7 +271,8 @@
                         "built-in"
                     ]
                 }
-            ]
+            ],
+            "default": "user"
         },
 
         "incr": {
@@ -305,10 +313,22 @@
             "type": "integer"
         },
 
+        "nbmin": {
+            "$id": "#nbmin",
+            "type": "integer"
+        },
+
         "pdo": {
             "$id": "#pdo",
             "description": "Set if object is usable in a PDO",
             "type": "boolean"
+        },
+
+        "repeat": {
+            "$id": "#repeat",
+            "description": "Set if object is a repeated object",
+            "type": "boolean",
+            "default": false
         },
 
         "save": {
@@ -376,6 +396,12 @@
                     "maximum": 4095
                 }
             ]
+        },
+
+        "unused": {
+            "$id": "#unused",
+            "description": "Unused dictionary",
+            "type": "boolean"
         },
 
         "value": {
