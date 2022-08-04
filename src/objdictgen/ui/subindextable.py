@@ -30,7 +30,8 @@ import wx
 import wx.grid
 
 from . import commondialogs as cdia
-from .. import node as nod
+from .. import maps
+from ..maps import OD
 
 
 COL_SIZES = [75, 250, 150, 125, 100, 60, 250, 60]
@@ -494,7 +495,7 @@ class EditingPanel(wx.SplitterWindow):
         self.FirstCall = False
         self.Index = None
 
-        for values in nod.INDEX_RANGES:
+        for values in maps.INDEX_RANGES:
             text = "   0x%04X-0x%04X      %s" % (values["min"], values["max"], values["description"])
             self.PartList.Append(text)
         self.Table = SubindexTable(self, [], [], SUBINDEX_TABLE_COLNAMES)
@@ -535,7 +536,7 @@ class EditingPanel(wx.SplitterWindow):
                     index = self.ListIndex[selected]
                     subindex = event.GetRow()
                     entry_infos = self.Manager.GetEntryInfos(index)
-                    if not entry_infos["struct"] & nod.OD.MultipleSubindexes or subindex != 0:
+                    if not entry_infos["struct"] & OD.MultipleSubindexes or subindex != 0:
                         subentry_infos = self.Manager.GetSubentryInfos(index, subindex)
                         typeinfos = self.Manager.GetEntryInfos(subentry_infos["type"])
                         if typeinfos:
@@ -558,7 +559,7 @@ class EditingPanel(wx.SplitterWindow):
                     index = self.ListIndex[selected]
                     subindex = event.GetRow()
                     entry_infos = self.Manager.GetEntryInfos(index)
-                    if not entry_infos["struct"] & nod.OD.MultipleSubindexes or subindex != 0:
+                    if not entry_infos["struct"] & OD.MultipleSubindexes or subindex != 0:
                         subentry_infos = self.Manager.GetSubentryInfos(index, subindex)
                         typeinfos = self.Manager.GetEntryInfos(subentry_infos["type"])
                         if subentry_infos["pdo"] and typeinfos:
@@ -626,8 +627,8 @@ class EditingPanel(wx.SplitterWindow):
         self.IndexList.Clear()
         self.IndexChoice.Clear()
         i = self.PartList.GetSelection()
-        if i < len(nod.INDEX_RANGES):
-            values = nod.INDEX_RANGES[i]
+        if i < len(maps.INDEX_RANGES):
+            values = maps.INDEX_RANGES[i]
             self.ListIndex = []
             for name, index in self.Manager.GetCurrentValidIndexes(values["min"], values["max"]):
                 self.IndexList.Append("0x%04X   %s" % (index, name))
@@ -768,7 +769,7 @@ class EditingPanel(wx.SplitterWindow):
                 if self.Manager.IsCurrentEntry(index):
                     showpopup = False
                     infos = self.Manager.GetEntryInfos(index)
-                    if 0x2000 <= index <= 0x5FFF and infos["struct"] & nod.OD.MultipleSubindexes or infos["struct"] & nod.OD.IdenticalSubindexes:
+                    if 0x2000 <= index <= 0x5FFF and infos["struct"] & OD.MultipleSubindexes or infos["struct"] & OD.IdenticalSubindexes:
                         showpopup = True
                         self.SubindexGridMenu.FindItemByPosition(0).Enable(True)
                         self.SubindexGridMenu.FindItemByPosition(1).Enable(True)
@@ -788,7 +789,7 @@ class EditingPanel(wx.SplitterWindow):
                 index = self.ListIndex[selected]
                 if self.Manager.IsCurrentEntry(index):
                     infos = self.Manager.GetEntryInfos(index)
-                    if not infos["struct"] & nod.OD.MultipleSubindexes or event.GetRow() > 0:
+                    if not infos["struct"] & OD.MultipleSubindexes or event.GetRow() > 0:
                         self.SubindexGridMenu.FindItemByPosition(0).Enable(False)
                         self.SubindexGridMenu.FindItemByPosition(1).Enable(False)
                         self.SubindexGridMenu.FindItemByPosition(3).Enable(False)
@@ -803,7 +804,7 @@ class EditingPanel(wx.SplitterWindow):
                 index = self.ListIndex[selected]
                 subindex = self.SubindexGrid.GetGridCursorRow()
                 entry_infos = self.Manager.GetEntryInfos(index)
-                if not entry_infos["struct"] & nod.OD.MultipleSubindexes or subindex != 0:
+                if not entry_infos["struct"] & OD.MultipleSubindexes or subindex != 0:
                     subentry_infos = self.Manager.GetSubentryInfos(index, subindex)
                     typeinfos = self.Manager.GetEntryInfos(subentry_infos["type"])
                     if typeinfos:

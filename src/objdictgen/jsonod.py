@@ -13,6 +13,8 @@ from .node import Node
 from . import node as nod
 from . import SCRIPT_DIRECTORY
 from . import dbg, warning, ODG_PROGRAM, ODG_VERSION
+from . import maps
+from .maps import OD
 
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
@@ -494,7 +496,7 @@ def node_todict_parameter(obj, node, index):
     dictvals = obj.pop("dictionary", [])
 
     # These types places the params in the top-level dict
-    if has_params and struct in (nod.OD.VAR, nod.OD.NVAR):
+    if has_params and struct in (OD.VAR, OD.NVAR):
         params = params.copy()  # Important, as its mutated here
         param0 = {}
         for k in FIELDS_PARAMS:
@@ -512,7 +514,7 @@ def node_todict_parameter(obj, node, index):
     #       empty. This might happen on a ARRAY with 0 elements.
     start = 0
     if has_dictionary:
-        if struct in (nod.OD.VAR, nod.OD.NVAR):
+        if struct in (OD.VAR, OD.NVAR):
             dictvals = [dictvals]
         else:
             start = 1  # Have "number of entries" first
@@ -588,7 +590,7 @@ def validate_nodeindex(node, index, obj):
         struct = info["struct"]  # Implicit
 
     # Helpers
-    is_var = struct in (nod.OD.VAR, nod.OD.NVAR)
+    is_var = struct in (OD.VAR, OD.NVAR)
 
     # Ensure obj does NOT contain any fields found in baseobj (sanity check really)
     member_compare(obj.keys(),
@@ -661,19 +663,19 @@ def validate_nodeindex(node, index, obj):
         # Bypass tests if no baseobj is present
         lenok, nbmaxok = True, True
 
-    elif struct in (nod.OD.VAR, nod.OD.NVAR):
+    elif struct in (OD.VAR, OD.NVAR):
         if len(nbmax) == 1:
             lenok = True
         if sum(nbmax) == 0:
             nbmaxok = True
 
-    elif struct in (nod.OD.ARRAY, nod.OD.NARRAY):
+    elif struct in (OD.ARRAY, OD.NARRAY):
         if len(nbmax) == 2:
             lenok = True
         if sum(nbmax) == 1 and nbmax[1]:
             nbmaxok = True
 
-    elif struct in (nod.OD.RECORD, nod.OD.NRECORD):
+    elif struct in (OD.RECORD, OD.NRECORD):
         if sum(nbmax) and len(nbmax) > 1 and nbmax[1]:
             nbmaxok = True
             if len(nbmax) == 2:
@@ -756,7 +758,7 @@ def node_fromdict(jd, internal=False):
 
         # Verify against built-in data (don't verify repeated params)
         if 'built-in' in obj and not obj.get('repeat', False):
-            baseobj = nod.MAPPING_DICTIONARY.get(index)
+            baseobj = maps.MAPPING_DICTIONARY.get(index)
 
             diff = deepdiff.DeepDiff(obj['built-in'], baseobj, view='tree')
             if diff:
@@ -790,11 +792,10 @@ def node_fromdict_parameter(obj):
     # Get struct
     struct = obj["struct"]
     if not isinstance(struct, int):
-        struct = nod.OD.from_string(struct)
+        struct = OD.from_string(struct)
 
     # Set the baseobj in the right category
     group = obj.pop("group", None) or 'user'
-    obj[group] = baseobj
 
     if 'profile_callback' in obj:
         baseobj['callback'] = obj.pop('profile_callback')
@@ -825,7 +826,7 @@ def node_fromdict_parameter(obj):
     # Restore the dictionary values
     if dictionary:
         # [N]VAR needs them as immediate values
-        if struct in (nod.OD.VAR, nod.OD.NVAR):
+        if struct in (OD.VAR, OD.NVAR):
             dictionary = dictionary[0]
         obj['dictionary'] = dictionary
 
@@ -844,7 +845,7 @@ def node_fromdict_parameter(obj):
                 pars[k] = vals.pop(k)
 
     # Move entries from item 0 into the params object
-    if 0 in params and struct in (nod.OD.VAR, nod.OD.NVAR):
+    if 0 in params and struct in (OD.VAR, OD.NVAR):
         params.update(params.pop(0))
 
     # Remove the empty params and values
@@ -862,10 +863,12 @@ def node_fromdict_parameter(obj):
         subitems.append(obj.pop('each'))
 
     # Restore values
-    baseobj['values'] = subitems
+    if subitems:
+        baseobj['values'] = subitems
+        obj[group] = baseobj
 
     # Restore optional items from subindex 0
-    if not obj.get('repeat', False) and struct in (nod.OD.ARRAY, nod.OD.NARRAY, nod.OD.RECORD, nod.OD.NRECORD):
+    if not obj.get('repeat', False) and struct in (OD.ARRAY, OD.NARRAY, OD.RECORD, OD.NRECORD):
         index0 = baseobj['values'][0]
         for k, v in SUBINDEX0.items():
             index0.setdefault(k, v)
@@ -981,8 +984,8 @@ def validate_fromdict(jsonobj):
         # Validate "struct"
         struct = obj["struct"]
         if not isinstance(struct, int):
-            struct = nod.OD.from_string(struct)
-        if struct not in nod.OD.STRINGS.keys():
+            struct = OD.from_string(struct)
+        if struct not in OD.STRINGS:
             raise ValidationError("Unknown struct value '{}'".format(obj['struct']))
 
         # Validate "group"
@@ -999,7 +1002,7 @@ def validate_fromdict(jsonobj):
             raise ValidationError("'sub' is not a list")
         for idx, val in enumerate(subitems):
             try:
-                is_var = struct in (nod.OD.VAR, nod.OD.NVAR)
+                is_var = struct in (OD.VAR, OD.NVAR)
                 _validate_sub(val, idx, is_var=is_var, is_repeat=is_repeat, is_each='each' in obj)
             except Exception as exc:
                 exc_amend(exc, "sub[{}]: ".format(idx))
@@ -1032,7 +1035,7 @@ def validate_fromdict(jsonobj):
             raise ValidationError("'size' cannot be used in index 0x1000 and above")
 
         # Validate that "nbmax" and "incr" is only present in right struct type
-        need_nbmax = not is_repeat and struct in (nod.OD.NVAR, nod.OD.NARRAY, nod.OD.NRECORD)
+        need_nbmax = not is_repeat and struct in (OD.NVAR, OD.NARRAY, OD.NRECORD)
         member_compare(obj.keys(), {'nbmax', 'incr'}, only_if=need_nbmax)
 
         # Validate "unused"
@@ -1043,7 +1046,7 @@ def validate_fromdict(jsonobj):
                 raise ValidationError("There is no values in subitems, but 'unused' is false")
 
         # Validate that we got the number of subs we expect for the type
-        if struct in (nod.OD.VAR, nod.OD.NVAR):
+        if struct in (OD.VAR, OD.NVAR):
             if 'each' in obj:
                 raise ValidationError("Unexpected 'each' found in VAR/NVAR object")
             if not is_repeat and sum(has_name) != 1:
@@ -1051,7 +1054,7 @@ def validate_fromdict(jsonobj):
             if is_repeat and sum(has_value) == 0:
                 raise ValidationError("Must have value in subitem 0")
 
-        elif struct in (nod.OD.ARRAY, nod.OD.NARRAY, nod.OD.RECORD, nod.OD.NRECORD):
+        elif struct in (OD.ARRAY, OD.NARRAY, OD.RECORD, OD.NRECORD):
             if not is_repeat and len(subitems) < 1:
                 raise ValidationError("Expects at least two subindexes")
             if sum(has_value) and has_value[0]:
@@ -1059,12 +1062,12 @@ def validate_fromdict(jsonobj):
             if sum(has_value) and sum(has_value) != len(has_value) - 1:
                 raise ValidationError("All subitems except item 0 must contain values")
 
-        if struct in (nod.OD.ARRAY, nod.OD.NARRAY):
+        if struct in (OD.ARRAY, OD.NARRAY):
             if not is_repeat and 'each' not in obj:
                 raise ValidationError("Field 'each' missing from ARRAY/NARRAY object")
             # Covered by 'each' validation
 
-        elif struct in (nod.OD.RECORD, nod.OD.NRECORD):
+        elif struct in (OD.RECORD, OD.NRECORD):
             if not is_repeat and 'each' not in obj:
                 if sum(has_name) != len(has_name):
                     raise ValidationError("Not all subitems have name, {} of {}".format(sum(has_name), len(has_name)))

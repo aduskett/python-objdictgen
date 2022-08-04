@@ -7,7 +7,7 @@ import sys
 import wx
 
 from . import commondialogs as cdia
-from .. import node as nod
+from ..maps import OD
 
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
@@ -83,11 +83,11 @@ class NodeEditorTemplate(object):
                     category = "Mandatory"
                 struct = "VAR"
                 number = ""
-                if entryinfos["struct"] & nod.OD.IdenticalIndexes:
+                if entryinfos["struct"] & OD.IdenticalIndexes:
                     number = " possibly defined %d times" % entryinfos["nbmax"]
-                if entryinfos["struct"] & nod.OD.IdenticalSubindexes:
+                if entryinfos["struct"] & OD.IdenticalSubindexes:
                     struct = "ARRAY"
-                elif entryinfos["struct"] & nod.OD.MultipleSubindexes:
+                elif entryinfos["struct"] & OD.MultipleSubindexes:
                     struct = "RECORD"
                 text = "%s: %s entry of struct %s%s." % (name, category, struct, number)
                 self.Frame.HelpBar.SetStatusText(text, 2)

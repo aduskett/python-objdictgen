@@ -32,6 +32,8 @@ from .nosis import pickle as nosis
 from . import node as nod
 from . import eds_utils, gen_cfile
 from . import jsonod
+from . import maps
+from .maps import OD, MAPPING_DICTIONARY
 from . import dbg
 
 UndoBufferLength = 20
@@ -422,14 +424,14 @@ class NodeManager(object):
         else:
             default = self.GetTypeDefaultValue(subentry_infos["type"])
         # First case entry is record
-        if infos["struct"] & nod.OD.IdenticalSubindexes:
+        if infos["struct"] & OD.IdenticalSubindexes:
             for i in range(1, min(number, subentry_infos["nbmax"] - length) + 1):
                 node.AddEntry(index, length + i, default)
             if not disable_buffer:
                 self.BufferCurrentNode()
             return
         # Second case entry is array, only possible for manufacturer specific
-        if infos["struct"] & nod.OD.MultipleSubindexes and 0x2000 <= index <= 0x5FFF:
+        if infos["struct"] & OD.MultipleSubindexes and 0x2000 <= index <= 0x5FFF:
             values = {"name": "Undefined", "type": 5, "access": "rw", "pdo": True}
             for i in range(1, min(number, 0xFE - length) + 1):
                 node.AddMappingEntry(index, length + i, values=values.copy())
@@ -450,7 +452,7 @@ class NodeManager(object):
         else:
             nbmin = 1
         # Entry is a record, or is an array of manufacturer specific
-        if infos["struct"] & nod.OD.IdenticalSubindexes or 0x2000 <= index <= 0x5FFF and infos["struct"] & nod.OD.IdenticalSubindexes:
+        if infos["struct"] & OD.IdenticalSubindexes or 0x2000 <= index <= 0x5FFF and infos["struct"] & OD.IdenticalSubindexes:
             for i in range(min(number, length - nbmin)):
                 self.RemoveCurrentVariable(index, length - i)
             self.BufferCurrentNode()
@@ -532,9 +534,9 @@ class NodeManager(object):
         # Add all the entries in addinglist
         for index in addinglist:
             infos = self.GetEntryInfos(index)
-            if infos["struct"] & nod.OD.MultipleSubindexes:
+            if infos["struct"] & OD.MultipleSubindexes:
                 # First case entry is an array
-                if infos["struct"] & nod.OD.IdenticalSubindexes:
+                if infos["struct"] & OD.IdenticalSubindexes:
                     subentry_infos = self.GetSubentryInfos(index, 1)
                     if "default" in subentry_infos:
                         default = subentry_infos["default"]
@@ -647,14 +649,14 @@ class NodeManager(object):
             if node.IsEntry(index):
                 raise ValueError("Index 0x%04X already defined!" % index)
             node.AddMappingEntry(index, name=name, struct=struct)
-            if struct == nod.OD.VAR:
+            if struct == OD.VAR:
                 values = {"name": name, "type": 0x05, "access": "rw", "pdo": True}
                 node.AddMappingEntry(index, 0, values=values)
                 node.AddEntry(index, 0, 0)
             else:
                 values = {"name": "Number of Entries", "type": 0x05, "access": "ro", "pdo": False}
                 node.AddMappingEntry(index, 0, values=values)
-                if struct == nod.OD.ARRAY:
+                if struct == OD.ARRAY:
                     values = {"name": name + " %d[(sub)]", "type": 0x05, "access": "rw", "pdo": True, "nbmax": 0xFE}
                     node.AddMappingEntry(index, 1, values=values)
                     for i in range(number):
@@ -680,7 +682,7 @@ class NodeManager(object):
         size = self.GetEntryInfos(type_)["size"]
         default = self.GetTypeDefaultValue(type_)
         if valuetype == 0:
-            self.CurrentNode.AddMappingEntry(index, name="%s[%d-%d]" % (name, min_, max_), struct=nod.OD.RECORD, size=size, default=default)
+            self.CurrentNode.AddMappingEntry(index, name="%s[%d-%d]" % (name, min_, max_), struct=OD.RECORD, size=size, default=default)
             self.CurrentNode.AddMappingEntry(index, 0, values={"name": "Number of Entries", "type": 0x05, "access": "ro", "pdo": False})
             self.CurrentNode.AddMappingEntry(index, 1, values={"name": "Type", "type": 0x05, "access": "ro", "pdo": False})
             self.CurrentNode.AddMappingEntry(index, 2, values={"name": "Minimum Value", "type": type_, "access": "ro", "pdo": False})
@@ -689,7 +691,7 @@ class NodeManager(object):
             self.CurrentNode.AddEntry(index, 2, min_)
             self.CurrentNode.AddEntry(index, 3, max_)
         elif valuetype == 1:
-            self.CurrentNode.AddMappingEntry(index, name="%s%d" % (name, length), struct=nod.OD.RECORD, size=length * size, default=default)
+            self.CurrentNode.AddMappingEntry(index, name="%s%d" % (name, length), struct=OD.RECORD, size=length * size, default=default)
             self.CurrentNode.AddMappingEntry(index, 0, values={"name": "Number of Entries", "type": 0x05, "access": "ro", "pdo": False})
             self.CurrentNode.AddMappingEntry(index, 1, values={"name": "Type", "type": 0x05, "access": "ro", "pdo": False})
             self.CurrentNode.AddMappingEntry(index, 2, values={"name": "Length", "type": 0x05, "access": "ro", "pdo": False})
@@ -740,7 +742,7 @@ class NodeManager(object):
                 else:
                     subentry_infos = self.GetSubentryInfos(index, subindex)
                     type_ = subentry_infos["type"]
-                    dic = {k: v for k, v in nod.CUSTOMISABLE_TYPES}
+                    dic = {k: v for k, v in maps.CUSTOMISABLE_TYPES}
                     if type_ not in dic:
                         type_ = node.GetEntry(type_)[1]
                     if dic[type_] == 0:
@@ -775,14 +777,14 @@ class NodeManager(object):
                 elif editor in ["access", "raccess"]:
                     dic = {
                         access: abbrev
-                        for abbrev, access in nod.ACCESS_TYPE.items()
+                        for abbrev, access in maps.ACCESS_TYPE.items()
                     }
                     value = dic[value]
                     if editor == "raccess" and not node.IsMappingEntry(index):
                         entry_infos = self.GetEntryInfos(index)
                         subindex0_infos = self.GetSubentryInfos(index, 0, False).copy()
                         subindex1_infos = self.GetSubentryInfos(index, 1, False).copy()
-                        node.AddMappingEntry(index, name=entry_infos["name"], struct=nod.OD.ARRAY)
+                        node.AddMappingEntry(index, name=entry_infos["name"], struct=OD.ARRAY)
                         node.AddMappingEntry(index, 0, values=subindex0_infos)
                         node.AddMappingEntry(index, 1, values=subindex1_infos)
                 node.SetMappingEntry(index, subindex, values={name: value})
@@ -800,7 +802,7 @@ class NodeManager(object):
         size = self.GetEntryInfos(type_)["size"]
         default = self.GetTypeDefaultValue(type_)
         if new_valuetype == 0:
-            self.CurrentNode.SetMappingEntry(index, name="%s[%d-%d]" % (name, min_, max_), struct=nod.OD.RECORD, size=size, default=default)
+            self.CurrentNode.SetMappingEntry(index, name="%s[%d-%d]" % (name, min_, max_), struct=OD.RECORD, size=size, default=default)
             if valuetype == 1:
                 self.CurrentNode.SetMappingEntry(index, 2, values={"name": "Minimum Value", "type": type_, "access": "ro", "pdo": False})
                 self.CurrentNode.AddMappingEntry(index, 3, values={"name": "Maximum Value", "type": type_, "access": "ro", "pdo": False})
@@ -811,7 +813,7 @@ class NodeManager(object):
             else:
                 self.CurrentNode.SetEntry(index, 3, max_)
         elif new_valuetype == 1:
-            self.CurrentNode.SetMappingEntry(index, name="%s%d" % (name, length), struct=nod.OD.RECORD, size=size, default=default)
+            self.CurrentNode.SetMappingEntry(index, name="%s%d" % (name, length), struct=OD.RECORD, size=size, default=default)
             if valuetype == 0:
                 self.CurrentNode.SetMappingEntry(index, 2, values={"name": "Length", "type": 0x02, "access": "ro", "pdo": False})
                 self.CurrentNode.RemoveMappingEntry(index, 3)
@@ -908,10 +910,10 @@ class NodeManager(object):
 
     def GetCurrentCommunicationLists(self):
         list_ = []
-        for index in nod.MAPPING_DICTIONARY:
+        for index in MAPPING_DICTIONARY:
             if 0x1000 <= index < 0x1200:
                 list_.append(index)
-        return self.GetProfileLists(nod.MAPPING_DICTIONARY, list_)
+        return self.GetProfileLists(MAPPING_DICTIONARY, list_)
 
     def GetCurrentDS302Lists(self):
         return self.GetSpecificProfileLists(self.CurrentNode.DS302)
@@ -1036,7 +1038,7 @@ class NodeManager(object):
                 good &= min_ <= index <= max_
             if good:
                 validchoices.append((menu, None))
-        list_ = [index for index in nod.MAPPING_DICTIONARY if index >= 0x1000]
+        list_ = [index for index in MAPPING_DICTIONARY if index >= 0x1000]
         profiles = self.CurrentNode.GetMappings(False)
         for profile in profiles:
             list_.extend(list(profile))
@@ -1081,8 +1083,8 @@ class NodeManager(object):
                 if dic["type"] is None:
                     dic["type"] = "Unknown"
                     dic["buffer_size"] = ""
-                dic["access"] = nod.ACCESS_TYPE[infos["access"]]
-                dic["save"] = nod.OPTION_TYPE[dic["save"]]
+                dic["access"] = maps.ACCESS_TYPE[infos["access"]]
+                dic["save"] = maps.OPTION_TYPE[dic["save"]]
                 editor = {
                     "subindex": None, "name": None,
                     "type": None, "value": None,
@@ -1095,12 +1097,12 @@ class NodeManager(object):
                         editor["access"] = "raccess"
                 else:
                     if infos["user_defined"]:
-                        if entry_infos["struct"] & nod.OD.IdenticalSubindexes:
+                        if entry_infos["struct"] & OD.IdenticalSubindexes:
                             if i == 1:
                                 editor["type"] = "type"
                                 editor["access"] = "access"
                         else:
-                            if entry_infos["struct"] & nod.OD.MultipleSubindexes:
+                            if entry_infos["struct"] & OD.MultipleSubindexes:
                                 editor["name"] = "string"
                             editor["type"] = "type"
                             editor["access"] = "access"
@@ -1123,7 +1125,7 @@ class NodeManager(object):
                             dic["value"] = codecs.encode(dic["value"].encode(), 'hex_codec')
                         elif dic["type"] == "BOOLEAN":
                             editor["value"] = "bool"
-                            dic["value"] = nod.BOOL_TYPE[dic["value"]]
+                            dic["value"] = maps.BOOL_TYPE[dic["value"]]
                             dic["buffer_size"] = ""
                         result = type_model.match(dic["type"])
                         if result:
@@ -1181,17 +1183,17 @@ class NodeManager(object):
     def GetEntryName(self, index, compute=True):
         if self.CurrentNode:
             return self.CurrentNode.GetEntryName(index, compute)
-        return nod.FindEntryName(index, nod.MAPPING_DICTIONARY, compute)
+        return nod.FindEntryName(index, MAPPING_DICTIONARY, compute)
 
     def GetEntryInfos(self, index, compute=True):
         if self.CurrentNode:
             return self.CurrentNode.GetEntryInfos(index, compute)
-        return nod.FindEntryInfos(index, nod.MAPPING_DICTIONARY, compute)
+        return nod.FindEntryInfos(index, MAPPING_DICTIONARY, compute)
 
     def GetSubentryInfos(self, index, subindex, compute=True):
         if self.CurrentNode:
             return self.CurrentNode.GetSubentryInfos(index, subindex, compute)
-        result = nod.FindSubentryInfos(index, subindex, nod.MAPPING_DICTIONARY, compute)
+        result = nod.FindSubentryInfos(index, subindex, MAPPING_DICTIONARY, compute)
         if result:
             result["user_defined"] = False
         return result
@@ -1199,17 +1201,17 @@ class NodeManager(object):
     def GetTypeIndex(self, typename):
         if self.CurrentNode:
             return self.CurrentNode.GetTypeIndex(typename)
-        return nod.FindTypeIndex(typename, nod.MAPPING_DICTIONARY)
+        return nod.FindTypeIndex(typename, MAPPING_DICTIONARY)
 
     def GetTypeName(self, typeindex):
         if self.CurrentNode:
             return self.CurrentNode.GetTypeName(typeindex)
-        return nod.FindTypeName(typeindex, nod.MAPPING_DICTIONARY)
+        return nod.FindTypeName(typeindex, MAPPING_DICTIONARY)
 
     def GetTypeDefaultValue(self, typeindex):
         if self.CurrentNode:
             return self.CurrentNode.GetTypeDefaultValue(typeindex)
-        return nod.FindTypeDefaultValue(typeindex, nod.MAPPING_DICTIONARY)
+        return nod.FindTypeDefaultValue(typeindex, MAPPING_DICTIONARY)
 
     def GetMapVariableList(self, compute=True):
         if self.CurrentNode:
@@ -1219,12 +1221,12 @@ class NodeManager(object):
     def GetMandatoryIndexes(self):
         if self.CurrentNode:
             return self.CurrentNode.GetMandatoryIndexes()
-        return nod.FindMandatoryIndexes(nod.MAPPING_DICTIONARY)
+        return nod.FindMandatoryIndexes(MAPPING_DICTIONARY)
 
     def GetCustomisableTypes(self):
         return {
             index: [self.GetTypeName(index), valuetype]
-            for index, valuetype in nod.CUSTOMISABLE_TYPES
+            for index, valuetype in maps.CUSTOMISABLE_TYPES
         }
 
     def GetCurrentSpecificMenu(self):

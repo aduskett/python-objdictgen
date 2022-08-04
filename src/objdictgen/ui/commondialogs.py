@@ -30,6 +30,7 @@ import wx.grid
 
 from .. import node as nod
 from .. import PROFILE_DIRECTORIES
+from ..maps import OD
 from .. import dbg
 
 
@@ -387,13 +388,13 @@ class MapVariableDialog(wx.Dialog):
         name = self.IndexName.GetValue()
         index = int(self.Index.GetValue(), 16)
         if self.radioButton1.GetValue():
-            struct = nod.OD.VAR
+            struct = OD.VAR
             number = None
         elif self.radioButton2.GetValue():
-            struct = nod.OD.ARRAY
+            struct = OD.ARRAY
             number = int(self.Number.GetValue())
         elif self.radioButton3.GetValue():
-            struct = nod.OD.RECORD
+            struct = OD.RECORD
             number = int(self.Number.GetValue())
         return index, name, struct, number
 
