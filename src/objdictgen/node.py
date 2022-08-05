@@ -1081,30 +1081,66 @@ class Node(object):
             attempt to fix the data if the correct flag is enabled.
         '''
 
-        # Because the sorted() is used below, using set() here is of no importance
+        def _warn(text):
+            name = self.GetEntryName(index)
+            warning("WARNING: 0x{:04x} ({}) '{}': {}".format(index, index, name, text))
+
+        # Iterate over all the values and user parameters
         params = set(self.Dictionary.keys())
         params.update(self.ParamsDictionary.keys())
+        for index in params:
 
-        for k in sorted(params):
-
-            name = self.GetEntryName(k)
-            if k not in self.Dictionary:
-                warning("WARNING: 0x%04x (%d) '%s': Parameter without any value" % (k, k, name))
+            #
+            # Test if ParamDictionary exists without Dictionary
+            #
+            if index not in self.Dictionary:
+                _warn("Parameter without any value")
                 if fix:
-                    del self.ParamsDictionary[k]
+                    del self.ParamsDictionary[index]
+                    _warn("FIX: Deleting ParamDictionary entry")
                 continue
 
-            values = self.GetEntry(k, aslist=True)
-            entries = self.GetParamsEntry(k, aslist=True)
+            base = self.GetEntryInfos(index)
+            is_var = base["struct"] in (OD.VAR, OD.NVAR)
 
-            for i, (value, entry) in enumerate(zip(values, entries)):
-                info = self.GetSubentryInfos(k, i)
-                info.update(entry)
+            #
+            # Test if ParamDictionary matches Dictionary
+            #
+            dictlen = 1 if is_var else len(self.Dictionary.get(index, []))
+            params = {
+                k: v
+                for k, v in self.ParamsDictionary.get(index, {}).items()
+                if isinstance(k, int)
+            }
+            excessive_params = {k for k in params if k > dictlen}
+            if excessive_params:
+                dbg("Excessive params: {}".format(excessive_params))
+                _warn("Excessive user parameters ({}) or too few dictionary values ({})".format(len(excessive_params), dictlen))
 
-                if not info['name']:
-                    warning("WARNING: 0x%04x (%d) '%s': Sub-parameter %02d has no name" % (k, k, name, i))
+                if index in self.Dictionary:
+                    for idx in excessive_params:
+                        del self.ParamsDictionary[index][idx]
+                        del params[idx]
+                    _warn("FIX: Deleting ParamDictionary entries {}".format(", ".join(str(k) for k in excessive_params)))
+
+                    # If params have been emptied because of this, remove it altogether
+                    if not params:
+                        del self.ParamsDictionary[index]
+                        _warn("FIX: Deleting ParamDictionary entry")
+
+        # Iterate over all user mappings
+        params = set(self.UserMapping.keys())
+        for index in params:
+            for idx, subvals in enumerate(self.UserMapping[index]['values']):
+
+                #
+                # Test if subindex have a name
+                #
+                if not subvals["name"]:
+                    _warn("Sub index {}: Missing name".format(idx))
                     if fix:
-                        self.UserMapping[k]['values'][i]['name'] = 'Subindex %02x' %(i, )
+                        subvals["name"] = "Subindex {}".format(idx)
+                        _warn("FIX: Set name to '{}'".format(subvals["name"]))
 
 
 def BE_to_LE(value):

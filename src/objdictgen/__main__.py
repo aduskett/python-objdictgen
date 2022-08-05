@@ -63,6 +63,37 @@ def open_od(fname, validate=True, fix=False):
     return od
 
 
+def print_diffs(diffs, show=False):
+
+    def _pprint(text):
+        for line in pformat(text).splitlines():
+            print("       ", line)
+
+    def _printlines(entries):
+        for chtype, change, path in entries:
+            if 'removed' in chtype:
+                print("<<<     {} only in LEFT".format(path))
+                if show:
+                    _pprint(change.t1)
+            elif 'added' in chtype:
+                print("    >>> {} only in RIGHT".format(path))
+                if show:
+                    _pprint(change.t2)
+            elif 'changed' in chtype:
+                print("<< - >> {} value changed from '{}' to '{}'".format(path, change.t1, change.t2))
+            else:
+                print("{}{} {} {}{}".format(Fore.RED, chtype, path, change, Style.RESET_ALL))
+
+    rest = diffs.pop('', None)
+    if rest:
+        print("{}Changes:{}".format(Fore.GREEN, Style.RESET_ALL))
+        _printlines(rest)
+
+    for index in sorted(diffs):
+        print("{}Index 0x{:04x} ({}){}".format(Fore.GREEN, index, index, Style.RESET_ALL))
+        _printlines(diffs[index])
+
+
 @debug_wrapper()
 def main(debugopts, args=None):
     ''' Main command dispatcher '''
@@ -225,34 +256,7 @@ def main(debugopts, args=None):
             errcode = 0
             print("{}: '{}' and '{}' are equal".format(ODG_PROGRAM, opts.od1, opts.od2))
 
-        def _pprint(text):
-            for line in pformat(text).splitlines():
-                print("       ", line)
-
-        def _printlines(entries):
-            for chtype, change, path in entries:
-                if 'removed' in chtype:
-                    print("<<<     {} only in LEFT".format(path))
-                    if opts.show:
-                        _pprint(change.t1)
-                elif 'added' in chtype:
-                    print("    >>> {} only in RIGHT".format(path))
-                    if opts.show:
-                        _pprint(change.t2)
-                elif 'changed' in chtype:
-                    print("<< - >> {} value changed from '{}' to '{}'".format(path, change.t1, change.t2))
-                else:
-                    print("{}{} {} {}{}".format(Fore.RED, chtype, path, change, Style.RESET_ALL))
-
-        rest = diffs.pop('', None)
-        if rest:
-            print("{}Changes:{}".format(Fore.GREEN, Style.RESET_ALL))
-            _printlines(rest)
-
-        for index in sorted(diffs):
-            print("{}Index 0x{:04x} ({}){}".format(Fore.GREEN, index, index, Style.RESET_ALL))
-            _printlines(diffs[index])
-
+        print_diffs(diffs, show=opts.show)
         parser.exit(errcode)
 
 

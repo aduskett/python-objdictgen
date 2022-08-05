@@ -1,8 +1,6 @@
 # TODO
 
-* [ ] Index 0x160E (5646) from ResusciFamilyMasterOD.od fails with
-      "Index 0x160e (5646): User parameters not empty. Programming error?"
-      *2022-08-03*
+# Issues
 
 * [ ] Change `struct`, `need`, `type` to human readable variants in JSON
       format. *2022-08-03*
@@ -17,6 +15,9 @@
 
 # Resolved
 
+* [X] Index 0x160E (5646) from ResusciFamilyMasterOD.od fails with
+      "Index 0x160e (5646): User parameters not empty. Programming error?"
+      *2022-08-03*
 * [X] Logging doesn't seem to work in py. No WARNINGS printed. *2022-08-03*
 * [X] Slave created in editor crash on save as json. "While processing index
       0x1401 (5121): Missing mapping". *2022-08-02*

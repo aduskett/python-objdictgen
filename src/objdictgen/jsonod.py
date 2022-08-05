@@ -849,7 +849,7 @@ def node_fromdict_parameter(obj):
         params.update(params.pop(0))
 
     # Remove the empty params and values
-    params = {k: v for k, v in params.items() if v}
+    params = {k: v for k, v in params.items() if not isinstance(v, dict) or v}
     subitems = [v for v in subitems if v]
 
     # Commit params if there is any data

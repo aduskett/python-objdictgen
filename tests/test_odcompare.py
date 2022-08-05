@@ -1,25 +1,51 @@
+import copy
 import shutil
 import re
 import os
 import sys
+from collections import OrderedDict
 import pytest
 from objdictgen.nodemanager import NodeManager
 
+if sys.version_info[0] >= 3:
+    ODict = dict
+else:
+    ODict = OrderedDict
+
+
+def shave_dict(a, b):
+    if isinstance(a, (ODict, dict)) and isinstance(b, (ODict, dict)):
+        for k in set(a.keys()) | set(b.keys()):
+            if k in a and k in b:
+                a[k], b[k] = shave_dict(a[k], b[k])
+            if k in a and k in b and a[k] == b[k]:
+                del a[k]
+                del b[k]
+    return a, b
+
 
 def shave_equal(a, b, ignore=None):
-    a = a.CurrentNode.__dict__.copy()
-    b = b.CurrentNode.__dict__.copy()
+    a = copy.deepcopy(a.CurrentNode.__dict__)
+    b = copy.deepcopy(b.CurrentNode.__dict__)
 
     for n in ignore or []:
         a.pop(n, None)
         b.pop(n, None)
 
-    for k in set(a.keys()) | set(b.keys()):
-        if k in a and k in b and a[k] == b[k]:
-            del a[k]
-            del b[k]
+    return shave_dict(a, b)
 
-    return a, b
+
+# TIPS:
+#
+# Printing of diffs:
+#   # from objdictgen.__main__ import print_diffs
+#   # from objdictgen import jsonod
+#   # diffs = jsonod.diff_nodes(m0.CurrentNode, m1.CurrentNode, as_dict=False, validate=True)
+#   # print_diffs(diffs)
+#
+# Saving for debug
+#    # m1.SaveCurrentInFile('<filepath>/_tmp.err.json', sort=True, internal=True, validate=False)
+
 
 
 # def dictify(d):
@@ -121,6 +147,7 @@ def test_jsonexport(wd, odfile):
     m1.OpenFileInCurrent(odfile + '.od')
 
     # Need this to fix any incorrect ODs which cause import error
+    m0.Validate(fix=True)
     m1.Validate(fix=True)
 
     m1.SaveCurrentInFile(od + '.json')
