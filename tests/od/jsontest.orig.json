@@ -3,24 +3,24 @@
   "$version": "1",
   "$description": "Canfestival object dictionary data",
   "$tool": "odg 3.2",
-  "$date": "2022-08-08T21:01:43.205000",
+  "$date": "2022-08-04T18:49:44.661789",
   "name": "jsontest",
   "description": "Full JSON test",
   "type": "master",
   "id": 0,
-  "profile": "Test",
+  "profile_name": "Test",
   "dictionary": [
     {
       "index": "0x00A0",  // 160
       "name": "UNSIGNED32[100-200]",
-      "struct": "record",
-      "mandatory": false,
+      "struct": 3,
+      "need": false,
       "default": 0,
       "size": 32,
       "sub": [
         {
           "name": "Number of Entries",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false,
           "save": true,
@@ -28,7 +28,7 @@
         },
         {
           "name": "Type",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false,
           "comment": "T1",
@@ -36,7 +36,7 @@
         },
         {
           "name": "Minimum Value",
-          "type": "UNSIGNED32",  // 7
+          "type": 7,
           "access": "ro",
           "pdo": false,
           "comment": "T2",
@@ -44,7 +44,7 @@
         },
         {
           "name": "Maximum Value",
-          "type": "UNSIGNED32",  // 7
+          "type": 7,
           "access": "ro",
           "pdo": false,
           "save": true,
@@ -56,14 +56,14 @@
     {
       "index": "0x1000",  // 4096
       "name": "Device Type",
-      "struct": "var",
+      "struct": 1,
       "group": "built-in",
-      "mandatory": true,
+      "need": true,
       "callback": true,
       "sub": [
         {
           "name": "Device Type",
-          "type": "UNSIGNED32",  // 7
+          "type": 7,
           "access": "ro",
           "pdo": false,
           "save": true,
@@ -75,13 +75,13 @@
     {
       "index": "0x1001",  // 4097
       "name": "Error Register",
-      "struct": "var",
+      "struct": 1,
       "group": "built-in",
-      "mandatory": true,
+      "need": true,
       "sub": [
         {
           "name": "Error Register",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": true,
           "save": true,
@@ -93,14 +93,14 @@
     {
       "index": "0x1018",  // 4120
       "name": "Identity",
-      "struct": "record",
+      "struct": 3,
       "group": "built-in",
-      "mandatory": true,
+      "need": true,
       "callback": true,
       "sub": [
         {
           "name": "Number of Entries",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false,
           "save": true,
@@ -108,7 +108,7 @@
         },
         {
           "name": "Vendor ID",
-          "type": "UNSIGNED32",  // 7
+          "type": 7,
           "access": "ro",
           "pdo": false,
           "comment": "R1",
@@ -116,7 +116,7 @@
         },
         {
           "name": "Product Code",
-          "type": "UNSIGNED32",  // 7
+          "type": 7,
           "access": "ro",
           "pdo": false,
           "comment": "R2",
@@ -124,7 +124,7 @@
         },
         {
           "name": "Revision Number",
-          "type": "UNSIGNED32",  // 7
+          "type": 7,
           "access": "ro",
           "pdo": false,
           "comment": "R3",
@@ -132,7 +132,7 @@
         },
         {
           "name": "Serial Number",
-          "type": "UNSIGNED32",  // 7
+          "type": 7,
           "access": "ro",
           "pdo": false,
           "save": true,
@@ -144,16 +144,16 @@
     {
       "index": "0x1280",  // 4736
       "name": "Client SDO %d Parameter[(idx)]",
-      "struct": "nrecord",
+      "struct": 11,
       "group": "built-in",
-      "mandatory": false,
+      "need": false,
       "callback": true,
       "incr": 1,
       "nbmax": 256,
       "sub": [
         {
           "name": "Number of Entries",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false,
           "save": true,
@@ -161,7 +161,7 @@
         },
         {
           "name": "COB ID Client to Server (Transmit SDO)",
-          "type": "UNSIGNED32",  // 7
+          "type": 7,
           "access": "rw",
           "pdo": false,
           "comment": "SDO1",
@@ -169,7 +169,7 @@
         },
         {
           "name": "COB ID Server to Client (Receive SDO)",
-          "type": "UNSIGNED32",  // 7
+          "type": 7,
           "access": "rw",
           "pdo": false,
           "comment": "SDO2",
@@ -177,7 +177,7 @@
         },
         {
           "name": "Node ID of the SDO Server",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "rw",
           "pdo": false,
           "save": true,
@@ -188,32 +188,23 @@
     },
     {
       "index": "0x1281",  // 4737
-      // "name": "Client SDO 2 Parameter"
       "repeat": true,
-      "struct": "nrecord",
+      "struct": 11,
       "callback": true,
       "sub": [
         {
-          // "name": "Number of Entries"
-          // "type": "UNSIGNED8"  // 5
           "save": true,
           "comment": "client0"
         },
         {
-          // "name": "COB ID Client to Server (Transmit SDO)"
-          // "type": "UNSIGNED32"  // 7
           "comment": "client1",
           "value": 0
         },
         {
-          // "name": "COB ID Server to Client (Receive SDO)"
-          // "type": "UNSIGNED32"  // 7
           "comment": "client2",
           "value": 0
         },
         {
-          // "name": "Node ID of the SDO Server"
-          // "type": "UNSIGNED8"  // 5
           "save": true,
           "comment": "client3",
           "value": 0
@@ -222,27 +213,17 @@
     },
     {
       "index": "0x1282",  // 4738
-      // "name": "Client SDO 3 Parameter"
       "repeat": true,
-      "struct": "nrecord",
+      "struct": 11,
       "sub": [
+        {},
         {
-          // "name": "Number of Entries"
-          // "type": "UNSIGNED8"  // 5
-        },
-        {
-          // "name": "COB ID Client to Server (Transmit SDO)"
-          // "type": "UNSIGNED32"  // 7
           "value": 0
         },
         {
-          // "name": "COB ID Server to Client (Receive SDO)"
-          // "type": "UNSIGNED32"  // 7
           "value": 0
         },
         {
-          // "name": "Node ID of the SDO Server"
-          // "type": "UNSIGNED8"  // 5
           "value": 0
         }
       ]
@@ -250,16 +231,16 @@
     {
       "index": "0x1400",  // 5120
       "name": "Receive PDO %d Parameter[(idx)]",
-      "struct": "nrecord",
+      "struct": 11,
       "group": "built-in",
-      "mandatory": false,
+      "need": false,
       "callback": true,
       "incr": 1,
       "nbmax": 512,
       "sub": [
         {
           "name": "Highest SubIndex Supported",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false,
           "save": true,
@@ -267,7 +248,7 @@
         },
         {
           "name": "COB ID used by PDO",
-          "type": "UNSIGNED32",  // 7
+          "type": 7,
           "access": "rw",
           "pdo": false,
           "comment": "rpdo1",
@@ -276,7 +257,7 @@
         },
         {
           "name": "Transmission Type",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "rw",
           "pdo": false,
           "comment": "rpdo2",
@@ -284,7 +265,7 @@
         },
         {
           "name": "Inhibit Time",
-          "type": "UNSIGNED16",  // 6
+          "type": 6,
           "access": "rw",
           "pdo": false,
           "comment": "rpdo3",
@@ -292,7 +273,7 @@
         },
         {
           "name": "Compatibility Entry",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "rw",
           "pdo": false,
           "comment": "rpdo4",
@@ -300,7 +281,7 @@
         },
         {
           "name": "Event Timer",
-          "type": "UNSIGNED16",  // 6
+          "type": 6,
           "access": "rw",
           "pdo": false,
           "comment": "rpdo5",
@@ -308,7 +289,7 @@
         },
         {
           "name": "SYNC start value",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "rw",
           "pdo": false,
           "save": true,
@@ -319,50 +300,35 @@
     },
     {
       "index": "0x1401",  // 5121
-      // "name": "Receive PDO 2 Parameter"
       "repeat": true,
-      "struct": "nrecord",
+      "struct": 11,
       "callback": true,
       "sub": [
         {
-          // "name": "Highest SubIndex Supported"
-          // "type": "UNSIGNED8"  // 5
           "save": true,
           "comment": "c0"
         },
         {
-          // "name": "COB ID used by PDO"
-          // "type": "UNSIGNED32"  // 7
           "comment": "c1",
           "value": "{True:\"$NODEID+0x%X00\"%(base+2),False:0x80000000}[base<4]"
         },
         {
-          // "name": "Transmission Type"
-          // "type": "UNSIGNED8"  // 5
           "comment": "c2",
           "value": 0
         },
         {
-          // "name": "Inhibit Time"
-          // "type": "UNSIGNED16"  // 6
           "comment": "c3",
           "value": 0
         },
         {
-          // "name": "Compatibility Entry"
-          // "type": "UNSIGNED8"  // 5
           "comment": "c4",
           "value": 0
         },
         {
-          // "name": "Event Timer"
-          // "type": "UNSIGNED16"  // 6
           "comment": "c5",
           "value": 0
         },
         {
-          // "name": "SYNC start value"
-          // "type": "UNSIGNED8"  // 5
           "save": true,
           "comment": "c6",
           "value": 0
@@ -371,42 +337,26 @@
     },
     {
       "index": "0x1402",  // 5122
-      // "name": "Receive PDO 3 Parameter"
       "repeat": true,
-      "struct": "nrecord",
+      "struct": 11,
       "sub": [
+        {},
         {
-          // "name": "Highest SubIndex Supported"
-          // "type": "UNSIGNED8"  // 5
-        },
-        {
-          // "name": "COB ID used by PDO"
-          // "type": "UNSIGNED32"  // 7
           "value": "{True:\"$NODEID+0x%X00\"%(base+2),False:0x80000000}[base<4]"
         },
         {
-          // "name": "Transmission Type"
-          // "type": "UNSIGNED8"  // 5
           "value": 0
         },
         {
-          // "name": "Inhibit Time"
-          // "type": "UNSIGNED16"  // 6
           "value": 0
         },
         {
-          // "name": "Compatibility Entry"
-          // "type": "UNSIGNED8"  // 5
           "value": 0
         },
         {
-          // "name": "Event Timer"
-          // "type": "UNSIGNED16"  // 6
           "value": 0
         },
         {
-          // "name": "SYNC start value"
-          // "type": "UNSIGNED8"  // 5
           "value": 0
         }
       ]
@@ -414,14 +364,14 @@
     {
       "index": "0x1600",  // 5632
       "name": "Receive PDO %d Mapping[(idx)]",
-      "struct": "narray",
+      "struct": 15,
       "group": "built-in",
-      "mandatory": false,
+      "need": false,
       "incr": 1,
       "nbmax": 512,
       "each": {
         "name": "PDO %d Mapping for an application object %d[(idx,sub)]",
-        "type": "UNSIGNED32",  // 7
+        "type": 7,
         "access": "rw",
         "pdo": false,
         "nbmin": 0,
@@ -430,7 +380,7 @@
       "sub": [
         {
           "name": "Number of Entries",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "rw",
           "pdo": false
         }
@@ -438,28 +388,26 @@
     },
     {
       "index": "0x1601",  // 5633
-      // "name": "Receive PDO 2 Mapping"
       "repeat": true,
-      "struct": "narray",
+      "struct": 15,
       "sub": []
     },
     {
       "index": "0x1602",  // 5634
-      // "name": "Receive PDO 3 Mapping"
       "repeat": true,
-      "struct": "narray",
+      "struct": 15,
       "sub": []
     },
     {
       "index": "0x1F20",  // 7968
       "name": "Store DCF",
-      "struct": "array",
+      "struct": 7,
       "group": "ds302",
-      "mandatory": false,
+      "need": false,
       "callback": true,
       "each": {
         "name": "Store DCF for node %d[(sub)]",
-        "type": "DOMAIN",  // 15
+        "type": 15,
         "access": "rw",
         "pdo": false,
         "nbmax": 127
@@ -467,7 +415,7 @@
       "sub": [
         {
           "name": "Number of Entries",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false,
           "save": true,
@@ -475,16 +423,12 @@
           "buffer_size": 3
         },
         {
-          // "name": "Store DCF for node 1"
-          // "type": "DOMAIN"  // 15
           "save": true,
           "comment": "DCF1",
           "value": "",
           "buffer_size": 12
         },
         {
-          // "name": "Store DCF for node 2"
-          // "type": "DOMAIN"  // 15
           "save": true,
           "comment": "DCF2",
           "value": "",
@@ -495,13 +439,13 @@
     {
       "index": "0x1F21",  // 7969
       "name": "Storage Format",
-      "struct": "array",
+      "struct": 7,
       "group": "ds302",
-      "mandatory": false,
+      "need": false,
       "unused": true,
       "each": {
         "name": "Storage Format for Node %d[(sub)]",
-        "type": "INTEGER8",  // 2
+        "type": 2,
         "access": "rw",
         "pdo": false,
         "nbmax": 127
@@ -509,7 +453,7 @@
       "sub": [
         {
           "name": "Number of Entries",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false
         }
@@ -518,13 +462,13 @@
     {
       "index": "0x1F22",  // 7970
       "name": "Concise DCF",
-      "struct": "array",
+      "struct": 7,
       "group": "ds302",
-      "mandatory": false,
+      "need": false,
       "unused": true,
       "each": {
         "name": "Concise DCF for Node %d[(sub)]",
-        "type": "DOMAIN",  // 15
+        "type": 15,
         "access": "rw",
         "pdo": false,
         "nbmax": 127
@@ -532,7 +476,7 @@
       "sub": [
         {
           "name": "Number of Entries",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false
         }
@@ -541,13 +485,13 @@
     {
       "index": "0x1F50",  // 8016
       "name": "Download Program Data",
-      "struct": "array",
+      "struct": 7,
       "group": "ds302",
-      "mandatory": false,
+      "need": false,
       "unused": true,
       "each": {
         "name": "Program Number %d[(sub)]",
-        "type": "DOMAIN",  // 15
+        "type": 15,
         "access": "rw",
         "pdo": false,
         "nbmax": 127
@@ -555,7 +499,7 @@
       "sub": [
         {
           "name": "Number of different programs supported on the node",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false
         }
@@ -564,13 +508,13 @@
     {
       "index": "0x1F51",  // 8017
       "name": "Program Control",
-      "struct": "array",
+      "struct": 7,
       "group": "ds302",
-      "mandatory": false,
+      "need": false,
       "unused": true,
       "each": {
         "name": "Program Number %d[(sub)]",
-        "type": "UNSIGNED8",  // 5
+        "type": 5,
         "access": "rw",
         "pdo": false,
         "nbmax": 127
@@ -578,7 +522,7 @@
       "sub": [
         {
           "name": "Number of different programs on the node",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false
         }
@@ -587,26 +531,26 @@
     {
       "index": "0x1F52",  // 8018
       "name": "Verify Application Software",
-      "struct": "record",
+      "struct": 3,
       "group": "ds302",
-      "mandatory": false,
+      "need": false,
       "unused": true,
       "sub": [
         {
           "name": "Number of Entries",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false
         },
         {
           "name": "Application software date",
-          "type": "UNSIGNED32",  // 7
+          "type": 7,
           "access": "rw",
           "pdo": false
         },
         {
           "name": "Application sofware time",
-          "type": "UNSIGNED32",  // 7
+          "type": 7,
           "access": "rw",
           "pdo": false
         }
@@ -615,13 +559,13 @@
     {
       "index": "0x1F53",  // 8019
       "name": "Expected Application SW Date",
-      "struct": "array",
+      "struct": 7,
       "group": "ds302",
-      "mandatory": false,
+      "need": false,
       "unused": true,
       "each": {
         "name": "Program number %d[(sub)]",
-        "type": "UNSIGNED32",  // 7
+        "type": 7,
         "access": "rw",
         "pdo": false,
         "nbmax": 127
@@ -629,7 +573,7 @@
       "sub": [
         {
           "name": "Number of different programs on the node",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false
         }
@@ -638,13 +582,13 @@
     {
       "index": "0x1F55",  // 8021
       "name": "Expected Application SW Time",
-      "struct": "array",
+      "struct": 7,
       "group": "ds302",
-      "mandatory": false,
+      "need": false,
       "unused": true,
       "each": {
         "name": "Program number %d[(sub)]",
-        "type": "UNSIGNED32",  // 7
+        "type": 7,
         "access": "rw",
         "pdo": false,
         "nbmax": 127
@@ -652,7 +596,7 @@
       "sub": [
         {
           "name": "Number of different programs on the node",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false
         }
@@ -661,13 +605,13 @@
     {
       "index": "0x2000",  // 8192
       "name": "VAR",
-      "struct": "var",
-      "mandatory": false,
+      "struct": 1,
+      "need": false,
       "callback": true,
       "sub": [
         {
           "name": "VAR",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "rw",
           "pdo": true,
           "save": true,
@@ -679,12 +623,12 @@
     {
       "index": "0x2001",  // 8193
       "name": "ARRAY",
-      "struct": "array",
-      "mandatory": false,
+      "struct": 7,
+      "need": false,
       "callback": true,
       "each": {
         "name": "ARRAY %d[(sub)]",
-        "type": "INTEGER8",  // 2
+        "type": 2,
         "access": "ro",
         "pdo": true,
         "nbmax": 254
@@ -692,21 +636,17 @@
       "sub": [
         {
           "name": "Number of Entries",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false,
           "save": true,
           "comment": "A0"
         },
         {
-          // "name": "ARRAY 1"
-          // "type": "INTEGER8"  // 2
           "comment": "A1",
           "value": 1
         },
         {
-          // "name": "ARRAY 2"
-          // "type": "INTEGER8"  // 2
           "comment": "A2",
           "value": 2
         }
@@ -715,13 +655,13 @@
     {
       "index": "0x2002",  // 8194
       "name": "RECORD",
-      "struct": "record",
-      "mandatory": false,
+      "struct": 3,
+      "need": false,
       "callback": true,
       "sub": [
         {
           "name": "Number of Entries",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false,
           "save": true,
@@ -729,7 +669,7 @@
         },
         {
           "name": "RECORD 1",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "rw",
           "pdo": true,
           "comment": "R1",
@@ -737,7 +677,7 @@
         },
         {
           "name": "RECORD 2",
-          "type": "INTEGER16",  // 3
+          "type": 3,
           "access": "rw",
           "pdo": true,
           "save": true,
@@ -749,14 +689,14 @@
     {
       "index": "0x5000",  // 20480
       "name": "VAR: Global Interrupt Enable Digital",
-      "struct": "var",
+      "struct": 1,
       "group": "profile",
-      "mandatory": false,
+      "need": false,
       "unused": true,
       "sub": [
         {
           "name": "Global Interrupt Enable Digital Sure",
-          "type": "BOOLEAN",  // 1
+          "type": 1,
           "access": "rw",
           "pdo": false,
           "default": true
@@ -766,27 +706,27 @@
     {
       "index": "0x5100",  // 20736
       "name": "RECORD: Software position limit",
-      "struct": "record",
+      "struct": 3,
       "group": "profile",
-      "mandatory": false,
+      "need": false,
       "unused": true,
       "sub": [
         {
           "name": "Number of things",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false
         },
         {
           "name": "Minimal position limit",
-          "type": "INTEGER32",  // 4
+          "type": 4,
           "access": "rw",
           "pdo": false,
           "default": 16
         },
         {
           "name": "Maximal position limit",
-          "type": "INTEGER32",  // 4
+          "type": 4,
           "access": "rw",
           "pdo": false,
           "default": 23
@@ -796,13 +736,13 @@
     {
       "index": "0x5180",  // 20864
       "name": "RECORD: AL Action",
-      "struct": "record",
+      "struct": 3,
       "group": "profile",
-      "mandatory": false,
+      "need": false,
       "unused": true,
       "each": {
         "name": "AL %d Action %d[(idx,sub)]",
-        "type": "INTEGER16",  // 3
+        "type": 3,
         "access": "rw",
         "pdo": false,
         "nbmax": 6,
@@ -811,7 +751,7 @@
       "sub": [
         {
           "name": "Number of subs",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false
         }
@@ -820,13 +760,13 @@
     {
       "index": "0x5200",  // 20992
       "name": "ARRAY: Acceleration Value",
-      "struct": "array",
+      "struct": 7,
       "group": "profile",
-      "mandatory": false,
+      "need": false,
       "unused": true,
       "each": {
         "name": "Acceleration Value Channel %d[(sub)]",
-        "type": "INTEGER16",  // 3
+        "type": 3,
         "access": "ro",
         "pdo": true,
         "nbmax": 254,
@@ -835,7 +775,7 @@
       "sub": [
         {
           "name": "Number of Available Channels",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false
         }
@@ -844,16 +784,16 @@
     {
       "index": "0x5300",  // 21248
       "name": "NVAR: Test profile %d[(idx)]",
-      "struct": "nvar",
+      "struct": 9,
       "group": "profile",
-      "mandatory": false,
+      "need": false,
       "unused": true,
       "incr": 2,
       "nbmax": 8,
       "sub": [
         {
           "name": "Device Type %d and %d[(idx,sub)]",
-          "type": "UNSIGNED32",  // 7
+          "type": 7,
           "access": "ro",
           "pdo": true,
           "default": 16
@@ -863,15 +803,15 @@
     {
       "index": "0x5400",  // 21504
       "name": "NARRAY: CAM%d Low Limit[(idx)]",
-      "struct": "narray",
+      "struct": 15,
       "group": "profile",
-      "mandatory": false,
+      "need": false,
       "unused": true,
       "incr": 2,
       "nbmax": 8,
       "each": {
         "name": "CAM%d Low Limit Channel %d[(idx,sub)]",
-        "type": "INTEGER32",  // 4
+        "type": 4,
         "access": "rw",
         "pdo": false,
         "nbmax": 254,
@@ -880,7 +820,7 @@
       "sub": [
         {
           "name": "Number of Available Channels",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false
         }
@@ -889,53 +829,53 @@
     {
       "index": "0x5500",  // 21760
       "name": "NRECORD: Receive PDO %d Parameter[(idx)]",
-      "struct": "nrecord",
+      "struct": 11,
       "group": "profile",
-      "mandatory": false,
+      "need": false,
       "unused": true,
       "incr": 2,
       "nbmax": 8,
       "sub": [
         {
           "name": "Highest SubIndex Supported",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false
         },
         {
           "name": "COB ID used by PDO",
-          "type": "UNSIGNED32",  // 7
+          "type": 7,
           "access": "rw",
           "pdo": false,
           "default": 12
         },
         {
           "name": "Transmission Type",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "rw",
           "pdo": false
         },
         {
           "name": "Inhibit Time",
-          "type": "UNSIGNED16",  // 6
+          "type": 6,
           "access": "rw",
           "pdo": false
         },
         {
           "name": "Compatibility Entry",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "rw",
           "pdo": false
         },
         {
           "name": "Event Timer",
-          "type": "UNSIGNED16",  // 6
+          "type": 6,
           "access": "rw",
           "pdo": false
         },
         {
           "name": "SYNC start value",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "rw",
           "pdo": false,
           "default": 16
@@ -945,15 +885,15 @@
     {
       "index": "0x5580",  // 21888
       "name": "NRECORD: AL %d Action[(idx)]",
-      "struct": "nrecord",
+      "struct": 11,
       "group": "profile",
-      "mandatory": false,
+      "need": false,
       "unused": true,
       "incr": 2,
       "nbmax": 16,
       "each": {
         "name": "AL %d Action %d[(idx,sub)]",
-        "type": "UNSIGNED32",  // 7
+        "type": 7,
         "access": "rw",
         "pdo": false,
         "nbmax": 3,
@@ -962,7 +902,7 @@
       "sub": [
         {
           "name": "Number of Actions",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false
         }
@@ -971,15 +911,15 @@
     {
       "index": "0x5600",  // 22016
       "name": "Producer Heartbeat Time",
-      "struct": "var",
+      "struct": 1,
       "group": "profile",
-      "mandatory": false,
+      "need": false,
       "profile_callback": true,
       "unused": true,
       "sub": [
         {
           "name": "Producer Heartbeat Time",
-          "type": "UNSIGNED16",  // 6
+          "type": 6,
           "access": "rw",
           "pdo": false
         }
@@ -988,14 +928,14 @@
     {
       "index": "0x6000",  // 24576
       "name": "VAR: Global Interrupt Enable Digital",
-      "struct": "var",
+      "struct": 1,
       "group": "profile",
-      "mandatory": false,
+      "need": false,
       "callback": true,
       "sub": [
         {
           "name": "Global Interrupt Enable Digital Sure",
-          "type": "BOOLEAN",  // 1
+          "type": 1,
           "access": "rw",
           "pdo": false,
           "save": true,
@@ -1008,14 +948,14 @@
     {
       "index": "0x6100",  // 24832
       "name": "RECORD: Software position limit",
-      "struct": "record",
+      "struct": 3,
       "group": "profile",
-      "mandatory": false,
+      "need": false,
       "callback": true,
       "sub": [
         {
           "name": "Number of things",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false,
           "save": true,
@@ -1023,7 +963,7 @@
         },
         {
           "name": "Minimal position limit",
-          "type": "INTEGER32",  // 4
+          "type": 4,
           "access": "rw",
           "pdo": false,
           "comment": "Rec1",
@@ -1032,7 +972,7 @@
         },
         {
           "name": "Maximal position limit",
-          "type": "INTEGER32",  // 4
+          "type": 4,
           "access": "rw",
           "pdo": false,
           "save": true,
@@ -1045,13 +985,13 @@
     {
       "index": "0x6180",  // 24960
       "name": "RECORD: AL Action",
-      "struct": "record",
+      "struct": 3,
       "group": "profile",
-      "mandatory": false,
+      "need": false,
       "callback": true,
       "each": {
         "name": "AL %d Action %d[(idx,sub)]",
-        "type": "INTEGER16",  // 3
+        "type": 3,
         "access": "rw",
         "pdo": false,
         "nbmax": 6,
@@ -1060,45 +1000,33 @@
       "sub": [
         {
           "name": "Number of subs",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false,
           "save": true,
           "comment": "r0"
         },
         {
-          // "name": "AL 1 Action 1"
-          // "type": "INTEGER16"  // 3
           "comment": "r1",
           "value": 1
         },
         {
-          // "name": "AL 1 Action 2"
-          // "type": "INTEGER16"  // 3
           "comment": "r2",
           "value": 2
         },
         {
-          // "name": "AL 1 Action 3"
-          // "type": "INTEGER16"  // 3
           "comment": "r3",
           "value": 3
         },
         {
-          // "name": "AL 1 Action 4"
-          // "type": "INTEGER16"  // 3
           "comment": "r4",
           "value": 4
         },
         {
-          // "name": "AL 1 Action 5"
-          // "type": "INTEGER16"  // 3
           "comment": "r5",
           "value": 5
         },
         {
-          // "name": "AL 1 Action 6"
-          // "type": "INTEGER16"  // 3
           "save": true,
           "comment": "r6",
           "value": 6
@@ -1108,13 +1036,13 @@
     {
       "index": "0x6200",  // 25088
       "name": "ARRAY: Acceleration Value",
-      "struct": "array",
+      "struct": 7,
       "group": "profile",
-      "mandatory": false,
+      "need": false,
       "callback": true,
       "each": {
         "name": "Acceleration Value Channel %d[(sub)]",
-        "type": "INTEGER16",  // 3
+        "type": 3,
         "access": "ro",
         "pdo": true,
         "nbmax": 254,
@@ -1123,21 +1051,17 @@
       "sub": [
         {
           "name": "Number of Available Channels",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false,
           "save": true,
           "comment": "A0"
         },
         {
-          // "name": "Acceleration Value Channel 1"
-          // "type": "INTEGER16"  // 3
           "comment": "A1",
           "value": 1
         },
         {
-          // "name": "Acceleration Value Channel 2"
-          // "type": "INTEGER16"  // 3
           "save": true,
           "comment": "A2",
           "value": 16
@@ -1147,16 +1071,16 @@
     {
       "index": "0x6300",  // 25344
       "name": "NVAR: Test profile %d[(idx)]",
-      "struct": "nvar",
+      "struct": 9,
       "group": "profile",
-      "mandatory": false,
+      "need": false,
       "callback": true,
       "incr": 2,
       "nbmax": 8,
       "sub": [
         {
           "name": "Device Type %d and %d[(idx,sub)]",
-          "type": "UNSIGNED32",  // 7
+          "type": 7,
           "access": "ro",
           "pdo": true,
           "save": true,
@@ -1168,13 +1092,10 @@
     },
     {
       "index": "0x6302",  // 25346
-      // "name": "NVAR: Test profile 2"
       "repeat": true,
-      "struct": "nvar",
+      "struct": 9,
       "sub": [
         {
-          // "name": "Device Type 2 and 0"
-          // "type": "UNSIGNED32"  // 7
           "value": 12
         }
       ]
@@ -1182,15 +1103,15 @@
     {
       "index": "0x6400",  // 25600
       "name": "NARRAY: CAM%d Low Limit[(idx)]",
-      "struct": "narray",
+      "struct": 15,
       "group": "profile",
-      "mandatory": false,
+      "need": false,
       "callback": true,
       "incr": 2,
       "nbmax": 8,
       "each": {
         "name": "CAM%d Low Limit Channel %d[(idx,sub)]",
-        "type": "INTEGER32",  // 4
+        "type": 4,
         "access": "rw",
         "pdo": false,
         "nbmax": 254,
@@ -1199,21 +1120,17 @@
       "sub": [
         {
           "name": "Number of Available Channels",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false,
           "save": true,
           "comment": "n0"
         },
         {
-          // "name": "CAM1 Low Limit Channel 1"
-          // "type": "INTEGER32"  // 4
           "comment": "n1",
           "value": 1
         },
         {
-          // "name": "CAM1 Low Limit Channel 2"
-          // "type": "INTEGER32"  // 4
           "save": true,
           "comment": "n2",
           "value": 2
@@ -1222,24 +1139,23 @@
     },
     {
       "index": "0x6402",  // 25602
-      // "name": "NARRAY: CAM2 Low Limit"
       "repeat": true,
-      "struct": "narray",
+      "struct": 15,
       "sub": []
     },
     {
       "index": "0x6500",  // 25856
       "name": "NRECORD: Receive PDO %d Parameter[(idx)]",
-      "struct": "nrecord",
+      "struct": 11,
       "group": "profile",
-      "mandatory": false,
+      "need": false,
       "callback": true,
       "incr": 2,
       "nbmax": 8,
       "sub": [
         {
           "name": "Highest SubIndex Supported",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false,
           "save": true,
@@ -1247,7 +1163,7 @@
         },
         {
           "name": "COB ID used by PDO",
-          "type": "UNSIGNED32",  // 7
+          "type": 7,
           "access": "rw",
           "pdo": false,
           "comment": "nr1",
@@ -1256,7 +1172,7 @@
         },
         {
           "name": "Transmission Type",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "rw",
           "pdo": false,
           "comment": "nr2",
@@ -1264,7 +1180,7 @@
         },
         {
           "name": "Inhibit Time",
-          "type": "UNSIGNED16",  // 6
+          "type": 6,
           "access": "rw",
           "pdo": false,
           "comment": "nr3",
@@ -1272,7 +1188,7 @@
         },
         {
           "name": "Compatibility Entry",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "rw",
           "pdo": false,
           "comment": "nr4",
@@ -1280,7 +1196,7 @@
         },
         {
           "name": "Event Timer",
-          "type": "UNSIGNED16",  // 6
+          "type": 6,
           "access": "rw",
           "pdo": false,
           "comment": "nr5",
@@ -1288,7 +1204,7 @@
         },
         {
           "name": "SYNC start value",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "rw",
           "pdo": false,
           "save": true,
@@ -1300,23 +1216,22 @@
     },
     {
       "index": "0x6502",  // 25858
-      // "name": "NRECORD: Receive PDO 2 Parameter"
       "repeat": true,
-      "struct": "nrecord",
+      "struct": 11,
       "sub": []
     },
     {
       "index": "0x6580",  // 25984
       "name": "NRECORD: AL %d Action[(idx)]",
-      "struct": "nrecord",
+      "struct": 11,
       "group": "profile",
-      "mandatory": false,
+      "need": false,
       "callback": true,
       "incr": 2,
       "nbmax": 16,
       "each": {
         "name": "AL %d Action %d[(idx,sub)]",
-        "type": "UNSIGNED32",  // 7
+        "type": 7,
         "access": "rw",
         "pdo": false,
         "nbmax": 6,
@@ -1325,46 +1240,34 @@
       "sub": [
         {
           "name": "Number of Actions",
-          "type": "UNSIGNED8",  // 5
+          "type": 5,
           "access": "ro",
           "pdo": false,
           "save": true,
           "comment": "com0"
         },
         {
-          // "name": "AL 1 Action 1"
-          // "type": "UNSIGNED32"  // 7
           "comment": "com1",
           "value": 1
         },
         {
-          // "name": "AL 1 Action 2"
-          // "type": "UNSIGNED32"  // 7
           "comment": "com2",
           "value": 2
         },
         {
-          // "name": "AL 1 Action 3"
-          // "type": "UNSIGNED32"  // 7
           "comment": "com3",
           "value": 3
         },
         {
-          // "name": "AL 1 Action 4"
-          // "type": "UNSIGNED32"  // 7
           "save": true,
           "comment": "com4",
           "value": 4
         },
         {
-          // "name": "AL 1 Action 5"
-          // "type": "UNSIGNED32"  // 7
           "comment": "com5",
           "value": 5
         },
         {
-          // "name": "AL 1 Action 6"
-          // "type": "UNSIGNED32"  // 7
           "save": true,
           "comment": "com6",
           "value": 6
@@ -1374,14 +1277,14 @@
     {
       "index": "0x6600",  // 26112
       "name": "Producer Heartbeat Time",
-      "struct": "var",
+      "struct": 1,
       "group": "profile",
-      "mandatory": false,
+      "need": false,
       "profile_callback": true,
       "sub": [
         {
           "name": "Producer Heartbeat Time",
-          "type": "UNSIGNED16",  // 6
+          "type": 6,
           "access": "rw",
           "pdo": false,
           "save": true,

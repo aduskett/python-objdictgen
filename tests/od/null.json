@@ -3,11 +3,11 @@
   "$version": "1",
   "$description": "Canfestival object dictionary data",
   "$tool": "odg 3.2",
-  "$date": "2022-08-04T18:50:58.487801",
+  "$date": "2022-08-08T21:01:52.666706",
   "name": "Null",
   "description": "",
   "type": "master",
   "id": 0,
-  "profile_name": "None",
+  "profile": "None",
   "dictionary": []
 }

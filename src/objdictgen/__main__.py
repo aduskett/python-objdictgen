@@ -54,13 +54,17 @@ def debug_wrapper():
 def open_od(fname, validate=True, fix=False):
     ''' Open and validate the OD file'''
 
-    od = nman.NodeManager()
-    od.OpenFileInCurrent(fname)
+    try:
+        od = nman.NodeManager()
+        od.OpenFileInCurrent(fname)
 
-    if validate and od.CurrentNode:
-        od.CurrentNode.Validate(fix=fix)
+        if validate and od.CurrentNode:
+            od.CurrentNode.Validate(fix=fix)
 
-    return od
+        return od
+    except Exception as exc:
+        jsonod.exc_amend(exc, "{}: ".format(fname))
+        raise
 
 
 def print_diffs(diffs, show=False):

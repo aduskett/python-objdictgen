@@ -3,23 +3,23 @@
   "$version": "1",
   "$description": "Canfestival object dictionary data",
   "$tool": "odg 3.2",
-  "$date": "2022-08-04T18:50:35.834615",
+  "$date": "2022-08-08T21:01:45.713961",
   "name": "Null",
   "description": "",
   "type": "master",
   "id": 0,
-  "profile_name": "None",
+  "profile": "None",
   "dictionary": [
     {
       "index": "0x1000",  // 4096
       "name": "Device Type",
-      "struct": 1,
+      "struct": "var",
       "group": "built-in",
-      "need": true,
+      "mandatory": true,
       "sub": [
         {
           "name": "Device Type",
-          "type": 7,
+          "type": "UNSIGNED32",  // 7
           "access": "ro",
           "pdo": false,
           "value": 0
@@ -29,40 +29,40 @@
     {
       "index": "0x1018",  // 4120
       "name": "Identity",
-      "struct": 3,
+      "struct": "record",
       "group": "built-in",
-      "need": true,
+      "mandatory": true,
       "sub": [
         {
           "name": "Number of Entries",
-          "type": 5,
+          "type": "UNSIGNED8",  // 5
           "access": "ro",
           "pdo": false
         },
         {
           "name": "Vendor ID",
-          "type": 7,
+          "type": "UNSIGNED32",  // 7
           "access": "ro",
           "pdo": false,
           "value": 0
         },
         {
           "name": "Product Code",
-          "type": 7,
+          "type": "UNSIGNED32",  // 7
           "access": "ro",
           "pdo": false,
           "value": 0
         },
         {
           "name": "Revision Number",
-          "type": 7,
+          "type": "UNSIGNED32",  // 7
           "access": "ro",
           "pdo": false,
           "value": 0
         },
         {
           "name": "Serial Number",
-          "type": 7,
+          "type": "UNSIGNED32",  // 7
           "access": "ro",
           "pdo": false,
           "value": 0

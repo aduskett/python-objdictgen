@@ -50,15 +50,8 @@
             "minimum": 0
         },
         "profile": {
-            "description": "Does this OD have a profile?",
-            "type": "boolean"
-        },
-        "profile_name": {
+            "description": "Name of the included profile",
             "type": "string"
-        },
-        "ds302": {
-            "description": "Does this OD use the DS-301 profile?",
-            "type": "boolean"
         },
         "default_string_size": {
             "type": "integer",
@@ -71,9 +64,6 @@
                 "$ref": "#object"
             }
         }
-    },
-    "dependencies": {
-        "profile": { "required": ["profile_name"] }
     },
     "required": [
         "$id", "$version", "name", "description", "type", "dictionary"
@@ -97,7 +87,6 @@
                     "repeat": { "$ref": "#repeat" },
                     "struct": { "$ref": "#struct" },
                     "callback": { "$ref": "#callback" },
-                    "unused": { "$ref": "#unused" },
                     "sub": {
                         "description": "Sub object items in repeated parameter",
                         "type": "array",
@@ -119,7 +108,6 @@
                     "struct": { "$ref": "#struct" },
                     "group": { "$ref": "#group" },
                     "mandatory": { "$ref": "#mandatory" },
-                    "need": { "$ref": "#mandatory" },
                     "profile_callback": { "$ref": "#callback" },
                     "callback": { "$ref": "#callback" },
                     "unused": { "$ref": "#unused" },
