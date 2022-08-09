@@ -133,3 +133,15 @@ The `--fix` option might be necessary if the OD-file contains internal
 inconsistencies. It is safe to run this option as it will not delete any active
 parameters. The `--drop-unused` will remove any unused *profile* and *DS-302*
 parameter that might be used in the file.
+
+
+## License
+
+Objdictgen has been based on the python tool included in CanFestival. This
+original work from CanFestival is:
+
+    Copyright (C): Edouard TISSERANT, Francis DUPIN and Laurent BESSARD
+
+The Python 3 port and tool improvements have been implemented under
+
+    Copyright (C) 2022 Svein Seldal, Laerdal Medical AS
