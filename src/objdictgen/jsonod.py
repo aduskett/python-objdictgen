@@ -27,6 +27,7 @@ else:
 class ValidationError(Exception):
     ''' Validation failure '''
 
+
 # JSON Version history/formats
 # ----------------------------
 # 0 - JSON representation of internal OD memory structure
@@ -109,14 +110,14 @@ FIELDS_DICT_MUST = {
     'sub',
 }
 FIELDS_DICT_OPT = {
-                        # R = omitted if repeat is True
-    'group',            # R, default 'user'
+                        # R = omitted if repeat is True   # noqa: E126
+    'group',            # R, default 'user'   # noqa: E131
     'each',             # R, only when struct != *var
-    'callback',         #    set if present
-    'profile_callback', # R, set if present
+    'callback',         #    set if present   # noqa: E262
+    'profile_callback', # R, set if present   # noqa: E261
     'unused',           # R, default False
     'mandatory',        # R, set if present
-    'repeat',           #    default False
+    'repeat',           #    default False   # noqa: E262
     'incr',             # R, only when struct is "N"-type
     'nbmax',            # R, only when struct is "N"-type
     'size',             # R, only when index < 0x1000
@@ -161,8 +162,8 @@ def remove_jasonc(text):
 
 
 if sys.version_info[0] >= 3:
-    with open(os.path.join(JSON_SCHEMA), 'r') as f:
-        SCHEMA = json.loads(remove_jasonc(f.read()))
+    with open(os.path.join(JSON_SCHEMA), 'r') as schemafile:
+        SCHEMA = json.loads(remove_jasonc(schemafile.read()))
 else:
     SCHEMA = None
 
@@ -348,7 +349,7 @@ def GenerateFile(filepath, node, sort=False, internal=False, validate=True):
     # Annotate symbolic fields with comments of the value
     def _index_repl(m):
         p = m.group(1)
-        v = m.group(2)
+        n = v = m.group(2)
         if p == 'index':
             n = str_to_number(v)
         if p == 'type':
@@ -396,8 +397,8 @@ def GenerateNode(filepath):
     return node_fromdict(jd)
 
 
-def node_todict(node, sort=False, rich=True, use_text=True, omit_profile=False,
-                omit_ds302=False, internal=False, validate=True, omit_date=False):
+def node_todict(node, sort=False, rich=True, use_text=True,
+                internal=False, validate=True, omit_date=False):
     '''
         Convert a node to dict representation for serialization.
 
@@ -703,7 +704,8 @@ def validate_nodeindex(node, index, obj):
         baseobj = obj[group]
 
         # B) Check baseobj object members is present
-        member_compare(baseobj.keys(),
+        member_compare(
+            baseobj.keys(),
             FIELDS_MAPPING_MUST, FIELDS_MAPPING_OPT | FIELDS_PARAMS_PROMOTE,
             msg=' in mapping object'
         )
@@ -725,14 +727,16 @@ def validate_nodeindex(node, index, obj):
     is_var = struct in (OD.VAR, OD.NVAR)
 
     # Ensure obj does NOT contain any fields found in baseobj (sanity check really)
-    member_compare(obj.keys(),
+    member_compare(
+        obj.keys(),
         not_want=FIELDS_MAPPING_MUST | FIELDS_MAPPING_OPT | FIELDS_PARAMS_PROMOTE,
         msg=' in object'
     )
 
     # Check baseobj object members
     for val in baseobj.get('values', []):
-        member_compare(val.keys(),
+        member_compare(
+            val.keys(),
             FIELDS_MAPVALS_MUST, FIELDS_MAPVALS_OPT,
             msg=' in mapping values'
         )
@@ -830,6 +834,7 @@ def node_fromdict(jd, internal=False):
 
     # Remove all underscore keys from the file
     jd = remove_underscore(jd)
+    assert isinstance(jd, dict)  # For mypy
 
     # Get the object type mappings forwards (int to str) and backwards (str to int)
     objtypes_i2s, objtypes_s2i = get_object_types(dictionary=jd.get("dictionary", []))
@@ -858,6 +863,7 @@ def node_fromdict(jd, internal=False):
         # Convert the index number (which might be "0x" string)
         index = str_to_number(obj['index'])
         obj["index"] = index
+        assert isinstance(index, int)  # For mypy
 
         try:
             if not internal:
@@ -1043,7 +1049,6 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
     # Verify that we have the expected members
     member_compare(jsonobj.keys(), FIELDS_DATA_MUST, FIELDS_DATA_OPT)
 
-
     def _validate_sub(obj, idx=0, is_var=False, is_repeat=False, is_each=False):
         if not isinstance(obj, dict):
             raise ValidationError("Is not a dict")
@@ -1114,7 +1119,6 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
                 raise ValidationError("Unknown object type '{}'".format(obj['type']))
             if isinstance(obj['type'], int) and objtypes_i2s and obj['type'] not in objtypes_i2s:
                 raise ValidationError("Unknown object type id {}".format(obj['type']))
-
 
     def _validate_dictionary(index, obj):
 
@@ -1253,10 +1257,10 @@ def diff_nodes(node1, node2, as_dict=True, validate=True):
     diffs = {}
 
     if as_dict:
-        j1, _ = node_todict(node1, sort=True, validate=validate, omit_date=True)
-        j2, _ = node_todict(node2, sort=True, validate=validate, omit_date=True)
+        jd1, _ = node_todict(node1, sort=True, validate=validate, omit_date=True)
+        jd2, _ = node_todict(node2, sort=True, validate=validate, omit_date=True)
 
-        diff = deepdiff.DeepDiff(j1, j2, exclude_paths=[
+        diff = deepdiff.DeepDiff(jd1, jd2, exclude_paths=[
             "root['dictionary']"
         ], view='tree')
 
@@ -1266,7 +1270,7 @@ def diff_nodes(node1, node2, as_dict=True, validate=True):
                 entries = diffs.setdefault('', [])
                 entries.append((chtype, change, path.replace('root', '')))
 
-        diff = deepdiff.DeepDiff(j1['dictionary'], j2['dictionary'], view='tree', group_by='index')
+        diff = deepdiff.DeepDiff(jd1['dictionary'], jd2['dictionary'], view='tree', group_by='index')
 
         res = re.compile(r"root\[('0x[0-9a-fA-F]+'|\d+)\]")
 

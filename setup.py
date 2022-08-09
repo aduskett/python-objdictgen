@@ -30,7 +30,7 @@ setup(
     # For a discussion on single-sourcing the version across setup.py and the
     # project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='3.1',  # Required
+    version='3.2',  # Required
 
     # This is a one-line description or tagline of what your project does. This
     # corresponds to the "Summary" metadata field:
@@ -63,15 +63,15 @@ setup(
     #
     # This field corresponds to the "Home-Page" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#home-page-optional
-    #url='https://github.com/pypa/sampleproject',  # Optional
+    url='https://github.com/Laerdal/python-objdictgen',  # Optional
 
     # This should be your name or the name of the organization which owns the
     # project.
-    #author='A. Random Developer',  # Optional
+    author='Svein Seldal',  # Optional
 
     # This should be a valid email address corresponding to the author listed
     # above.
-    #author_email='author@example.com',  # Optional
+    author_email='sveinse@seldal.com',  # Optional
 
     # Classifiers help users find your project by categorizing it.
     #
@@ -113,7 +113,7 @@ setup(
     # Note that this is a list of additional keywords, separated
     # by commas, to be used to assist searching for the distribution in a
     # larger catalog.
-    keywords='build, development, canfestival, canopen',  # Optional
+    keywords='build, development, canfestival, canopen, objdictgen',  # Optional
 
     # When your source code is in a subdirectory under the project root, e.g.
     # `src/`, it is necessary to specify the `package_dir` argument.

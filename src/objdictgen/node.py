@@ -33,11 +33,10 @@ from collections import OrderedDict
 import traceback
 from past.builtins import execfile
 from future.utils import raise_from
-import colorama
 
 from .nosis import pickle as nosis
 from . import PROFILE_DIRECTORIES
-from . import dbg, warning
+from . import dbg
 from . import maps
 from .maps import OD, MAPPING_DICTIONARY
 
@@ -46,9 +45,6 @@ if sys.version_info[0] >= 3:
     ODict = dict
 else:
     ODict = OrderedDict
-
-Fore = colorama.Fore
-Style = colorama.Style
 
 
 # ------------------------------------------------------------------------------
@@ -90,7 +86,7 @@ def ImportProfile(profilename):
         dbg("EXECFILE %s" % (profilepath,))
         execfile(profilepath)  # FIXME: Using execfile is unsafe
         # pylint: disable=undefined-variable
-        return Mapping, AddMenuEntries  # noqa: F821
+        return Mapping, AddMenuEntries  # pyright: ignore  # noqa: F821
     except Exception as exc:  # pylint: disable=broad-except
         dbg("EXECFILE FAILED: %s" % exc)
         dbg(traceback.format_exc())
@@ -331,7 +327,7 @@ class Node(object):
             if subindex == 1:
                 self.Dictionary[index] = [value]
                 return True
-        elif subindex > 0 and isinstance(self.Dictionary[index], list) and subindex == len(self.Dictionary[index]) + 1:
+        elif subindex and isinstance(self.Dictionary[index], list) and subindex == len(self.Dictionary[index]) + 1:
             self.Dictionary[index].append(value)
             return True
         return False
@@ -645,6 +641,7 @@ class Node(object):
         return copy.deepcopy(self)
 
     def GetDict(self):
+        """ Return the class data as a dict """
         return copy.deepcopy(self.__dict__)
 
     def GetIndexDict(self, index):
@@ -671,119 +668,6 @@ class Node(object):
         Return a sorted list of indexes in Object Dictionary
         """
         return list(sorted(self.Dictionary))
-
-    def PrintParams(self, keys=None, short=False, compact=False, unused=False, verbose=False, raw=False):
-        """
-        Generator for printing the dictionary values
-        """
-
-        # Get the indexes to print and determine the order
-        keys = keys or self.GetAllParameters(sort=True)
-
-        index_range = None
-        for k in keys:
-
-            obj = self.GetEntryInfos(k)
-            if not obj:
-                continue
-
-            # Get the node flags
-            flags = self.GetEntryFlags(k)
-            if 'Unused' in flags and not unused:
-                continue
-
-            # Print the parameter range header
-            ir = GetIndexRange(k)
-            if index_range != ir:
-                index_range = ir
-                if not compact:
-                    yield (Fore.YELLOW + ir["description"] + Style.RESET_ALL)
-
-            # Replace flags for formatting
-            for i, flag in enumerate(flags):
-                if flag == 'Missing':
-                    flags[i] = Fore.RED + ' *MISSING* ' + Style.RESET_ALL
-
-            # Print formattings
-            fmt = {
-                'key': "%s0x%04x (%d)%s" %(Fore.GREEN, k, k, Style.RESET_ALL),
-                'name': self.GetEntryName(k),
-                'struct': maps.ODStructTypes.to_string(obj.get('struct'), '???').upper(),
-                'flags': "  %s%s%s" %(Fore.CYAN, ', '.join(flags), Style.RESET_ALL) if flags else '',
-                'pre': '    ' if not compact else '',
-            }
-
-            # ** PRINT PARAMETER **
-            yield ("{pre}{key}  {name}   [{struct}]{flags}".format(**fmt))
-
-            # Omit printing sub index data if:
-            if short or k not in self.Dictionary:
-                continue
-
-            infos = []
-            for info in self.GetAllSubentryInfos(k, compute=not raw):
-
-                # Prepare data for printing
-
-                i = info['subindex']
-                typename = self.GetTypeName(info['type'])
-                value = info['value']
-
-                # Special formatting on value
-                if isinstance(value, str):
-                    value = '"' + value + '"'
-                elif i and index_range and index_range["name"] in ('rpdom', 'tpdom'):
-                    index, subindex, _ = self.GetMapIndex(value)
-                    pdo = self.GetSubentryInfos(index, subindex)
-                    suffix = '???' if value else ''
-                    if pdo:
-                        suffix = '%s' % (pdo["name"],)
-                    value = "0x%x  %s" % (value, suffix)
-                elif i and value and (k in (4120, ) or 'COB ID' in info["name"]):
-                    value = "0x%x" % (value)
-                else:
-                    value = str(value)
-
-                comment = info['comment'] or ''
-                if comment:
-                    comment = Fore.LIGHTBLACK_EX + ('/* %s */' % info.get('comment')) + Style.RESET_ALL
-
-                # Omit printing this subindex if:
-                if not verbose and i == 0 and fmt['struct'] in ('RECORD', 'NRECORD', 'ARRAY', 'NARRAY') and not comment:
-                    continue
-
-                # Print formatting
-                infos.append({
-                    'i': "%02d" % i,
-                    'access': info['access'],
-                    'pdo': 'P' if info['pdo'] else ' ',
-                    'name': info['name'],
-                    'type': typename,
-                    'value': value,
-                    'comment': comment,
-                    'pre': fmt['pre'],
-                })
-
-            if not infos:
-                continue
-
-            # Calculate the max width for each of the columns
-            w = {
-                col: max(len(str(row[col])) for row in infos) or ''
-                for col in infos[0]
-            }
-
-            # Generate a format string based on the calculcated column widths
-            fmt = "{pre}    {i:%ss}  {access:%ss}  {pdo:%ss}  {name:%ss}  {type:%ss}  {value:%ss}  {comment}" % (
-                         w["i"],  w["access"],  w["pdo"],  w["name"],  w["type"],  w["value"]  # noqa: E126, E241
-            )
-
-            # Print each line using the generated format string
-            for info in infos:
-                yield (fmt.format(**info))
-
-            if not compact and infos:
-                yield ("")
 
     def CompileValue(self, value, index, compute=True):
         if isinstance(value, (str, unicode)) and '$NODEID' in value.upper():
@@ -906,7 +790,9 @@ class Node(object):
                 'subindex': i,
                 'value': value,
             }
-            info.update(self.GetSubentryInfos(index, i))
+            result = self.GetSubentryInfos(index, i)
+            if result:
+                info.update(result)
             info.update(entry)
             yield info
 
@@ -1071,76 +957,24 @@ class Node(object):
 
         return order
 
+    def GetUnusedParameters(self):
+        """ Return a list of all unused parameter indexes """
+        return [
+            k for k in self.GetAllParameters()
+            if k not in self.Dictionary
+        ]
 
-# ------------------------------------------------------------------------------
-#                            Comparison and checks
-# ------------------------------------------------------------------------------
-
-    def Validate(self, fix=False):
-        ''' Verify any inconsistencies when loading an OD. The function will
-            attempt to fix the data if the correct flag is enabled.
-        '''
-
-        def _warn(text):
-            name = self.GetEntryName(index)
-            warning("WARNING: 0x{:04x} ({}) '{}': {}".format(index, index, name, text))
-
-        # Iterate over all the values and user parameters
-        params = set(self.Dictionary.keys())
-        params.update(self.ParamsDictionary.keys())
-        for index in params:
-
-            #
-            # Test if ParamDictionary exists without Dictionary
-            #
-            if index not in self.Dictionary:
-                _warn("Parameter without any value")
-                if fix:
-                    del self.ParamsDictionary[index]
-                    _warn("FIX: Deleting ParamDictionary entry")
-                continue
-
-            base = self.GetEntryInfos(index)
-            is_var = base["struct"] in (OD.VAR, OD.NVAR)
-
-            #
-            # Test if ParamDictionary matches Dictionary
-            #
-            dictlen = 1 if is_var else len(self.Dictionary.get(index, []))
-            params = {
-                k: v
-                for k, v in self.ParamsDictionary.get(index, {}).items()
-                if isinstance(k, int)
-            }
-            excessive_params = {k for k in params if k > dictlen}
-            if excessive_params:
-                dbg("Excessive params: {}".format(excessive_params))
-                _warn("Excessive user parameters ({}) or too few dictionary values ({})".format(len(excessive_params), dictlen))
-
-                if index in self.Dictionary:
-                    for idx in excessive_params:
-                        del self.ParamsDictionary[index][idx]
-                        del params[idx]
-                    _warn("FIX: Deleting ParamDictionary entries {}".format(", ".join(str(k) for k in excessive_params)))
-
-                    # If params have been emptied because of this, remove it altogether
-                    if not params:
-                        del self.ParamsDictionary[index]
-                        _warn("FIX: Deleting ParamDictionary entry")
-
-        # Iterate over all user mappings
-        params = set(self.UserMapping.keys())
-        for index in params:
-            for idx, subvals in enumerate(self.UserMapping[index]['values']):
-
-                #
-                # Test if subindex have a name
-                #
-                if not subvals["name"]:
-                    _warn("Sub index {}: Missing name".format(idx))
-                    if fix:
-                        subvals["name"] = "Subindex {}".format(idx)
-                        _warn("FIX: Set name to '{}'".format(subvals["name"]))
+    def RemoveIndex(self, index):
+        """ Remove the given index """
+        self.UserMapping.pop(index, None)
+        self.Dictionary.pop(index, None)
+        self.ParamsDictionary.pop(index, None)
+        if self.DS302:
+            self.DS302.pop(index, None)
+        if self.Profile:
+            self.Profile.pop(index, None)
+            if not self.Profile:
+                self.ProfileName = "None"
 
 
 def BE_to_LE(value):

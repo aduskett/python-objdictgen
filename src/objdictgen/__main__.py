@@ -59,7 +59,7 @@ def open_od(fname, validate=True, fix=False):
         od.OpenFileInCurrent(fname)
 
         if validate and od.CurrentNode:
-            od.CurrentNode.Validate(fix=fix)
+            od.Validate(fix=fix)
 
         return od
     except Exception as exc:
@@ -140,8 +140,10 @@ def main(debugopts, args=None):
     subp.add_argument('od', **opt_od)
     subp.add_argument('out', default=None, help="Output file")
     subp.add_argument('-i', '--index', action="append", help="OD Index to include. Filter out the rest.")
+    subp.add_argument('-x', '--exclude', action="append", help="OD Index to exclude.")
     subp.add_argument('-f', '--fix', action="store_true", help="Fix any inconsistency errors in OD before generate output")
     subp.add_argument('-t', '--type', choices=['od', 'eds', 'json', 'c'], help="Select output file type")
+    subp.add_argument('--drop-unused', action="store_true", help="Remove unused parameters")
     subp.add_argument('--internal', action="store_true", help="Store in internal format (json only)")
     subp.add_argument('--nosort', action="store_true", help="Don't order of parameters in output OD")
     subp.add_argument('--novalidate', action="store_true", help="Don't validate files before conversion")
@@ -224,14 +226,32 @@ def main(debugopts, args=None):
 
         od = open_od(opts.od, fix=opts.fix)
 
-        # If index is specified, strip away everything else
+        to_remove = set()
+
+        # Drop excluded parameters
+        if opts.exclude:
+            to_remove |= set(jsonod.str_to_number(i) for i in opts.exclude)
+
+        # Drop unused parameters
+        if opts.drop_unused:
+            to_remove |= set(od.GetUnusedParameters())
+
+        # Drop all other indexes than specified
         if opts.index:
             index = [jsonod.str_to_number(i) for i in opts.index]
             node = od.CurrentNode
-            node.Profile = {k: v for k, v in node.Profile.items() if k in index}
-            node.Dictionary = {k: v for k, v in node.Dictionary.items() if k in index}
-            node.ParamsDictionary = {k: v for k, v in node.ParamsDictionary.items() if k in index}
-            node.UserMapping = {k: v for k, v in node.UserMapping.items() if k in index}
+            to_remove |= (set(node.GetAllParameters()) - set(index))
+
+        # Have any parameters to delete?
+        if to_remove:
+            print("Removed parameters:")
+            info = [
+                od.GetPrintLine(k, unused=True)
+                for k in sorted(to_remove)
+            ]
+            od.RemoveParams(to_remove)
+            for line, fmt in info:
+                print(line.format(**fmt))
 
         # Write the data
         od.SaveCurrentInFile(opts.out,
@@ -330,7 +350,7 @@ def main(debugopts, args=None):
                 continue
 
             # Print the parameters
-            for line in node.PrintParams(keys=keys, short=opts.short, compact=opts.compact, unused=opts.unused, verbose=opts.all, raw=opts.raw):
+            for line in od.GetPrintParams(keys=keys, short=opts.short, compact=opts.compact, unused=opts.unused, verbose=opts.all, raw=opts.raw):
                 print(line)
 
 

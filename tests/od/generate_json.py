@@ -19,7 +19,7 @@ def convert(fname):
     print("Reading %s" % fname)
     manager.OpenFileInCurrent(base + '.od')
 
-    manager.CurrentNode.Validate(fix=True)
+    manager.Validate(fix=True)
 
     print("    Writing json")
     manager.ExportCurrentToJsonFile(base + '.json', sort=True)

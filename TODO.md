@@ -2,9 +2,6 @@
 
 # Issues
 
-* [ ] Change `struct`, `need`, `type` to human readable variants in JSON
-      format. *2022-08-03*
-
 * [ ] Viewing of PDO Receive in UI it will crash it. *2022-08-03*
 
 * [ ] Add info in gen_cfile.py to indicate which tool that generated the output
@@ -15,6 +12,8 @@
 
 # Resolved
 
+* [X] Change `struct`, `need`, `type` to human readable variants in JSON
+      format. *2022-08-03*
 * [X] Index 0x160E (5646) from ResusciFamilyMasterOD.od fails with
       "Index 0x160e (5646): User parameters not empty. Programming error?"
       *2022-08-03*

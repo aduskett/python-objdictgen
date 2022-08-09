@@ -27,6 +27,7 @@ from builtins import range
 import os
 import re
 import codecs
+import colorama
 
 from .nosis import pickle as nosis
 from . import node as nod
@@ -34,7 +35,10 @@ from . import eds_utils, gen_cfile
 from . import jsonod
 from . import maps
 from .maps import OD, MAPPING_DICTIONARY
-from . import dbg
+from . import dbg, warning
+
+Fore = colorama.Fore
+Style = colorama.Style
 
 UndoBufferLength = 20
 
@@ -397,11 +401,6 @@ class NodeManager(object):
         self.SetCurrentFilePath(filepath)
         return index
 
-    def Validate(self, fix=False):
-        if not self.CurrentNode:
-            raise ValueError("No node loaded")
-        return self.CurrentNode.Validate(fix)
-
 # ------------------------------------------------------------------------------
 #                        Add Entries to Current Functions
 # ------------------------------------------------------------------------------
@@ -414,6 +413,7 @@ class NodeManager(object):
         disable_buffer = node is not None
         if node is None:
             node = self.CurrentNode
+        assert node  # For mypy
         # Informations about entry
         length = node.GetEntry(index, 0)
         infos = node.GetEntryInfos(index)
@@ -596,6 +596,7 @@ class NodeManager(object):
         Remove an entry from current node. Analize the index to perform the correct
         method
         """
+        assert self.CurrentNode  # For mypy
         mappings = self.CurrentNode.GetMappings()
         if index < 0x1000 and subindex is None:
             type_ = self.CurrentNode.GetEntry(index, 1)
@@ -646,6 +647,7 @@ class NodeManager(object):
             disable_buffer = node is not None
             if node is None:
                 node = self.CurrentNode
+            assert node  # For mypy
             if node.IsEntry(index):
                 raise ValueError("Index 0x%04X already defined!" % index)
             node.AddMappingEntry(index, name=name, struct=struct)
@@ -672,6 +674,7 @@ class NodeManager(object):
         raise ValueError("Index 0x%04X isn't a valid index for Map Variable!" % index)
 
     def AddUserTypeToCurrent(self, type_, min_, max_, length):
+        assert self.CurrentNode  # For mypy
         index = 0xA0
         while index < 0x100 and self.CurrentNode.IsEntry(index):
             index += 1
@@ -796,6 +799,7 @@ class NodeManager(object):
         self.BufferCurrentNode()
 
     def SetCurrentUserType(self, index, type_, min_, max_, length):
+        assert self.CurrentNode  # For mypy
         customisabletypes = self.GetCustomisableTypes()
         _, valuetype = self.GetCustomisedTypeValues(index)
         name, new_valuetype = customisabletypes[type_]
@@ -953,6 +957,21 @@ class NodeManager(object):
         if self.CurrentNode:
             return len(self.CurrentNode.DS302) > 0
         return False
+
+    def GetUnusedParameters(self):
+        node = self.CurrentNode
+        if not node:
+            raise ValueError("No node loaded")
+        return node.GetUnusedParameters()
+
+    def RemoveParams(self, remove):
+        node = self.CurrentNode
+        if not node:
+            raise ValueError("No node loaded")
+
+        for index in remove:
+            node.RemoveIndex(index)
+
 
 # ------------------------------------------------------------------------------
 #                         Node State and Values Functions
@@ -1233,3 +1252,208 @@ class NodeManager(object):
         if self.CurrentNode:
             return self.CurrentNode.SpecificMenu
         return []
+
+# ------------------------------------------------------------------------------
+#                         Additional Node Functions
+# ------------------------------------------------------------------------------
+
+    def Validate(self, fix=False):
+        ''' Verify any inconsistencies when loading an OD. The function will
+            attempt to fix the data if the correct flag is enabled.
+        '''
+        node = self.CurrentNode
+        if not node:
+            raise ValueError("No node loaded")
+
+        def _warn(text):
+            name = node.GetEntryName(index)
+            warning("WARNING: 0x{:04x} ({}) '{}': {}".format(index, index, name, text))
+
+        # Iterate over all the values and user parameters
+        params = set(node.Dictionary.keys())
+        params.update(node.ParamsDictionary.keys())
+        for index in params:
+
+            #
+            # Test if ParamDictionary exists without Dictionary
+            #
+            if index not in node.Dictionary:
+                _warn("Parameter without any value")
+                if fix:
+                    del node.ParamsDictionary[index]
+                    _warn("FIX: Deleting ParamDictionary entry")
+                continue
+
+            base = node.GetEntryInfos(index)
+            assert base  # For mypy
+            is_var = base["struct"] in (OD.VAR, OD.NVAR)
+
+            #
+            # Test if ParamDictionary matches Dictionary
+            #
+            dictlen = 1 if is_var else len(node.Dictionary.get(index, []))
+            params = {
+                k: v
+                for k, v in node.ParamsDictionary.get(index, {}).items()
+                if isinstance(k, int)
+            }
+            excessive_params = {k for k in params if k > dictlen}
+            if excessive_params:
+                dbg("Excessive params: {}".format(excessive_params))
+                _warn("Excessive user parameters ({}) or too few dictionary values ({})".format(len(excessive_params), dictlen))
+
+                if index in node.Dictionary:
+                    for idx in excessive_params:
+                        del node.ParamsDictionary[index][idx]
+                        del params[idx]
+                    _warn("FIX: Deleting ParamDictionary entries {}".format(", ".join(str(k) for k in excessive_params)))
+
+                    # If params have been emptied because of this, remove it altogether
+                    if not params:
+                        del node.ParamsDictionary[index]
+                        _warn("FIX: Deleting ParamDictionary entry")
+
+        # Iterate over all user mappings
+        params = set(node.UserMapping.keys())
+        for index in params:
+            for idx, subvals in enumerate(node.UserMapping[index]['values']):
+
+                #
+                # Test if subindex have a name
+                #
+                if not subvals["name"]:
+                    _warn("Sub index {}: Missing name".format(idx))
+                    if fix:
+                        subvals["name"] = "Subindex {}".format(idx)
+                        _warn("FIX: Set name to '{}'".format(subvals["name"]))
+
+
+    def GetPrintLine(self, index, unused=False, compact=False):
+        node = self.CurrentNode
+        if not node:
+            return
+
+        obj = node.GetEntryInfos(index)
+        if not obj:
+            return '', {}
+
+        # Get the node flags
+        flags = node.GetEntryFlags(index)
+        if 'Unused' in flags and not unused:
+            return '', {}
+
+        # Replace flags for formatting
+        for i, flag in enumerate(flags):
+            if flag == 'Missing':
+                flags[i] = Fore.RED + ' *MISSING* ' + Style.RESET_ALL
+
+        # Print formattings
+        fmt = {
+            'key': "{}0x{:04x} ({}){}".format(Fore.GREEN, index, index, Style.RESET_ALL),
+            'name': node.GetEntryName(index),
+            'struct': maps.ODStructTypes.to_string(obj.get('struct'), '???').upper(),
+            'flags': "  {}{}{}".format(Fore.CYAN, ', '.join(flags), Style.RESET_ALL) if flags else '',
+            'pre': '    ' if not compact else '',
+        }
+
+        # ** PRINT PARAMETER **
+        return "{pre}{key}  {name}   [{struct}]{flags}", fmt
+
+
+    def GetPrintParams(self, keys=None, short=False, compact=False, unused=False, verbose=False, raw=False):
+        """
+        Generator for printing the dictionary values
+        """
+
+        node = self.CurrentNode
+        if not node:
+            return
+
+        # Get the indexes to print and determine the order
+        keys = keys or node.GetAllParameters(sort=True)
+
+        index_range = None
+        for k in keys:
+
+            line, fmt = self.GetPrintLine(k, unused=unused, compact=compact)
+            if not line:
+                continue
+
+            # Print the parameter range header
+            ir = nod.GetIndexRange(k)
+            if index_range != ir:
+                index_range = ir
+                if not compact:
+                    yield Fore.YELLOW + ir["description"] + Style.RESET_ALL
+
+            # Yield the parameter header
+            yield line.format(**fmt)
+
+            # Omit printing sub index data if:
+            if short or k not in node.Dictionary:
+                continue
+
+            infos = []
+            for info in node.GetAllSubentryInfos(k, compute=not raw):
+
+                # Prepare data for printing
+
+                i = info['subindex']
+                typename = node.GetTypeName(info['type'])
+                value = info['value']
+
+                # Special formatting on value
+                if isinstance(value, str):
+                    value = '"' + value + '"'
+                elif i and index_range and index_range["name"] in ('rpdom', 'tpdom'):
+                    index, subindex, _ = node.GetMapIndex(value)
+                    pdo = node.GetSubentryInfos(index, subindex)
+                    suffix = '???' if value else ''
+                    if pdo:
+                        suffix = str(pdo["name"])
+                    value = "0x{:x}  {}".format(value, suffix)
+                elif i and value and (k in (4120, ) or 'COB ID' in info["name"]):
+                    value = "0x{:x}".format(value)
+                else:
+                    value = str(value)
+
+                comment = info['comment'] or ''
+                if comment:
+                    comment = '{}/* {} */{}'.format(Fore.LIGHTBLACK_EX, info.get('comment'), Style.RESET_ALL)
+
+                # Omit printing this subindex if:
+                if not verbose and i == 0 and fmt['struct'] in ('RECORD', 'NRECORD', 'ARRAY', 'NARRAY') and not comment:
+                    continue
+
+                # Print formatting
+                infos.append({
+                    'i': "{:02d}".format(i),
+                    'access': info['access'],
+                    'pdo': 'P' if info['pdo'] else ' ',
+                    'name': info['name'],
+                    'type': typename,
+                    'value': value,
+                    'comment': comment,
+                    'pre': fmt['pre'],
+                })
+
+            if not infos:
+                continue
+
+            # Calculate the max width for each of the columns
+            w = {
+                col: max(len(str(row[col])) for row in infos) or ''
+                for col in infos[0]
+            }
+
+            # Generate a format string based on the calculcated column widths
+            fmt = "{pre}    {i:%ss}  {access:%ss}  {pdo:%ss}  {name:%ss}  {type:%ss}  {value:%ss}  {comment}" % (
+                         w["i"],  w["access"],  w["pdo"],  w["name"],  w["type"],  w["value"]  # noqa: E126, E241
+            )
+
+            # Print each line using the generated format string
+            for info in infos:
+                yield fmt.format(**info)
+
+            if not compact and infos:
+                yield ""
