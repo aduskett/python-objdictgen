@@ -16,7 +16,7 @@ __*
 !__*__.py
 _tmp*
 
-tests/od/extra*
+tests/od/extra-compare*
 /*.od
 /*.json
 

@@ -14,8 +14,8 @@ HERE = os.path.split(__file__)[0]
 ODDIR = os.path.join(HERE, 'od')
 
 # Make a list of all .od files in tests/od
-ODFILES = list(glob.glob(os.path.join(ODDIR, '*.od')))
-ODFILES.extend(glob.glob(os.path.join(ODDIR, 'extra', '*.od')))
+ODFILES = list(glob.glob(os.path.join(ODDIR, 'legacy-compare', '*.od')))
+ODFILES.extend(glob.glob(os.path.join(ODDIR, 'extra-compare', '*.od')))
 
 
 @attr.s

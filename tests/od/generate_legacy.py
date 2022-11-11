@@ -10,21 +10,25 @@ if sys.version_info[0] >= 3:
 parser = argparse.ArgumentParser()
 parser.add_argument("objdictgen_dir", help="Directory to legacy objdictgen sources")
 parser.add_argument("od_dir", help="Directory to ODs")
+parser.add_argument("out_dir", nargs="?", help="Output directory. Use od_dir if omitted.")
 opts = parser.parse_args()
 
-here = os.path.dirname(os.path.abspath(__file__))
-
-extra = os.path.join(here, 'extra')
-if not os.path.exists(extra):
-    os.mkdir(extra)
-
 sys.path.insert(0, os.path.abspath(opts.objdictgen_dir))
-
 from nodemanager import *
+
+
+if opts.out_dir:
+    out_dir = os.path.abspath(opts.out_dir)
+else:
+    out_dir = os.path.abspath(opts.od_dir)
+
+if not os.path.exists(out_dir):
+    os.mkdir(out_dir)
+
 
 def convert(path):
     ipath, fname = os.path.split(path)
-    #opath = os.path.join(ipath, 'extra')
+    #opath = os.path.join(ipath, 'out_dir')
     opath = ipath
     base = fname.replace('.od', '')
 
@@ -53,16 +57,12 @@ for root, dirs, files in os.walk(opts.od_dir):
         if not fname.endswith('.od'):
             continue
 
-        dst = os.path.join(here, 'extra', fname)
-        shutil.copyfile(os.path.join(root, fname), dst)
+        src = os.path.abspath(os.path.join(root, fname))
+        dst = os.path.join(out_dir, fname)
+        if src != dst:
+            shutil.copyfile(src, dst)
 
         try:
             convert(dst)
         except Exception as err:
             print("FAILED: %s" %(err,))
-
-# for fname in glob.glob(os.path.join(here, '*.od')):
-#     try:
-#         convert(fname)
-#     except Exception as err:
-#         print("FAILED: %s" %(err,))
