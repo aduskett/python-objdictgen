@@ -132,7 +132,7 @@ FIELDS_DICT_OPT = {
     'each',             # R, only when struct != *var
     'callback',         #    set if present   # noqa: E262
     'profile_callback', # R, set if present   # noqa: E261
-    'unused',           # R, default False
+    'unused',           #    default False
     'mandatory',        # R, set if present
     'repeat',           #    default False   # noqa: E262
     'incr',             # R, only when struct is "N"-type
@@ -146,7 +146,7 @@ FIELDS_DICT_OPT = {
 # Fields contents of the dictionary, data['dictionary'] = [ ..dicts.. ]
 FIELDS_DICT_REPEAT_MUST = FIELDS_DICT_MUST - {'name'}
 FIELDS_DICT_REPEAT_OPT = {
-    'callback', 'repeat',
+    'callback', 'repeat', 'unused',
 }
 
 # Valid values of data['dictionary'][index]['group']
@@ -179,8 +179,8 @@ def remove_jasonc(text):
 
 
 if sys.version_info[0] >= 3:
-    with open(os.path.join(JSON_SCHEMA), 'r') as schemafile:
-        SCHEMA = json.loads(remove_jasonc(schemafile.read()))
+    with open(os.path.join(JSON_SCHEMA), 'r') as f:
+        SCHEMA = json.loads(remove_jasonc(f.read()))
 else:
     SCHEMA = None
 
@@ -346,11 +346,18 @@ def compare_profile(profilename, params, menu=None):
         return False, False
 
 
-def GenerateFile(filepath, node, sort=False, internal=False, validate=True):
-    ''' Write a JSON file representation of the node '''
+def GenerateJson(node, compact=False, sort=False, internal=False, validate=True):
+    ''' Export a JSON string representation of the node '''
 
     # Get the dict representation
-    jd, objtypes_s2i = node_todict(node, sort=sort, internal=internal, validate=validate)
+    jd, objtypes_s2i = node_todict(
+        node, sort=sort, internal=internal, validate=validate,
+        rich=not compact,
+    )
+
+    if compact:
+        # Return a compact representation
+        return json.dumps(jd, separators=(',', ':'))
 
     # Generate the json string
     text = json.dumps(jd, separators=(',', ': '), indent=2)
@@ -387,44 +394,54 @@ def GenerateFile(filepath, node, sort=False, internal=False, validate=True):
         flags=re.MULTILINE,
     )
 
-    # Writeout the json
-    with open(filepath, "w") as f:
-        f.write(out)
+    return out
 
 
-def GenerateNode(filepath):
-    ''' Import a JSON file '''
+def GenerateNode(contents):
+    ''' Import from JSON string or objects '''
 
-    # Read the json file
-    with open(filepath, "r") as f:
-        text = f.read()
+    jd = contents
+    if isinstance(contents, str):
 
-    # Remove jsonc annotations
-    jsontext = remove_jasonc(text)
+        # Remove jsonc annotations
+        jsontext = remove_jasonc(contents)
 
-    # Load the json, with awareness on ordering in py2
-    if sys.version_info[0] < 3:
-        jd = json.loads(jsontext, object_pairs_hook=ordereddict_hook)
-    else:
-        jd = json.loads(jsontext)
+        # Load the json, with awareness on ordering in py2
+        if sys.version_info[0] < 3:
+            jd = json.loads(jsontext, object_pairs_hook=ordereddict_hook)
+        else:
+            jd = json.loads(jsontext)
 
+        # Remove any __ in the file
+        jd = remove_underscore(jd)
+
+    # FIXME: Dilemma: Where to place this. It belongs here with JSON, but it
+    #        would make sense to place it after running the built-in validator.
+    #        Often the od validator is better at giving useful errors
+    #        than the json validator. However the type checking of the json
+    #        validator is better.
     if SCHEMA:
         jsonschema.validate(jd, schema=SCHEMA)
 
     return node_fromdict(jd)
 
 
-def node_todict(node, sort=False, rich=True, use_text=True,
-                internal=False, validate=True, omit_date=False):
+def node_todict(node, sort=False, rich=True, internal=False, validate=True):
     '''
         Convert a node to dict representation for serialization.
 
         sort: Set if the output dictionary should be sorted before output.
-        rich: If true, additional __fields will be added to the output. These
-            fields are not needed, but helps the readability of the json.
-        use_text: Replace some numerical fields with strings
-        omit_profile: Set to true if inclusion of the profile params should be
-            omitted
+        rich: Generate tich output intended for human reading. It will add
+            text to the output that will ease the readabiliy of the output.
+            1) It will add __fields to the output. These fields are redundant
+               and and will be skipped when reading the file
+            2) Replace struct and type fields with strings instead of numerical
+               value
+            3) Use hex index instead of numerical value in dictionary index
+        internal: Enable to dump the internal data model as-is. Used for
+            low-level format debugging
+        validate: Set if the output JSON should be validated to check if the
+            output is valid. Used to double check format.
     '''
 
     # Get the dict representation of the node object
@@ -448,9 +465,8 @@ def node_todict(node, sort=False, rich=True, use_text=True,
         '$version': JSON_INTERNAL_VERSION if internal else JSON_VERSION,
         '$description': JSON_DESCRIPTION,
         '$tool': str(ODG_PROGRAM) + ' ' + str(ODG_VERSION),
+        '$date': datetime.isoformat(datetime.now()),
     })
-    if not omit_date:
-        jd['$date'] = datetime.isoformat(datetime.now())
 
     # Get the order for the indexes
     order = node.GetAllParameters(sort=sort)
@@ -467,7 +483,7 @@ def node_todict(node, sort=False, rich=True, use_text=True,
             obj = node.GetIndexDict(index)
 
             # Add in the index (as dictionary is a list)
-            obj["index"] = "0x{:04X}".format(index)
+            obj["index"] = "0x{:04X}".format(index) if rich else index
 
             # Don't wrangle further if the internal format is wanted
             if internal:
@@ -500,7 +516,7 @@ def node_todict(node, sort=False, rich=True, use_text=True,
                 obj["mandatory"] = obj.pop("need")
 
             # Replace numerical struct with symbolic value
-            if use_text:
+            if rich:
                 obj["struct"] = nod.OD.to_string(struct, struct)
 
             if rich and "name" not in obj:
@@ -514,7 +530,7 @@ def node_todict(node, sort=False, rich=True, use_text=True,
                     sub["__name"] = info[i]["name"]
 
                 # Replace numeric type with string value
-                if use_text and "type" in sub:
+                if rich and "type" in sub:
                     sub["type"] = objtypes_i2s.get(sub["type"], sub["type"])
 
                 # # Add __type when rich format
@@ -525,7 +541,7 @@ def node_todict(node, sort=False, rich=True, use_text=True,
                 sub = obj["each"]
 
                 # Replace numeric type with string value
-                if use_text and "type" in sub:
+                if rich and "type" in sub:
                     sub["type"] = objtypes_i2s.get(sub["type"], sub["type"])
 
             # ---------------------
@@ -924,11 +940,6 @@ def node_fromdict(jd, internal=False):
     # Node.IndexOrder has been added to store this information.
     node.IndexOrder = [obj["index"] for obj in jd['dictionary']]
 
-    # DEBUG
-    # out = json.dumps(jd, separators=(',', ': '), indent=2)
-    # with open('_tmp_mk4.debug.json', "w") as f:
-    #     f.write(out)
-
     return node
 
 
@@ -1046,6 +1057,21 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
 
     jd = jsonobj
 
+    # Validated: (See FIELDS_DATA_MUST, FIELDS_DATA_OPT)
+    # ----------
+    # Y "$id" (must)
+    # Y "$version" (must)
+    #   "name" (must)
+    #   "description" (must)
+    #   "type" (must)
+    # Y "dictionary" (must)
+    #   "$description" (optional)
+    #   "$tool" (optional)
+    #   "$date" (optional)
+    #   "id" (optional, default 0)
+    #   "profile" (optional, default "None")
+    #   "default_string_size" (optional)
+
     if not jd or not isinstance(jd, dict):
         raise ValidationError("Not data or not dict")
 
@@ -1067,6 +1093,21 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
     member_compare(jsonobj.keys(), FIELDS_DATA_MUST, FIELDS_DATA_OPT)
 
     def _validate_sub(obj, idx=0, is_var=False, is_repeat=False, is_each=False):
+
+        # Validated: (See FIELDS_MAPVAPS_*, FIELDS_PARAMS and FIELDS_VALUE)
+        # ----------
+        # Y "name" (must)
+        # Y "type" (must)
+        #   "access" (must)
+        #   "pdo" (must)
+        #   "nbmin" (optional)
+        #   "nbmax" (optional)
+        #   "default" (optiona)
+        #   "comment" (optional)
+        #   "save" (optional)
+        #   "buffer_size" (optional)
+        #   "value" (optional)
+
         if not isinstance(obj, dict):
             raise ValidationError("Is not a dict")
 
@@ -1138,6 +1179,24 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
                 raise ValidationError("Unknown object type id {}".format(obj['type']))
 
     def _validate_dictionary(index, obj):
+
+        # Validated: (See FIELDS_DICT_MUST, FIELDS_DICT_OPT)
+        # ----------
+        # Y "index" (must)
+        #   "name" (must, optional if repeat is True)
+        # Y "struct" (must)
+        # Y "sub" (must)
+        # Y "group" (optional, default 'user', omit if repeat is True)
+        # Y "each" (optional, omit if repeat is True)
+        #   "callback" (optional, default False)
+        #   "profile_callback" (optional, omit if repeat is True)
+        # Y "unused" (optional)
+        #   "mandatory" (optional, omit if repeat is True, default False)
+        # Y "repeat" (optional, default False)
+        #   "incr" (optional)
+        #   "nbmax" (optional)
+        # Y "size" (optional)
+        # Y "default" (optional)
 
         # Validate "repeat" (optional, default False)
         is_repeat = obj.get('repeat', False)
@@ -1274,8 +1333,11 @@ def diff_nodes(node1, node2, as_dict=True, validate=True):
     diffs = {}
 
     if as_dict:
-        jd1, _ = node_todict(node1, sort=True, validate=validate, omit_date=True)
-        jd2, _ = node_todict(node2, sort=True, validate=validate, omit_date=True)
+        jd1, _ = node_todict(node1, sort=True, validate=validate)
+        jd2, _ = node_todict(node2, sort=True, validate=validate)
+
+        dt = datetime.isoformat(datetime.now())
+        jd1['$date'] = jd2['$date'] = dt
 
         diff = deepdiff.DeepDiff(jd1, jd2, exclude_paths=[
             "root['dictionary']"

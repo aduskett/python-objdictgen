@@ -265,11 +265,18 @@ def test_jsonimport(wd, odfile):
     m1.Validate(fix=True)
 
     m1.SaveCurrentInFile(od + '.json')
+    m1.SaveCurrentInFile(od + '.json2', filetype='json', compact=True)
 
     m2 = NodeManager()
     m2.OpenFileInCurrent(od + '.json')
 
     a, b = shave_equal(m1, m2, ignore=('IndexOrder',))
+    assert a == b
+
+    m3 = NodeManager()
+    m3.OpenFileInCurrent(od + '.json2')
+
+    a, b = shave_equal(m1, m3, ignore=('IndexOrder',))
     assert a == b
 
 

@@ -276,8 +276,8 @@ class NodeManager(object):
         dbg("Loading JSON OD '%s'" % filepath)
         return self.ImportCurrentFromJsonFile(filepath)
 
-    def SaveCurrentInFile(self, filepath=None, filetype=None, sort=False,
-                          internal=False, validate=True):
+    def SaveCurrentInFile(self, filepath=None, filetype=None, compact=False,
+                          sort=False, internal=False, validate=True):
         """
         Save current node in a file
         """
@@ -300,7 +300,7 @@ class NodeManager(object):
             self.ExportCurrentToEDSFile(filepath)
         elif ext == 'json':
             dbg("Writing JSON OD '%s'" % filepath)
-            self.ExportCurrentToJsonFile(filepath, sort=sort, internal=internal, validate=validate)
+            self.ExportCurrentToJsonFile(filepath, compact=compact, sort=sort, internal=internal, validate=validate)
         elif ext == 'c':
             dbg("Writing C files '%s'" % filepath)
             self.ExportCurrentToCFile(filepath)
@@ -341,6 +341,7 @@ class NodeManager(object):
         """
         with open(filepath, "r") as f:
             node = nosis.xmlload(f)
+
         self.CurrentNode = node
         self.CurrentNode.ID = 0
         # Add a new buffer and defining current state
@@ -382,18 +383,24 @@ class NodeManager(object):
             raise ValueError("No node loaded")
         gen_cfile.GenerateFile(filepath, self.CurrentNode)
 
-    def ExportCurrentToJsonFile(self, filepath, sort=False, internal=False, validate=True):
+    def ExportCurrentToJsonFile(self, filepath, compact=False, sort=False, internal=False, validate=True):
         """
         Export JSON
         """
-        jsonod.GenerateFile(filepath, self.CurrentNode, sort=sort, internal=internal, validate=validate)
+        jdata = jsonod.GenerateJson(self.CurrentNode, compact=compact, sort=sort, internal=internal, validate=validate)
+
+        with open(filepath, "w") as f:
+            f.write(jdata)
 
     def ImportCurrentFromJsonFile(self, filepath):
         """
         Open a JSON file and store it in a new buffer
         """
         # Open and load file
-        node = jsonod.GenerateNode(filepath)
+        with open(filepath, "r") as f:
+            contents = f.read()
+
+        node = jsonod.GenerateNode(contents)
         self.CurrentNode = node
         self.CurrentNode.ID = 0
         # Add a new buffer and defining current state

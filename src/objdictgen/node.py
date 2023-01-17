@@ -172,10 +172,6 @@ def FindSubentryInfos(index, subindex, mappingdictionary, compute=True):
     base_index = FindIndex(index, mappingdictionary)
     if base_index:
         struct = mappingdictionary[base_index]["struct"]
-        if struct & OD.IdenticalIndexes:
-            incr = mappingdictionary[base_index]["incr"]
-        else:
-            incr = 1
         if struct & OD.Subindex:
             infos = None
             if struct & OD.IdenticalSubindexes:
@@ -198,8 +194,14 @@ def FindSubentryInfos(index, subindex, mappingdictionary, compute=True):
                         idx += 1
             elif subindex == 0:
                 infos = mappingdictionary[base_index]["values"][0].copy()
+
             if infos is not None and compute:
+                if struct & OD.IdenticalIndexes:
+                    incr = mappingdictionary[base_index]["incr"]
+                else:
+                    incr = 1
                 infos["name"] = StringFormat(infos["name"], (index - base_index) // incr + 1, subindex)
+
             return infos
     return None
 
@@ -273,7 +275,7 @@ def StringFormat(text, idx, sub):  # pylint: disable=unused-argument
     if result:
         fmt = result.groups()
         try:
-            # dbg("EVAL StringFormat(): '%s'" % (fmt[1],))
+            dbg("EVAL StringFormat(): '%s'" % (fmt[1],))
             return fmt[0] % eval(fmt[1])  # FIXME: Using eval is not safe
         except Exception as exc:
             dbg("EVAL FAILED: %s" % (exc, ))
@@ -674,12 +676,16 @@ class Node(object):
             # NOTE: Don't change base, as the eval() use this
             base = self.GetBaseIndexNumber(index)  # noqa: F841  pylint: disable=unused-variable
             try:
-                # dbg("EVAL CompileValue(): '%s'" % (value,))
+                dbg("EVAL CompileValue() #1: '%s'" % (value,))
                 raw = eval(value)  # FIXME: Using eval is not safe
                 if compute and isinstance(raw, (str, unicode)):
                     raw = raw.upper().replace("$NODEID", "self.ID")
-                    # dbg("EVAL CompileValue() #2: '%s'" % (raw,))
+                    dbg("EVAL CompileValue() #2: '%s'" % (raw,))
                     return eval(raw)  # FIXME: Using eval is not safe
+                # NOTE: This has a side effect: It will strip away # '"$NODEID"' into '$NODEID'
+                #       even if compute is False.
+                # if not compute and raw != value:
+                #     warning(f"CompileValue() changed '{value}' into '{raw}'")
                 return raw
             except Exception as exc:  # pylint: disable=broad-except
                 dbg("EVAL FAILED: %s" % exc)
