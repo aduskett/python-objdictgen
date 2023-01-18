@@ -399,13 +399,19 @@ class NodeManager(object):
         # Open and load file
         with open(filepath, "r") as f:
             contents = f.read()
+        return self.ImportCurrentFromJson(contents, filepath)
 
+    def ImportCurrentFromJson(self, contents, filepath=None):
+        """
+        Import JSON data and store it in a new buffer
+        """
         node = jsonod.GenerateNode(contents)
         self.CurrentNode = node
         self.CurrentNode.ID = 0
         # Add a new buffer and defining current state
         index = self.AddNodeBuffer(self.CurrentNode.Copy(), True)
-        self.SetCurrentFilePath(filepath)
+        if filepath:
+            self.SetCurrentFilePath(filepath)
         return index
 
 # ------------------------------------------------------------------------------
