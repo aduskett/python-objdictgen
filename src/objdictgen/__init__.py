@@ -20,9 +20,11 @@ import os
 
 from objdictgen.node import Node, ImportProfile, Find
 from objdictgen.nodemanager import NodeManager
+from objdictgen.maps import OD
 
 # Shortcuts
 LoadFile = Node.LoadFile
+LoadJson = Node.LoadJson
 
 ODG_PROGRAM = "odg"
 ODG_VERSION = "3.3"
@@ -41,5 +43,7 @@ __all__ = [
     "ImportProfile",
     "Find",
     "LoadFile",
+    "LoadJson",
     "NodeManager",
+    "OD",
 ]
