@@ -1,7 +1,7 @@
 #
 #    This file is based on objdictgen from CanFestival
 #
-#    Copyright (C) 2022  Svein Seldal, Laerdal Medical AS
+#    Copyright (C) 2022-2023  Svein Seldal, Laerdal Medical AS
 #    Copyright (C): Edouard TISSERANT, Francis DUPIN and Laurent BESSARD
 #
 #    This library is free software; you can redistribute it and/or
@@ -27,8 +27,8 @@ import sys
 
 import wx
 
-from . import commondialogs as cdia
-from ..maps import OD
+from objdictgen.ui import commondialogs as cdia
+from objdictgen.maps import OD
 
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
@@ -45,10 +45,6 @@ class NodeEditorTemplate(object):
 
         self.BusId = None
         self.Closing = False
-
-    # FIXME: Unused. Delete this?
-    # def SetBusId(self, bus_id):
-    #     self.BusId = bus_id
 
     def GetBusId(self):
         return self.BusId

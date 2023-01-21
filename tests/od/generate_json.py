@@ -5,7 +5,7 @@ import argparse
 import shutil
 import logging
 
-from objdictgen.nodemanager import NodeManager
+from objdictgen import Node
 
 parser = argparse.ArgumentParser()
 parser.add_argument("od_dir", help="Directory to ODs")
@@ -26,14 +26,13 @@ log.addHandler(logging.StreamHandler(sys.stdout))
 def convert(fname):
     base = fname.replace('.od', '')
 
-    manager = NodeManager()
     print("Reading %s" % fname)
-    manager.OpenFileInCurrent(base + '.od')
+    node = Node.LoadFile(base + '.od')
 
-    manager.Validate(fix=True)
+    node.Validate(fix=True)
 
     print("    Writing json")
-    manager.ExportCurrentToJsonFile(base + '.json', sort=True)
+    node.DumpFile(base + '.json', filetype='json', sort=True)
 
 
 for root, dirs, files in os.walk(opts.od_dir):

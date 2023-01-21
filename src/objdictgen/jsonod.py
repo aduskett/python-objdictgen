@@ -1,6 +1,6 @@
 """ OD dict/json serialization and deserialization functions """
 #
-#    Copyright (C) 2022  Svein Seldal, Laerdal Medical AS
+#    Copyright (C) 2022-2023  Svein Seldal, Laerdal Medical AS
 #
 #    This library is free software; you can redistribute it and/or
 #    modify it under the terms of the GNU Lesser General Public
@@ -22,16 +22,14 @@ import sys
 import os
 import re
 from collections import OrderedDict
+import logging
 import json
 import jsonschema
 import deepdiff
 
-from .node import Node
-from . import node as nod
-from . import SCRIPT_DIRECTORY
-from . import dbg, warning, ODG_PROGRAM, ODG_VERSION
-from . import maps
-from .maps import OD
+import objdictgen
+from objdictgen import maps
+from objdictgen.maps import OD
 
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
@@ -39,6 +37,11 @@ if sys.version_info[0] >= 3:
     ODict = dict
 else:
     ODict = OrderedDict
+
+log = logging.getLogger('objdictgen')
+
+
+SCHEMA = None
 
 
 class ValidationError(Exception):
@@ -53,9 +56,6 @@ JSON_ID = "od data"
 JSON_DESCRIPTION = "Canfestival object dictionary data"
 JSON_INTERNAL_VERSION = "0"
 JSON_VERSION = "1"
-
-JSON_SCHEMA = os.path.join(SCRIPT_DIRECTORY, 'schema', 'od.schema.json')
-
 
 # Output order in JSON file
 JSON_TOP_ORDER = (
@@ -167,8 +167,7 @@ def remove_jasonc(text):
     def __re_sub(match):
         if match.group(2) is not None:
             return ""
-        else:
-            return match.group(1)
+        return match.group(1)
 
     return re.sub(
         r"(\".*?\"|\'.*?\')|(/\*.*?\*/|//[^\r\n]*$)",
@@ -176,13 +175,6 @@ def remove_jasonc(text):
         text,
         flags=re.MULTILINE | re.DOTALL
     )
-
-
-if sys.version_info[0] >= 3:
-    with open(os.path.join(JSON_SCHEMA), 'r') as f:
-        SCHEMA = json.loads(remove_jasonc(f.read()))
-else:
-    SCHEMA = None
 
 
 def exc_amend(exc, text):
@@ -329,7 +321,7 @@ def get_object_types(node=None, dictionary=None):
 
 def compare_profile(profilename, params, menu=None):
     try:
-        dsmap, menumap = nod.ImportProfile(profilename)
+        dsmap, menumap = objdictgen.ImportProfile(profilename)
         identical = all(
             k in dsmap and k in params and dsmap[k] == params[k]
             for k in set(dsmap) | set(params)
@@ -339,10 +331,10 @@ def compare_profile(profilename, params, menu=None):
         return True, identical
 
     except ValueError as exc:
-        dbg("Loading profile failed: {}".format(exc))
+        log.debug("Loading profile failed: {}".format(exc))
         # FIXME: Is this an error?
         # Test case test-profile.od -> test-profile.json without access to profile
-        warning("WARNING: %s", exc)
+        log.warning("WARNING: %s", exc)
         return False, False
 
 
@@ -420,6 +412,11 @@ def GenerateNode(contents):
     #        Often the od validator is better at giving useful errors
     #        than the json validator. However the type checking of the json
     #        validator is better.
+    global SCHEMA  # pylint: disable=global-statement
+    if not SCHEMA and sys.version_info[0] >= 3:
+        with open(os.path.join(objdictgen.JSON_SCHEMA), 'r') as f:
+            SCHEMA = json.loads(remove_jasonc(f.read()))
+
     if SCHEMA:
         jsonschema.validate(jd, schema=SCHEMA)
 
@@ -464,7 +461,7 @@ def node_todict(node, sort=False, rich=True, internal=False, validate=True):
         '$id': JSON_ID,
         '$version': JSON_INTERNAL_VERSION if internal else JSON_VERSION,
         '$description': JSON_DESCRIPTION,
-        '$tool': str(ODG_PROGRAM) + ' ' + str(ODG_VERSION),
+        '$tool': str(objdictgen.ODG_PROGRAM) + ' ' + str(objdictgen.ODG_VERSION),
         '$date': datetime.isoformat(datetime.now()),
     })
 
@@ -517,7 +514,7 @@ def node_todict(node, sort=False, rich=True, internal=False, validate=True):
 
             # Replace numerical struct with symbolic value
             if rich:
-                obj["struct"] = nod.OD.to_string(struct, struct)
+                obj["struct"] = OD.to_string(struct, struct)
 
             if rich and "name" not in obj:
                 obj["__name"] = node.GetEntryName(index)
@@ -555,7 +552,7 @@ def node_todict(node, sort=False, rich=True, internal=False, validate=True):
                 obj["each"] = copy_in_order(obj["each"], JSON_SUB_ORDER)
 
         except Exception as exc:
-            exc_amend(exc, "Index 0x{:04x} ({}): ".format(index, index))
+            exc_amend(exc, "Index 0x{0:04x} ({0}): ".format(index))
             raise
 
         finally:
@@ -697,7 +694,7 @@ def node_todict_parameter(obj, node, index):
         dictlen = start + len(dictvals)
         sub = obj["sub"]
         if dictlen > len(sub):
-            sub += [dict() for i in range(len(sub), dictlen)]
+            sub += [{} for i in range(len(sub), dictlen)]
 
         # Commit the params to 'sub'
         for i, val in enumerate(sub):
@@ -880,8 +877,10 @@ def node_fromdict(jd, internal=False):
     jd.setdefault("profile", "None")
 
     # Create the node and fill the most basic data
-    node = Node(name=jd["name"], type=jd["type"], id=jd["id"],
-                description=jd["description"], profilename=jd["profile"])
+    node = objdictgen.Node(
+        name=jd["name"], type=jd["type"], id=jd["id"],
+        description=jd["description"], profilename=jd["profile"],
+    )
 
     # Restore optional values
     if 'default_string_size' in jd:
@@ -904,7 +903,7 @@ def node_fromdict(jd, internal=False):
                 obj = node_fromdict_parameter(obj, objtypes_s2i)
 
         except Exception as exc:
-            exc_amend(exc, "Index 0x{:04x} ({}): ".format(index, index))
+            exc_amend(exc, "Index 0x{0:04x} ({0}): ".format(index))
             raise
 
         # Copy the object to node object entries
@@ -926,13 +925,13 @@ def node_fromdict(jd, internal=False):
             diff = deepdiff.DeepDiff(baseobj, obj['built-in'], view='tree')
             if diff:
                 if sys.version_info[0] >= 3:
-                    dbg("Index 0x{:04x} ({}) Difference between built-in object and imported:".format(index, index))
+                    log.debug("Index 0x{0:04x} ({0}) Difference between built-in object and imported:".format(index))
                     for line in diff.pretty().splitlines():
-                        dbg('  ' + line)
+                        log.debug('  ' + line)
                 else:
                     # FIXME: No print
                     print("WARNING: Py2 cannot print difference of objects")
-                raise ValidationError("Built-in parameter index 0x{:04x} ({}) does not match against system parameters".format(index, index))
+                raise ValidationError("Built-in parameter index 0x{0:04x} ({0}) does not match against system parameters".format(index))
 
     # There is a weakness to the Node implementation: There is no store
     # of the order of the incoming parameters, instead the data is spread over
@@ -1324,7 +1323,7 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
         try:
             _validate_dictionary(index, obj)
         except Exception as exc:
-            exc_amend(exc, "Index 0x{:04x} ({}): ".format(index, index))
+            exc_amend(exc, "Index 0x{0:04x} ({0}): ".format(index))
             raise
 
 

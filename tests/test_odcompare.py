@@ -5,7 +5,8 @@ import os
 import sys
 from collections import OrderedDict
 import pytest
-from objdictgen.nodemanager import NodeManager
+
+from objdictgen import Node
 
 if sys.version_info[0] >= 3:
     ODict = dict
@@ -25,8 +26,8 @@ def shave_dict(a, b):
 
 
 def shave_equal(a, b, ignore=None):
-    a = copy.deepcopy(a.CurrentNode.__dict__)
-    b = copy.deepcopy(b.CurrentNode.__dict__)
+    a = copy.deepcopy(a.__dict__)
+    b = copy.deepcopy(b.__dict__)
 
     for n in ignore or []:
         a.pop(n, None)
@@ -40,7 +41,7 @@ def shave_equal(a, b, ignore=None):
 # Printing of diffs:
 #   # from objdictgen.__main__ import print_diffs
 #   # from objdictgen import jsonod
-#   # diffs = jsonod.diff_nodes(m0.CurrentNode, m1.CurrentNode, as_dict=False, validate=True)
+#   # diffs = jsonod.diff_nodes(m0, m1, as_dict=False, validate=True)
 #   # print_diffs(diffs)
 #
 # Saving for debug
@@ -77,14 +78,10 @@ def test_load_compare(odfile, suffix):
         pytest.skip("File not found")
 
     # Load the OD
-    m1 = NodeManager()
-    m1.OpenFileInCurrent(odfile + suffix)
+    m1 = Node.LoadFile(odfile + suffix)
+    m2 = Node.LoadFile(odfile + suffix)
 
-    # Load the OD a second time and compare it
-    m2 = NodeManager()
-    m2.OpenFileInCurrent(odfile + suffix)
-
-    assert m1.CurrentNode.__dict__ == m2.CurrentNode.__dict__
+    assert m1.__dict__ == m2.__dict__
 
 
 def test_odexport(wd, odfile, fn):
@@ -94,17 +91,14 @@ def test_odexport(wd, odfile, fn):
     '''
     od = odfile.name
 
-    m0 = NodeManager()
-    m0.OpenFileInCurrent(odfile + '.od')
-
-    m1 = NodeManager()
-    m1.OpenFileInCurrent(odfile + '.od')
+    m0 = Node.LoadFile(odfile + '.od')
+    m1 = Node.LoadFile(odfile + '.od')
 
     # Save the OD
-    m1.SaveCurrentInFile(od + '.od')
+    m1.DumpFile(od + '.od', filetype='od')
 
     # Assert that the object is unmodified by the export
-    assert m0.CurrentNode.__dict__ == m1.CurrentNode.__dict__
+    assert m0.__dict__ == m1.__dict__
 
     # Modify the od files to remove unique elements
     #  .od.orig  is the original .od file
@@ -122,11 +116,10 @@ def test_odexport(wd, odfile, fn):
     os.remove(od + '.tmp')
 
     # Load the saved OD
-    m2 = NodeManager()
-    m2.OpenFileInCurrent(od + '.od')
+    m2 = Node.LoadFile(od + '.od')
 
     # Compare the OD master and the OD2 objects
-    assert m1.CurrentNode.__dict__ == m2.CurrentNode.__dict__
+    assert m1.__dict__ == m2.__dict__
 
     # Compare the files - The py3 ones are by guarantee different, as the str handling is different
     if sys.version_info[0] < 3:
@@ -140,33 +133,29 @@ def test_jsonexport(wd, odfile):
     '''
     od = odfile.name
 
-    m0 = NodeManager()
-    m0.OpenFileInCurrent(odfile + '.od')
-
-    m1 = NodeManager()
-    m1.OpenFileInCurrent(odfile + '.od')
+    m0 = Node.LoadFile(odfile + '.od')
+    m1 = Node.LoadFile(odfile + '.od')
 
     # Need this to fix any incorrect ODs which cause import error
     m0.Validate(fix=True)
     m1.Validate(fix=True)
 
-    m1.SaveCurrentInFile(od + '.json')
+    m1.DumpFile(od + '.json', filetype='json')
 
     # Assert that the object is unmodified by the export
-    assert m0.CurrentNode.__dict__ == m1.CurrentNode.__dict__
+    assert m0.__dict__ == m1.__dict__
 
-    m2 = NodeManager()
-    m2.OpenFileInCurrent(odfile + '.od')
+    m2 = Node.LoadFile(odfile + '.od')
 
     # To verify that the export doesn't clobber the object
-    equal = m1.CurrentNode.__dict__ == m2.CurrentNode.__dict__
+    equal = m1.__dict__ == m2.__dict__
 
     # If this isn't equal, then it could be the fix option above, so let's attempt
     # to modify m2 with the same change
     if not equal:
         m2.Validate(fix=True)
 
-    assert m1.CurrentNode.__dict__ == m2.CurrentNode.__dict__
+    assert m1.__dict__ == m2.__dict__
 
 
 def test_cexport(wd, odfile, fn):
@@ -176,16 +165,13 @@ def test_cexport(wd, odfile, fn):
     '''
     od = odfile.name
 
-    m0 = NodeManager()
-    m0.OpenFileInCurrent(odfile + '.od')
+    m0 = Node.LoadFile(odfile + '.od')
+    m1 = Node.LoadFile(odfile + '.od')
 
-    m1 = NodeManager()
-    m1.OpenFileInCurrent(odfile + '.od')
-
-    m1.SaveCurrentInFile(od + '.c')
+    m1.DumpFile(od + '.c', filetype='c')
 
     # Assert that the object is unmodified by the export
-    assert m0.CurrentNode.__dict__ == m1.CurrentNode.__dict__
+    assert m0.__dict__ == m1.__dict__
 
     # FIXME: If files doesn't exist, this leaves this test half-done. Better way?
     if os.path.exists(odfile + '.c'):
@@ -204,16 +190,13 @@ def test_edsexport(wd, odfile, fn):
     if od == 'null':
         pytest.skip("Won't work for null")
 
-    m0 = NodeManager()
-    m0.OpenFileInCurrent(odfile + '.od')
+    m0 = Node.LoadFile(odfile + '.od')
+    m1 = Node.LoadFile(odfile + '.od')
 
-    m1 = NodeManager()
-    m1.OpenFileInCurrent(odfile + '.od')
-
-    m1.SaveCurrentInFile(od + '.eds')
+    m1.DumpFile(od + '.eds', filetype='eds')
 
     # Assert that the object is unmodified by the export
-    assert m0.CurrentNode.__dict__ == m1.CurrentNode.__dict__
+    assert m0.__dict__ == m1.__dict__
 
     def predicate(line):
         for m in ('CreationDate', 'CreationTime', 'ModificationDate', 'ModificationTime'):
@@ -235,16 +218,14 @@ def test_edsimport(wd, odfile):
     if od == 'null':
         pytest.skip("Won't work for null")
 
-    m1 = NodeManager()
-    m1.OpenFileInCurrent(odfile + '.od')
+    m1 = Node.LoadFile(odfile + '.od')
 
     # Need this to fix any incorrect ODs which cause EDS import error
     #m1.Validate(correct=True)
 
-    m1.SaveCurrentInFile(od + '.eds')
+    m1.DumpFile(od + '.eds', filetype='eds')
 
-    m2 = NodeManager()
-    m2.OpenFileInCurrent(od + '.eds')
+    m2 = Node.LoadFile(od + '.eds')
 
     # FIXME: EDS isn't complete enough to compare with an OD-loaded file
     # a, b = shave_equal(m1, m2, ignore=('IndexOrder', 'Description'))
@@ -258,23 +239,20 @@ def test_jsonimport(wd, odfile):
     '''
     od = odfile.name
 
-    m1 = NodeManager()
-    m1.OpenFileInCurrent(odfile + '.od')
+    m1 = Node.LoadFile(odfile + '.od')
 
     # Need this to fix any incorrect ODs which cause import error
     m1.Validate(fix=True)
 
-    m1.SaveCurrentInFile(od + '.json')
-    m1.SaveCurrentInFile(od + '.json2', filetype='json', compact=True)
+    m1.DumpFile(od + '.json', filetype='json')
+    m1.DumpFile(od + '.json2', filetype='json', compact=True)
 
-    m2 = NodeManager()
-    m2.OpenFileInCurrent(od + '.json')
+    m2 = Node.LoadFile(od + '.json')
 
     a, b = shave_equal(m1, m2, ignore=('IndexOrder',))
     assert a == b
 
-    m3 = NodeManager()
-    m3.OpenFileInCurrent(od + '.json2')
+    m3 = Node.LoadFile(od + '.json2')
 
     a, b = shave_equal(m1, m3, ignore=('IndexOrder',))
     assert a == b
@@ -288,11 +266,8 @@ def test_od_json_compare(odfile):
     if not os.path.exists(odfile + '.json'):
         raise pytest.skip("No .json file for '%s'" %(odfile + '.od'))
 
-    m1 = NodeManager()
-    m1.OpenFileInCurrent(odfile + '.od')
-
-    m2 = NodeManager()
-    m2.OpenFileInCurrent(odfile + '.json')
+    m1 = Node.LoadFile(odfile + '.od')
+    m2 = Node.LoadFile(odfile + '.json')
 
     # To verify that the export doesn't clobber the object
     a, b = shave_equal(m1, m2, ignore=('IndexOrder',))
@@ -326,7 +301,7 @@ PROFILE_ODS = [
 ]
 
 @pytest.mark.parametrize("oddut", PROFILE_ODS)
-@pytest.mark.parametrize("suffix", ['.od', '.json'])
+@pytest.mark.parametrize("suffix", ['od', 'json'])
 def test_save_wo_profile(oddir, oddut, suffix, wd):
     ''' Test that saving a od that contains a profile creates identical
         results as the original. This test has no access to the profile dir
@@ -334,19 +309,17 @@ def test_save_wo_profile(oddir, oddut, suffix, wd):
 
     fa = os.path.join(oddir, oddut)
 
-    m1 = NodeManager()
-    m1.OpenFileInCurrent(fa + '.od')
-    m1.SaveCurrentInFile(oddut + suffix)
+    m1 = Node.LoadFile(fa + '.od')
+    m1.DumpFile(oddut + '.' + suffix, filetype=suffix)
 
-    m2 = NodeManager()
-    m2.OpenFileInCurrent(oddut + suffix)
+    m2 = Node.LoadFile(oddut + '.' + suffix)
 
     a, b = shave_equal(m1, m2, ignore=('IndexOrder',))
     assert a == b
 
 
 @pytest.mark.parametrize("oddut", PROFILE_ODS)
-@pytest.mark.parametrize("suffix", ['.od', '.json'])
+@pytest.mark.parametrize("suffix", ['od', 'json'])
 def test_save_with_profile(oddir, oddut, suffix, wd, profile):
     ''' Test that saving a od that contains a profile creates identical
         results as the original. This test have access to the profile dir
@@ -354,12 +327,10 @@ def test_save_with_profile(oddir, oddut, suffix, wd, profile):
 
     fa = os.path.join(oddir, oddut)
 
-    m1 = NodeManager()
-    m1.OpenFileInCurrent(fa + '.od')
-    m1.SaveCurrentInFile(oddut + suffix)
+    m1 = Node.LoadFile(fa + '.od')
+    m1.DumpFile(oddut + '.' + suffix, filetype=suffix)
 
-    m2 = NodeManager()
-    m2.OpenFileInCurrent(oddut + suffix)
+    m2 = Node.LoadFile(oddut + '.' + suffix)
 
     a, b = shave_equal(m1, m2, ignore=('IndexOrder',))
     assert a == b
@@ -392,11 +363,8 @@ def test_legacy_compare(oddir, equivs):
     fa = os.path.join(oddir, a)
     fb = os.path.join(oddir, b)
 
-    m1 = NodeManager()
-    m1.OpenFileInCurrent(fa)
-
-    m2 = NodeManager()
-    m2.OpenFileInCurrent(fb)
+    m1 = Node.LoadFile(fa)
+    m2 = Node.LoadFile(fb)
 
     a, b = shave_equal(m1, m2, ignore=('Description', 'IndexOrder'))
     assert a == b

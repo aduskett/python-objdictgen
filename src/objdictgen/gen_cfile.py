@@ -2,7 +2,7 @@
 #
 #    This file is based on objdictgen from CanFestival
 #
-#    Copyright (C) 2022  Svein Seldal, Laerdal Medical AS
+#    Copyright (C) 2022-2023  Svein Seldal, Laerdal Medical AS
 #    Copyright (C): Edouard TISSERANT, Francis DUPIN
 #
 #    This library is free software; you can redistribute it and/or
@@ -26,7 +26,7 @@ from builtins import range
 import re
 import os
 
-from .maps import OD
+from objdictgen.maps import OD
 
 RE_WORD = re.compile(r'([a-zA-Z_0-9]*)')
 RE_TYPE = re.compile(r'([\_A-Z]*)([0-9]*)')

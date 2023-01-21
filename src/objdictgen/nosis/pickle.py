@@ -55,7 +55,7 @@ VISITED = {}
 
 # entry point expected by XML_Pickle
 def thing_from_dom(filehandle):
-    global VISITED
+    global VISITED  # pylint: disable=global-statement
     VISITED = {}
     return _thing_from_dom(minidom.parse(filehandle), None)
 
@@ -145,7 +145,7 @@ class StreamWriter(object):
             self.iohandle = self.sio = StringIO()
 
         if compress == 1:  # maybe we'll add more types someday
-            import gzip
+            import gzip  # pylint: disable=import-outside-toplevel
             self.iohandle = gzip.GzipFile(None, 'wb', 9, self.iohandle)
 
     def append(self, item):
@@ -183,7 +183,7 @@ def StreamReader(stream):
     magic = stream.read(2)
     stream.seek(pos)
     if magic == '\037\213':
-        import gzip
+        import gzip  # pylint: disable=import-outside-toplevel
         stream = gzip.GzipFile(None, 'rb', None, stream)
 
     return stream
@@ -208,7 +208,7 @@ def _pickle_toplevel_obj(xml_list, py_obj, deepcopy, omit=None):
     "handle the top object -- add XML header, etc."
 
     # Store the ref id to the pickling object (if not deepcopying)
-    global VISITED
+    global VISITED  # pylint: disable=global-statement
     VISITED = {}
     if not deepcopy:
         id_ = id(py_obj)
@@ -479,6 +479,7 @@ def _tag_completer(start_tag, orig_thing, close_tag, level, deepcopy):
             # can't pickle unicode containing the special "escape" sequence
             # we use for putting strings in the XML body (they'll be unpickled
             # as strings, not unicode, if we do!)
+            # pylint: disable=redundant-u-string-prefix
             if thing[0:2] == u'\xbb\xbb' and thing[-2:] == u'\xab\xab':
                 raise ValueError("Unpickleable Unicode value")
 

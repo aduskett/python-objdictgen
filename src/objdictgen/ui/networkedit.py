@@ -2,7 +2,7 @@
 #
 #    This file is based on objdictgen from CanFestival
 #
-#    Copyright (C) 2022  Svein Seldal, Laerdal Medical AS
+#    Copyright (C) 2022-2023  Svein Seldal, Laerdal Medical AS
 #    Copyright (C): Edouard TISSERANT, Francis DUPIN and Laurent BESSARD
 #
 #    This library is free software; you can redistribute it and/or
@@ -27,16 +27,17 @@ from builtins import range
 import os
 import sys
 import getopt
+import logging
 
 import wx
 
-from .exception import AddExceptHook
-from .networkeditortemplate import NetworkEditorTemplate
-from ..nodelist import NodeList
-from ..nodemanager import NodeManager
-from .. import SCRIPT_DIRECTORY
-from .. import ODG_VERSION
-from .. import dbg
+import objdictgen
+from objdictgen.nodelist import NodeList
+from objdictgen.nodemanager import NodeManager
+from objdictgen.ui.exception import AddExceptHook
+from objdictgen.ui.networkeditortemplate import NetworkEditorTemplate
+
+log = logging.getLogger('objdictgen')
 
 
 def usage():
@@ -221,7 +222,7 @@ class NetworkEdit(wx.Frame, NetworkEditorTemplate):
         # FIXME: Unused. Delete this?
         # self.HtmlFrameOpened = []
 
-        icon = wx.Icon(os.path.join(SCRIPT_DIRECTORY, "ui", "networkedit.ico"), wx.BITMAP_TYPE_ICO)
+        icon = wx.Icon(os.path.join(objdictgen.SCRIPT_DIRECTORY, "ui", "networkedit.ico"), wx.BITMAP_TYPE_ICO)
         self.SetIcon(icon)
 
         if self.ModeSolo:
@@ -232,7 +233,7 @@ class NetworkEdit(wx.Frame, NetworkEditorTemplate):
                     self.RefreshNetworkNodes()
                     self.RefreshProfileMenu()
                 except Exception as exc:
-                    dbg("Exception: %s" % exc)
+                    log.debug("Exception: %s" % exc)
                     raise  # FIXME: Temporary. Orginal code swallows exception
             else:
                 self.NodeList = None
@@ -251,12 +252,6 @@ class NetworkEdit(wx.Frame, NetworkEditorTemplate):
         if not self.ModeSolo and getattr(self, "_onclose", None) is not None:
             self._onclose()
         event.Skip()
-
-    # FIXME: Unused. Delete this?
-    # def OnChar(self, event):
-    #     if event.ControlDown() and event.GetKeyCode() == 83 and getattr(self, "_onsave", None) is not None:
-    #         self._onsave()
-    #     # event.Skip()
 
     def OnQuitMenu(self, event):  # pylint: disable=unused-argument
         self.Close()
@@ -422,7 +417,7 @@ def uimain(project):
     wx.InitAllImageHandlers()
 
     # Install a exception handle for bug reports
-    AddExceptHook(os.getcwd(), ODG_VERSION)
+    AddExceptHook(os.getcwd(), objdictgen.ODG_VERSION)
 
     frame = NetworkEdit(None, projectOpen=project)
 

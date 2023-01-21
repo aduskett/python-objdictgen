@@ -1,13 +1,11 @@
 import sys
 import re
-from past.builtins import long
 import logging
+from past.builtins import long
 
 log = logging.getLogger('objdictgen.nosis')
 
-def dbg(msg):  # pylint: disable=unused-argument
-    log.debug(">> %s" % (msg,))
-
+# pylint: disable=invalid-name
 
 pat_fl = r'[-+]?(((((\d+)?[.]\d+|\d+[.])|\d+)[eE][+-]?\d+)|((\d+)?[.]\d+|\d+[.]))'
 re_float = re.compile(pat_fl + r'$')
@@ -111,10 +109,10 @@ def unsafe_string(s):
     # for Python escapes, exec the string
     # (niggle w/ literalizing apostrophe)
     _s = s = s.replace("'", r"\047")
-    # dbg("EXEC in unsafe_string(): '%s'" % ("s='" + s + "'",))
+    # log.debug("EXEC in unsafe_string(): '%s'" % ("s='" + s + "'",))
     exec("s='" + s + "'")
     if s != _s:
-        dbg("EXEC in unsafe_string(): '%s' -> '%s'" % (_s, s))
+        log.debug("EXEC in unsafe_string(): '%s' -> '%s'" % (_s, s))
     # XML entities (DOM does it for us)
     return s
 

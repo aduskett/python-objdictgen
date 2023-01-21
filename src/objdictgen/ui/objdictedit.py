@@ -2,7 +2,7 @@
 #
 #    This file is based on objdictgen from CanFestival
 #
-#    Copyright (C) 2022  Svein Seldal, Laerdal Medical AS
+#    Copyright (C) 2022-2023  Svein Seldaleldal, Laerdal Medical AS
 #    Copyright (C): Edouard TISSERANT, Francis DUPIN and Laurent BESSARD
 #
 #    This library is free software; you can redistribute it and/or
@@ -27,20 +27,20 @@ from builtins import range
 import os
 import sys
 import getopt
+import logging
 
 import wx
 
-from .exception import AddExceptHook
-from . import nodeeditortemplate as net
-from . import subindextable as sit
-from . import commondialogs as cdia
-from .. import nodemanager as nman
-from .. import SCRIPT_DIRECTORY
-from .. import ODG_VERSION
-from .. import dbg
+from objdictgen.ui.exception import AddExceptHook
+from objdictgen.ui import nodeeditortemplate as net
+from objdictgen.ui import subindextable as sit
+from objdictgen.ui import commondialogs as cdia
+import objdictgen
 
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
+
+log = logging.getLogger('objdictgen')
 
 
 def usage():
@@ -222,12 +222,12 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
     def __init__(self, parent, manager=None, filesopen=None):
         filesopen = filesopen or []
         if manager is None:
-            net.NodeEditorTemplate.__init__(self, nman.NodeManager(), self, True)
+            net.NodeEditorTemplate.__init__(self, objdictgen.NodeManager(), self, True)
         else:
             net.NodeEditorTemplate.__init__(self, manager, self, False)
         self._init_ctrls(parent)
 
-        icon = wx.Icon(os.path.join(SCRIPT_DIRECTORY, "ui", "networkedit.ico"), wx.BITMAP_TYPE_ICO)
+        icon = wx.Icon(os.path.join(objdictgen.SCRIPT_DIRECTORY, "ui", "networkedit.ico"), wx.BITMAP_TYPE_ICO)
         self.SetIcon(icon)
 
         if self.ModeSolo:
@@ -238,7 +238,7 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
                     new_editingpanel.SetIndex(index)
                     self.FileOpened.AddPage(new_editingpanel, "")
                 except Exception as exc:  # Need this broad exception?
-                    dbg("Swallowed Exception: %s" % (exc, ))
+                    log.debug("Swallowed Exception: %s" % (exc, ))
                     raise  # FIXME: Originial code swallows exception
         else:
             for index in self.Manager.GetBufferIndexes():
@@ -507,7 +507,7 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
             filepath = dialog.GetPath()
             if os.path.isfile(filepath):
                 try:
-                    index = self.Manager.ImportCurrentFromEDSFile(filepath)
+                    index = self.Manager.OpenFileInCurrent(filepath, load=False)
                     new_editingpanel = sit.EditingPanel(self.FileOpened, self, self.Manager)
                     new_editingpanel.SetIndex(index)
                     self.FileOpened.AddPage(new_editingpanel, "")
@@ -542,7 +542,7 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
                 if extend in ("", "."):
                     filepath = path + ".eds"
                 try:
-                    self.Manager.ExportCurrentToEDSFile(filepath)
+                    self.Manager.SaveCurrentInFile(filepath, filetype='eds')
                     message = wx.MessageDialog(self, "Export successful", "Information", wx.OK | wx.ICON_INFORMATION)
                     message.ShowModal()
                     message.Destroy()
@@ -565,7 +565,7 @@ class ObjdictEdit(wx.Frame, net.NodeEditorTemplate):
                 if extend in ("", "."):
                     filepath = path + ".c"
                 try:
-                    self.Manager.ExportCurrentToCFile(filepath)
+                    self.Manager.SaveCurrentInFile(filepath, filetype='c')
                     message = wx.MessageDialog(self, "Export successful", "Information", wx.OK | wx.ICON_INFORMATION)
                     message.ShowModal()
                     message.Destroy()
@@ -582,7 +582,7 @@ def uimain(args):
     wx.InitAllImageHandlers()
 
     # Install a exception handle for bug reports
-    AddExceptHook(os.getcwd(), ODG_VERSION)
+    AddExceptHook(os.getcwd(), objdictgen.ODG_VERSION)
 
     frame = ObjdictEdit(None, filesopen=args)
 

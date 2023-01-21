@@ -1,7 +1,7 @@
 #
 #    This file is based on objdictgen from CanFestival
 #
-#    Copyright (C) 2022  Svein Seldal, Laerdal Medical AS
+#    Copyright (C) 2022-2023  Svein Seldal, Laerdal Medical AS
 #    Copyright (C): Edouard TISSERANT, Francis DUPIN and Laurent BESSARD
 #
 #    This library is free software; you can redistribute it and/or
@@ -24,9 +24,9 @@ from builtins import range
 
 import wx
 
-from . import nodeeditortemplate as net
-from . import subindextable as sit
-from . import commondialogs as cdia
+from objdictgen.ui import nodeeditortemplate as net
+from objdictgen.ui import subindextable as sit
+from objdictgen.ui import commondialogs as cdia
 
 [
     ID_NETWORKEDITNETWORKNODES,

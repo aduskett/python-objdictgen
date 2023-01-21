@@ -1,5 +1,5 @@
 #
-#    Copyright (C) 2022  Svein Seldal, Laerdal Medical AS
+#    Copyright (C) 2022-2023  Svein Seldal, Laerdal Medical AS
 #
 #    This library is free software; you can redistribute it and/or
 #    modify it under the terms of the GNU Lesser General Public
@@ -17,12 +17,15 @@
 #    USA
 
 import os
-import logging
 
-log = logging.getLogger('objdictgen')
+from objdictgen.node import Node, ImportProfile, Find
+from objdictgen.nodemanager import NodeManager
+
+# Shortcuts
+LoadFile = Node.LoadFile
 
 ODG_PROGRAM = "odg"
-ODG_VERSION = "3.2"
+ODG_VERSION = "3.3"
 
 SCRIPT_DIRECTORY = os.path.split(__file__)[0]
 
@@ -31,6 +34,12 @@ odgdir = os.environ.get('ODG_PROFILE_DIR')
 if odgdir:
     PROFILE_DIRECTORIES.append(odgdir)
 
-def dbg(msg):  # pylint: disable=unused-argument
-    log.debug(">> %s", msg)
-warning = log.warning
+JSON_SCHEMA = os.path.join(SCRIPT_DIRECTORY, 'schema', 'od.schema.json')
+
+__all__ = [
+    "Node",
+    "ImportProfile",
+    "Find",
+    "LoadFile",
+    "NodeManager",
+]

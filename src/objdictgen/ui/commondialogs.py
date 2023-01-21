@@ -2,7 +2,7 @@
 #
 #    This file is based on objdictgen from CanFestival
 #
-#    Copyright (C) 2022  Svein Seldal, Laerdal Medical AS
+#    Copyright (C) 2022-2023  Svein Seldal, Laerdal Medical AS
 #    Copyright (C): Edouard TISSERANT, Francis DUPIN and Laurent BESSARD
 #
 #    This library is free software; you can redistribute it and/or
@@ -24,14 +24,16 @@ from __future__ import absolute_import
 from builtins import range
 
 import os
+import logging
 
 import wx
 import wx.grid
 
-from .. import node as nod
-from .. import PROFILE_DIRECTORIES
-from ..maps import OD
-from .. import dbg
+import objdictgen
+from objdictgen.node import BE_to_LE, LE_to_BE
+from objdictgen.maps import OD
+
+log = logging.getLogger('objdictgen')
 
 
 # ------------------------------------------------------------------------------
@@ -361,13 +363,13 @@ class MapVariableDialog(wx.Dialog):
         try:
             int(self.Index.GetValue(), 16)
         except ValueError as exc:
-            dbg("ValueError: '%s': %s" % (self.Index.GetValue(), exc))
+            log.debug("ValueError: '%s': %s" % (self.Index.GetValue(), exc))
             error.append("Index")
         if self.radioButton2.GetValue() or self.radioButton3.GetValue():
             try:
                 int(self.Number.GetValue())
             except ValueError as exc:
-                dbg("ValueError: '%s': %s" % (self.Index.GetValue(), exc))
+                log.debug("ValueError: '%s': %s" % (self.Index.GetValue(), exc))
                 error.append("Number")
         if len(error) > 0:
             text = ""
@@ -554,18 +556,18 @@ class UserTypeDialog(wx.Dialog):
                 try:
                     int(self.Min.GetValue(), 16)
                 except ValueError as exc:
-                    dbg("ValueError: '%s': %s" % (self.Index.GetValue(), exc))
+                    log.debug("ValueError: '%s': %s" % (self.Index.GetValue(), exc))
                     error.append("Minimum")
                 try:
                     int(self.Max.GetValue(), 16)
                 except ValueError as exc:
-                    dbg("ValueError: '%s': %s" % (self.Index.GetValue(), exc))
+                    log.debug("ValueError: '%s': %s" % (self.Index.GetValue(), exc))
                     error.append("Maximum")
             elif valuetype == 1:
                 try:
                     int(self.Length.GetValue(), 16)
                 except ValueError as exc:
-                    dbg("ValueError: '%s': %s" % (self.Index.GetValue(), exc))
+                    log.debug("ValueError: '%s': %s" % (self.Index.GetValue(), exc))
                     error.append("Length")
             if len(error) > 0:
                 message = ""
@@ -774,7 +776,7 @@ class NodeInfosDialog(wx.Dialog):
             try:
                 _ = int(self.NodeID.GetValue(), 16)
             except ValueError as exc:
-                dbg("ValueError: '%s': %s" % (self.NodeID.GetValue(), exc))
+                log.debug("ValueError: '%s': %s" % (self.NodeID.GetValue(), exc))
                 message = "Node ID must be integer!"
         if message:
             message = wx.MessageDialog(self, message, "ERROR", wx.OK | wx.ICON_ERROR)
@@ -1028,8 +1030,8 @@ class CreateNodeDialog(wx.Dialog):
         self.Description.SetValue("")
         self.ListProfile = {"None": ""}
         self.Profile.Append("None")
-        self.Directory = PROFILE_DIRECTORIES[-1]
-        for pdir in PROFILE_DIRECTORIES:
+        self.Directory = objdictgen.PROFILE_DIRECTORIES[-1]
+        for pdir in objdictgen.PROFILE_DIRECTORIES:
             for item in sorted(os.listdir(pdir)):
                 name, extend = os.path.splitext(item)
                 if os.path.isfile(os.path.join(self.Directory, item)) and extend == ".prf" and name != "DS-302":
@@ -1049,7 +1051,7 @@ class CreateNodeDialog(wx.Dialog):
             try:
                 _ = int(self.NodeID.GetValue(), 16)
             except ValueError as exc:
-                dbg("ValueError: '%s': %s" % (self.NodeID.GetValue(), exc))
+                log.debug("ValueError: '%s': %s" % (self.NodeID.GetValue(), exc))
                 message = "Node ID must be integer!"
         if message:
             message = wx.MessageDialog(self, message, "ERROR", wx.OK | wx.ICON_ERROR)
@@ -1239,7 +1241,7 @@ class AddSlaveDialog(wx.Dialog):
                 else:
                     nodeid = int(nodeid)
             except ValueError as exc:
-                dbg("ValueError: '%s': %s" % (self.SlaveNodeID.GetValue(), exc))
+                log.debug("ValueError: '%s': %s" % (self.SlaveNodeID.GetValue(), exc))
                 message = wx.MessageDialog(self, "Slave Node ID must be a value in decimal or hexadecimal!", "Error", wx.OK | wx.ICON_ERROR)
                 message.ShowModal()
                 message.Destroy()
@@ -1344,10 +1346,6 @@ class DCFEntryValuesTable(wx.grid.PyGridTableBase):
             return self.colnames[col]
         return None
 
-    # FIXME: Unused. Delete this?
-    # def GetRowLabelValues(self, row, translate=True):  # pylint: disable=unused-argument
-    #     return row
-
     def GetValue(self, row, col):
         if row < self.GetNumberRows():
             return str(self.data[row].get(self.GetColLabelValue(col, False), ""))
@@ -1420,10 +1418,6 @@ class DCFEntryValuesTable(wx.grid.PyGridTableBase):
 
     def SetData(self, data):
         self.data = data
-
-    # FIXME: Unused. Delete this?
-    # def AppendRow(self, row_content):
-    #     self.data.append(row_content)
 
     def Empty(self):
         self.data = []
@@ -1597,13 +1591,13 @@ class DCFEntryValuesDialog(wx.Dialog):
         if values:
             data = values[4:]
             current = 0
-            for _ in range(nod.BE_to_LE(values[:4])):
+            for _ in range(BE_to_LE(values[:4])):
                 value = {}
-                value["Index"] = nod.BE_to_LE(data[current:current + 2])
-                value["Subindex"] = nod.BE_to_LE(data[current + 2:current + 3])
-                size = nod.BE_to_LE(data[current + 3:current + 7])
+                value["Index"] = BE_to_LE(data[current:current + 2])
+                value["Subindex"] = BE_to_LE(data[current + 2:current + 3])
+                size = BE_to_LE(data[current + 3:current + 7])
                 value["Size"] = size
-                value["Value"] = nod.BE_to_LE(data[current + 7:current + 7 + size])
+                value["Value"] = BE_to_LE(data[current + 7:current + 7 + size])
                 current += 7 + size
                 self.Values.append(value)
         self.RefreshValues()
@@ -1611,12 +1605,12 @@ class DCFEntryValuesDialog(wx.Dialog):
     def GetValues(self):
         if len(self.Values) <= 0:
             return ""
-        value = nod.LE_to_BE(len(self.Values), 4)
+        value = LE_to_BE(len(self.Values), 4)
         for row in self.Values:
-            value += nod.LE_to_BE(row["Index"], 2)
-            value += nod.LE_to_BE(row["Subindex"], 1)
-            value += nod.LE_to_BE(row["Size"], 4)
-            value += nod.LE_to_BE(row["Value"], row["Size"])
+            value += LE_to_BE(row["Index"], 2)
+            value += LE_to_BE(row["Subindex"], 1)
+            value += LE_to_BE(row["Size"], 4)
+            value += LE_to_BE(row["Value"], row["Size"])
         return value
 
     def RefreshValues(self):

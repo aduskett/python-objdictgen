@@ -1,5 +1,5 @@
 #
-#    Copyright (C) 2022  Svein Seldal, Laerdal Medical AS
+#    Copyright (C) 2022-2023  Svein Seldal, Laerdal Medical AS
 #
 #    This library is free software; you can redistribute it and/or
 #    modify it under the terms of the GNU Lesser General Public
@@ -26,9 +26,8 @@ import logging
 import attr
 from colorama import init, Fore, Style
 
-from . import nodemanager as nman
-from . import jsonod
-from . import ODG_VERSION, ODG_PROGRAM
+import objdictgen
+from objdictgen import jsonod
 
 # For colored output
 init()
@@ -60,10 +59,10 @@ def debug_wrapper():
             opts = DebugOpts()
             try:
                 return fn(opts, *args, **kw)
-            except Exception as exc:
+            except Exception as exc:  # pylint: disable=broad-except
                 if opts.show_debug:
                     raise
-                print("{}: {}: {}".format(ODG_PROGRAM, exc.__class__.__name__, exc))
+                print("{}: {}: {}".format(objdictgen.ODG_PROGRAM, exc.__class__.__name__, exc))
                 sys.exit(1)
         return inner
     return decorator
@@ -73,10 +72,9 @@ def open_od(fname, validate=True, fix=False):
     ''' Open and validate the OD file'''
 
     try:
-        od = nman.NodeManager()
-        od.OpenFileInCurrent(fname)
+        od = objdictgen.LoadFile(fname)
 
-        if validate and od.CurrentNode:
+        if validate:
             od.Validate(fix=fix)
 
         return od
@@ -112,7 +110,7 @@ def print_diffs(diffs, show=False):
         _printlines(rest)
 
     for index in sorted(diffs):
-        print("{}Index 0x{:04x} ({}){}".format(Fore.GREEN, index, index, Style.RESET_ALL))
+        print("{0}Index 0x{1:04x} ({1}){2}".format(Fore.GREEN, index, Style.RESET_ALL))
         _printlines(diffs[index])
 
 
@@ -121,7 +119,7 @@ def main(debugopts, args=None):
     ''' Main command dispatcher '''
 
     parser = argparse.ArgumentParser(
-        prog=ODG_PROGRAM,
+        prog=objdictgen.ODG_PROGRAM,
         description="""
             A tool to read and convert object dictionary files for the
             CAN festival library
@@ -141,7 +139,7 @@ def main(debugopts, args=None):
     opt_debug = dict(action='store_true', help="Debug: enable tracebacks on errors")
     opt_od = dict(metavar='od', default=None, help="Object dictionary")
 
-    parser.add_argument('--version', action='version', version='%(prog)s ' + ODG_VERSION)
+    parser.add_argument('--version', action='version', version='%(prog)s ' + objdictgen.ODG_VERSION)
     parser.add_argument('-D', '--debug', **opt_debug)
 
     # -- HELP --
@@ -159,7 +157,8 @@ def main(debugopts, args=None):
     subp.add_argument('out', default=None, help="Output file")
     subp.add_argument('-i', '--index', action="append", help="OD Index to include. Filter out the rest.")
     subp.add_argument('-x', '--exclude', action="append", help="OD Index to exclude.")
-    subp.add_argument('-f', '--fix', action="store_true", help="Fix any inconsistency errors in OD before generate output")
+    subp.add_argument('-f', '--fix', action="store_true",
+                      help="Fix any inconsistency errors in OD before generate output")
     subp.add_argument('-t', '--type', choices=['od', 'eds', 'json', 'c'], help="Select output file type")
     subp.add_argument('--drop-unused', action="store_true", help="Remove unused parameters")
     subp.add_argument('--internal', action="store_true", help="Store in internal format (json only)")
@@ -257,8 +256,7 @@ def main(debugopts, args=None):
         # Drop all other indexes than specified
         if opts.index:
             index = [jsonod.str_to_number(i) for i in opts.index]
-            node = od.CurrentNode
-            to_remove |= (set(node.GetAllParameters()) - set(index))
+            to_remove |= (set(od.GetAllParameters()) - set(index))
 
         # Have any parameters to delete?
         if to_remove:
@@ -267,12 +265,13 @@ def main(debugopts, args=None):
                 od.GetPrintLine(k, unused=True)
                 for k in sorted(to_remove)
             ]
-            od.RemoveParams(to_remove)
+            for index in to_remove:
+                od.RemoveIndex(index)
             for line, fmt in info:
                 print(line.format(**fmt))
 
         # Write the data
-        od.SaveCurrentInFile(opts.out,
+        od.DumpFile(opts.out,
             filetype=opts.type, sort=not opts.nosort,
             internal=opts.internal, validate=not opts.novalidate
         )
@@ -287,16 +286,16 @@ def main(debugopts, args=None):
         od2 = open_od(opts.od2, validate=not opts.novalidate)
 
         diffs = jsonod.diff_nodes(
-            od1.CurrentNode, od2.CurrentNode, as_dict=not opts.internal,
+            od1, od2, as_dict=not opts.internal,
             validate=not opts.novalidate,
         )
 
         if diffs:
             errcode = 1
-            print("{}: '{}' and '{}' differ".format(ODG_PROGRAM, opts.od1, opts.od2))
+            print("{}: '{}' and '{}' differ".format(objdictgen.ODG_PROGRAM, opts.od1, opts.od2))
         else:
             errcode = 0
-            print("{}: '{}' and '{}' are equal".format(ODG_PROGRAM, opts.od1, opts.od2))
+            print("{}: '{}' and '{}' are equal".format(objdictgen.ODG_PROGRAM, opts.od1, opts.od2))
 
         print_diffs(diffs, show=opts.show)
         parser.exit(errcode)
@@ -318,15 +317,12 @@ def main(debugopts, args=None):
             if n > 0:
                 print()
             if len(opts.od) > 1:
-                s = name
-                print(Fore.LIGHTBLUE_EX + s + '\n' + "="*len(s) + Style.RESET_ALL)
+                print(Fore.LIGHTBLUE_EX + name + '\n' + "=" * len(name) + Style.RESET_ALL)
 
             od = open_od(name)
-            node = od.CurrentNode
-            assert node  # For mypy
 
             # Get the indexes to print and determine the order
-            keys = node.GetAllParameters(sort=not opts.asis)
+            keys = od.GetAllParameters(sort=not opts.asis)
             if opts.index:
                 index = tuple(jsonod.str_to_number(i) for i in opts.index)
                 keys = tuple(k for k in keys if k in index)
@@ -335,8 +331,8 @@ def main(debugopts, args=None):
                     parser.error("Unknown index {}".format(missing))
 
             profiles = []
-            if node.DS302:
-                loaded, equal = jsonod.compare_profile("DS-302", node.DS302)
+            if od.DS302:
+                loaded, equal = jsonod.compare_profile("DS-302", od.DS302)
                 if equal:
                     extra = "DS-302 (equal)"
                 elif loaded:
@@ -345,9 +341,9 @@ def main(debugopts, args=None):
                     extra = "DS-302 (not loaded)"
                 profiles.append(extra)
 
-            pname = node.ProfileName
+            pname = od.ProfileName
             if pname and pname != 'None':
-                loaded, equal = jsonod.compare_profile(pname, node.Profile, node.SpecificMenu)
+                loaded, equal = jsonod.compare_profile(pname, od.Profile, od.SpecificMenu)
                 if equal:
                     extra = "%s (equal)" % pname
                 elif loaded:
@@ -357,18 +353,21 @@ def main(debugopts, args=None):
                 profiles.append(extra)
 
             if not opts.compact:
-                print("File:      %s" % (od.GetCurrentFilePath()))
-                print("Name:      %s  [%s]  %s" % (node.Name, node.Type.upper(), node.Description))
+                print("File:      %s" % (name))
+                print("Name:      %s  [%s]  %s" % (od.Name, od.Type.upper(), od.Description))
                 print("Profiles:  %s" % (", ".join(profiles) or None))
-                if node.ID:
-                    print("ID:        %s" % (node.ID))
+                if od.ID:
+                    print("ID:        %s" % (od.ID))
                 print("")
 
             if opts.header:
                 continue
 
             # Print the parameters
-            for line in od.GetPrintParams(keys=keys, short=opts.short, compact=opts.compact, unused=opts.unused, verbose=opts.all, raw=opts.raw):
+            for line in od.GetPrintParams(
+                keys=keys, short=opts.short, compact=opts.compact, unused=opts.unused,
+                verbose=opts.all, raw=opts.raw
+            ):
                 print(line)
 
 
@@ -389,7 +388,7 @@ def main(debugopts, args=None):
 
 
     else:
-        parser.error("Programming error: Uknown option '%s'" %(opts.command))
+        parser.error("Programming error: Uknown option '%s'" % (opts.command))
 
 
 def main_objdictgen():
@@ -421,11 +420,10 @@ def main_objdictgen():
         sys.exit()
 
     if filein != "" and fileout != "":
-        manager = nman.NodeManager()
         print("Parsing input file", filein)
-        manager.OpenFileInCurrent(filein)
+        node = objdictgen.LoadFile(filein)
         print("Writing output file", fileout)
-        manager.ExportCurrentToCFile(fileout)
+        node.DumpFile(fileout, filetype='c')
         print("All done")
 
 
@@ -439,4 +437,5 @@ def main_objdictedit():
 
 # To support -m objdictgen
 if __name__ == '__main__':
-    main()
+    # pylint: disable=no-value-for-parameter
+    main()  # type: ignore

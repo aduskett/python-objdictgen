@@ -1,7 +1,7 @@
 #
 #    This file is based on objdictgen from CanFestival
 #
-#    Copyright (C) 2022  Svein Seldal, Laerdal Medical AS
+#    Copyright (C) 2022-2023  Svein Seldal, Laerdal Medical AS
 #    Copyright (C): Edouard TISSERANT, Francis DUPIN and Laurent BESSARD
 #
 #    This library is free software; you can redistribute it and/or
@@ -25,15 +25,13 @@ import os
 import sys
 import platform
 import time
+
 import wx
+
 
 # ------------------------------------------------------------------------------
 #                               Exception Handler
 # ------------------------------------------------------------------------------
-
-# FIXME: Unused. Delete this?
-# MAX_TRACEBACK_LIST_SIZE = 20
-
 
 def Display_Exception_Dialog(e_type, e_value, e_tb):
     trcbck_lst = []

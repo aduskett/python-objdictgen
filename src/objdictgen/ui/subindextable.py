@@ -2,7 +2,7 @@
 #
 #    This file is based on objdictgen from CanFestival
 #
-#    Copyright (C) 2022  Svein Seldal, Laerdal Medical AS
+#    Copyright (C) 2022-2023  Svein Seldal, Laerdal Medical AS
 #    Copyright (C): Edouard TISSERANT, Francis DUPIN and Laurent BESSARD
 #
 #    This library is free software; you can redistribute it and/or
@@ -29,9 +29,9 @@ import codecs
 import wx
 import wx.grid
 
-from . import commondialogs as cdia
-from .. import maps
-from ..maps import OD
+from objdictgen.ui import commondialogs as cdia
+from objdictgen import maps
+from objdictgen.maps import OD
 
 
 COL_SIZES = [75, 250, 150, 125, 100, 60, 250, 60]
@@ -140,10 +140,6 @@ class SubindexTable(wx.grid.PyGridTableBase):
         if col < len(self.colnames):
             return self.colnames[col]
         return None
-
-    # FIXME: Unused. Delete this?
-    # def GetRowLabelValues(self, row, translate=True):  # pylint: disable=unused-argument
-    #     return row
 
     def GetValue(self, row, col, translate=True):  # pylint: disable=unused-argument
         if row < self.GetNumberRows():
@@ -302,10 +298,6 @@ class SubindexTable(wx.grid.PyGridTableBase):
 
     def SetCurrentIndex(self, index):
         self.CurrentIndex = index
-
-    # FIXME: Unused. Delete this?
-    # def AppendRow(self, row_content):
-    #     self.data.append(row_content)
 
     def Empty(self):
         self.data = []

@@ -2,7 +2,7 @@
 #
 #    This file is based on objdictgen from CanFestival
 #
-#    Copyright (C) 2022  Svein Seldal, Laerdal Medical AS
+#    Copyright (C) 2022-2023  Svein Seldal, Laerdal Medical AS
 #    Copyright (C): Edouard TISSERANT, Francis DUPIN and Laurent BESSARD
 #
 #    This library is free software; you can redistribute it and/or
@@ -74,11 +74,13 @@ class ODStructTypes:
     }
 
     @classmethod
-    def to_string(cls, val, default=None):
+    def to_string(cls, val, default=''):
+        # type: (type[ODStructTypes], int, str) -> str
         return cls.STRINGS.get(val, default)
 
     @classmethod
     def from_string(cls, val, default=None):
+        # type: (type[ODStructTypes], str, int|None) -> int|None
         try:
             return next(k for k, v in cls.STRINGS.items() if v == val)
         except StopIteration:

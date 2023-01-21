@@ -2,7 +2,7 @@
 #
 #    This file is based on objdictgen from CanFestival
 #
-#    Copyright (C) 2022  Svein Seldal, Laerdal Medical AS
+#    Copyright (C) 2022-2023  Svein Seldal, Laerdal Medical AS
 #    Copyright (C): Edouard TISSERANT, Francis DUPIN and Laurent BESSARD
 #
 #    This library is free software; you can redistribute it and/or
@@ -28,11 +28,11 @@ import os
 import re
 import sys
 from time import localtime, strftime
-from past.builtins import long
+from past.builtins import long  # type: ignore
 from future.utils import raise_from
 
-from . import node as nod
-from .maps import OD
+import objdictgen
+from objdictgen.maps import OD
 
 if sys.version_info[0] >= 3:
     unicode = str  # pylint: disable=invalid-name
@@ -89,7 +89,8 @@ ENTRY_TYPES = {
         "optional": ["DATATYPE", "ACCESSTYPE", "DEFAULTVALUE", "OBJFLAGS"]},
     7: {"name": " VAR",
         "require": ["PARAMETERNAME", "DATATYPE", "ACCESSTYPE"],
-        "optional": ["OBJECTTYPE", "DEFAULTVALUE", "PDOMAPPING", "LOWLIMIT", "HIGHLIMIT", "OBJFLAGS", "PARAMETERVALUE"]},
+        "optional": ["OBJECTTYPE", "DEFAULTVALUE", "PDOMAPPING", "LOWLIMIT",
+                     "HIGHLIMIT", "OBJFLAGS", "PARAMETERVALUE"]},
     8: {"name": "n ARRAY",
         "require": ["PARAMETERNAME", "OBJECTTYPE", "SUBNUMBER"],
         "optional": ["OBJFLAGS"]},
@@ -667,7 +668,7 @@ def GenerateCPJContent(nodelist):
 # Function that generates Node from an EDS file
 def GenerateNode(filepath, nodeid=0):
     # Create a new node
-    node = nod.Node(id=nodeid)
+    node = objdictgen.Node(id=nodeid)
 
     # Parse file and extract dictionary of EDS entry
     eds_dict = ParseEDSFile(filepath)
@@ -687,7 +688,7 @@ def GenerateNode(filepath, nodeid=0):
         try:
             # Import profile
             profilename = "DS-%d" % profilenb
-            mapping, menuentries = nod.ImportProfile(profilename)
+            mapping, menuentries = objdictgen.ImportProfile(profilename)
             node.ProfileName = profilename
             node.Profile = mapping
             node.SpecificMenu = menuentries

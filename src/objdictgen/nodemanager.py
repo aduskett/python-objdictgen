@@ -2,7 +2,7 @@
 #
 #    This file is based on objdictgen from CanFestival
 #
-#    Copyright (C) 2022  Svein Seldal, Laerdal Medical AS
+#    Copyright (C) 2022-2023  Svein Seldal, Laerdal Medical AS
 #    Copyright (C): Edouard TISSERANT, Francis DUPIN and Laurent BESSARD
 #
 #    This library is free software; you can redistribute it and/or
@@ -27,45 +27,32 @@ from builtins import range
 import os
 import re
 import codecs
+import logging
 import colorama
 
-from .nosis import pickle as nosis
-from . import node as nod
-from . import eds_utils, gen_cfile
-from . import jsonod
-from . import maps
-from .maps import OD, MAPPING_DICTIONARY
-from . import dbg, warning
+from objdictgen.node import Node, Find, ImportProfile, BE_to_LE, LE_to_BE
+from objdictgen import maps
+from objdictgen.maps import OD, MAPPING_DICTIONARY
+
+log = logging.getLogger('objdictgen')
 
 Fore = colorama.Fore
 Style = colorama.Style
 
-UndoBufferLength = 20
+UNDO_BUFFER_LENGTH = 20
 
 type_model = re.compile(r'([\_A-Z]*)([0-9]*)')
 range_model = re.compile(r'([\_A-Z]*)([0-9]*)\[([\-0-9]*)-([\-0-9]*)\]')
 
 # ID for the file viewed
-CurrentID = 0
+CURRENTID = 0
 
 
 # Returns a new id
 def GetNewId():
-    global CurrentID
-    CurrentID += 1
-    return CurrentID
-
-
-def isXml(filepath):
-    with open(filepath, 'r') as f:
-        header = f.read(5)
-        return header == "<?xml"
-
-
-def isEds(filepath):
-    with open(filepath, 'r') as f:
-        header = f.readline().rstrip()
-        return header == "[FileInfo]"
+    global CURRENTID  # pylint: disable=global-statement
+    CURRENTID += 1
+    return CURRENTID
 
 
 class UndoBuffer(object):
@@ -87,7 +74,7 @@ class UndoBuffer(object):
             self.MinIndex = 0
             self.MaxIndex = 0
         # Initialising buffer with currentstate at the first place
-        for i in range(UndoBufferLength):
+        for i in range(UNDO_BUFFER_LENGTH):
             self.Buffer.append(currentstate if not i else None)
         # Initialising index of state saved
         if issaved:
@@ -99,7 +86,7 @@ class UndoBuffer(object):
         """
         Add a new state in buffer
         """
-        self.CurrentIndex = (self.CurrentIndex + 1) % UndoBufferLength
+        self.CurrentIndex = (self.CurrentIndex + 1) % UNDO_BUFFER_LENGTH
         self.Buffer[self.CurrentIndex] = currentstate
         # Actualising buffer limits
         self.MaxIndex = self.CurrentIndex
@@ -107,7 +94,7 @@ class UndoBuffer(object):
             # If the removed state was the state saved, there is no state saved in the buffer
             if self.LastSave == self.MinIndex:
                 self.LastSave = -1
-            self.MinIndex = (self.MinIndex + 1) % UndoBufferLength
+            self.MinIndex = (self.MinIndex + 1) % UNDO_BUFFER_LENGTH
         self.MinIndex = max(self.MinIndex, 0)
 
     def Current(self):
@@ -121,7 +108,7 @@ class UndoBuffer(object):
         Change current state to previous in buffer and return new current state
         """
         if self.CurrentIndex != self.MinIndex:
-            self.CurrentIndex = (self.CurrentIndex - 1) % UndoBufferLength
+            self.CurrentIndex = (self.CurrentIndex - 1) % UNDO_BUFFER_LENGTH
             return self.Buffer[self.CurrentIndex]
         return None
 
@@ -130,7 +117,7 @@ class UndoBuffer(object):
         Change current state to next in buffer and return new current state
         """
         if self.CurrentIndex != self.MaxIndex:
-            self.CurrentIndex = (self.CurrentIndex + 1) % UndoBufferLength
+            self.CurrentIndex = (self.CurrentIndex + 1) % UNDO_BUFFER_LENGTH
             return self.Buffer[self.CurrentIndex]
         return None
 
@@ -175,9 +162,9 @@ class NodeManager(object):
         self.CurrentNode = None
         self.UndoBuffers = {}
 
-# ------------------------------------------------------------------------------
-#                         Type and Map Variable Lists
-# ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
+    #                         Type and Map Variable Lists
+    # --------------------------------------------------------------------------
 
     def GetCurrentTypeList(self):
         """
@@ -195,20 +182,20 @@ class NodeManager(object):
             return self.CurrentNode.GetMapList()
         return ""
 
-# ------------------------------------------------------------------------------
-#                        Create Load and Save Functions
-# ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
+    #                        Create Load and Save Functions
+    # --------------------------------------------------------------------------
 
     def CreateNewNode(self, name, id, type, description, profile, filepath, nmt, options):  # pylint: disable=redefined-builtin, invalid-name
         """
         Create a new node and add a new buffer for storing it
         """
         # Create a new node
-        node = nod.Node()
+        node = Node()
         # Load profile given
         if profile != "None":
             # Import profile
-            mapping, menuentries = nod.ImportProfile(filepath)
+            mapping, menuentries = ImportProfile(filepath)
             node.ProfileName = profile
             node.Profile = mapping
             node.SpecificMenu = menuentries
@@ -232,7 +219,7 @@ class NodeManager(object):
         for option in options:
             if option == "DS302":
                 # Import profile
-                mapping, menuentries = nod.ImportProfile("DS-302")
+                mapping, menuentries = ImportProfile("DS-302")
                 self.CurrentNode.DS302 = mapping
                 self.CurrentNode.SpecificMenu.extend(menuentries)
             elif option == "GenSYNC":
@@ -263,21 +250,20 @@ class NodeManager(object):
             self.AddSubentriesToCurrent(idx, num)
         return index
 
-    def OpenFileInCurrent(self, filepath):
+    def OpenFileInCurrent(self, filepath, load=True):
         """
         Open a file and store it in a new buffer
         """
-        if isXml(filepath):
-            dbg("Loading XML OD '%s'" % filepath)
-            return self.ImportCurrentFromODFile(filepath)
-        if isEds(filepath):
-            dbg("Loading EDS '%s'" % filepath)
-            return self.ImportCurrentFromEDSFile(filepath, True)
-        dbg("Loading JSON OD '%s'" % filepath)
-        return self.ImportCurrentFromJsonFile(filepath)
+        node = Node.LoadFile(filepath)
 
-    def SaveCurrentInFile(self, filepath=None, filetype=None, compact=False,
-                          sort=False, internal=False, validate=True):
+        self.CurrentNode = node
+        self.CurrentNode.ID = 0
+
+        index = self.AddNodeBuffer(self.CurrentNode.Copy(), load)
+        self.SetCurrentFilePath(filepath if load else None)
+        return index
+
+    def SaveCurrentInFile(self, filepath=None, filetype='', **kwargs):
         """
         Save current node in a file
         """
@@ -287,28 +273,20 @@ class NodeManager(object):
             if not filepath:
                 return False
 
+        node = self.CurrentNode
+        if not node:
+            return False
+
         # Save node in file
         ext = os.path.splitext(filepath.lower())[1].lstrip('.')
         if filetype:
             ext = filetype.lower()
 
-        if ext == 'od':
-            dbg("Writing XML OD '%s'" % filepath)
-            self.ExportCurrentToODFile(filepath)
-        elif ext == 'eds':
-            dbg("Writing EDS '%s'" % filepath)
-            self.ExportCurrentToEDSFile(filepath)
-        elif ext == 'json':
-            dbg("Writing JSON OD '%s'" % filepath)
-            self.ExportCurrentToJsonFile(filepath, compact=compact, sort=sort, internal=internal, validate=validate)
-        elif ext == 'c':
-            dbg("Writing C files '%s'" % filepath)
-            self.ExportCurrentToCFile(filepath)
-        else:
-            raise ValueError("Unknown file suffix, unable to write file")
+        # Save the data
+        node.DumpFile(filepath, filetype=ext, **kwargs)
 
         # Update saved state in buffer
-        if ext != 'c':
+        if ext not in ('c', 'eds'):
             self.UndoBuffers[self.NodeIndex].CurrentSaved()
         return True
 
@@ -335,88 +313,9 @@ class NodeManager(object):
             return True
         return False
 
-    def ImportCurrentFromODFile(self, filepath):
-        """
-        Open an od file and store it in a new buffer
-        """
-        with open(filepath, "r") as f:
-            node = nosis.xmlload(f)
-
-        self.CurrentNode = node
-        self.CurrentNode.ID = 0
-        # Add a new buffer and defining current state
-        index = self.AddNodeBuffer(self.CurrentNode.Copy(), True)
-        self.SetCurrentFilePath(filepath)
-        return index
-
-    def ExportCurrentToODFile(self, filepath):
-        """
-        Export to an eds file and store it in a new buffer if no node edited
-        """
-        # Save node in file
-        with open(filepath, "w") as f:
-            # Never generate an od with IndexOrder in it
-            nosis.xmldump(f, self.CurrentNode, omit=('IndexOrder', ))
-
-    def ImportCurrentFromEDSFile(self, filepath, load=False):
-        """
-        Import an eds file and store it in a new buffer if no node edited
-        """
-        # Generate node from definition in a xml file
-        node = eds_utils.GenerateNode(filepath)
-        self.CurrentNode = node
-        index = self.AddNodeBuffer(self.CurrentNode.Copy(), load)
-        self.SetCurrentFilePath(filepath if load else None)
-        return index
-
-    def ExportCurrentToEDSFile(self, filepath):
-        """
-        Export to an eds file and store it in a new buffer if no node edited
-        """
-        eds_utils.GenerateEDSFile(filepath, self.CurrentNode)
-
-    def ExportCurrentToCFile(self, filepath):
-        """
-        Build the C definition of Object Dictionary for current node
-        """
-        if not self.CurrentNode:
-            raise ValueError("No node loaded")
-        gen_cfile.GenerateFile(filepath, self.CurrentNode)
-
-    def ExportCurrentToJsonFile(self, filepath, compact=False, sort=False, internal=False, validate=True):
-        """
-        Export JSON
-        """
-        jdata = jsonod.GenerateJson(self.CurrentNode, compact=compact, sort=sort, internal=internal, validate=validate)
-
-        with open(filepath, "w") as f:
-            f.write(jdata)
-
-    def ImportCurrentFromJsonFile(self, filepath):
-        """
-        Open a JSON file and store it in a new buffer
-        """
-        # Open and load file
-        with open(filepath, "r") as f:
-            contents = f.read()
-        return self.ImportCurrentFromJson(contents, filepath)
-
-    def ImportCurrentFromJson(self, contents, filepath=None):
-        """
-        Import JSON data and store it in a new buffer
-        """
-        node = jsonod.GenerateNode(contents)
-        self.CurrentNode = node
-        self.CurrentNode.ID = 0
-        # Add a new buffer and defining current state
-        index = self.AddNodeBuffer(self.CurrentNode.Copy(), True)
-        if filepath:
-            self.SetCurrentFilePath(filepath)
-        return index
-
-# ------------------------------------------------------------------------------
-#                        Add Entries to Current Functions
-# ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
+    #                        Add Entries to Current Functions
+    # --------------------------------------------------------------------------
 
     def AddSubentriesToCurrent(self, index, number, node=None):
         """
@@ -715,9 +614,9 @@ class NodeManager(object):
             self.CurrentNode.AddEntry(index, 2, length)
         self.BufferCurrentNode()
 
-# ------------------------------------------------------------------------------
-#                      Modify Entry and Mapping Functions
-# ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
+    #                      Modify Entry and Mapping Functions
+    # --------------------------------------------------------------------------
 
     def SetCurrentEntryCallbacks(self, index, value):
         if self.CurrentNode and self.CurrentNode.IsEntry(index):
@@ -758,7 +657,7 @@ class NodeManager(object):
                 else:
                     subentry_infos = self.GetSubentryInfos(index, subindex)
                     type_ = subentry_infos["type"]
-                    dic = {k: v for k, v in maps.CUSTOMISABLE_TYPES}
+                    dic = dict(maps.CUSTOMISABLE_TYPES)
                     if type_ not in dic:
                         type_ = node.GetEntry(type_)[1]
                     if dic[type_] == 0:
@@ -840,9 +739,9 @@ class NodeManager(object):
                 self.CurrentNode.RemoveEntry(index, 3)
         self.BufferCurrentNode()
 
-# ------------------------------------------------------------------------------
-#                      Current Buffering Management Functions
-# ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
+    #                      Current Buffering Management Functions
+    # --------------------------------------------------------------------------
 
     def BufferCurrentNode(self):
         self.UndoBuffers[self.NodeIndex].Buffering(self.CurrentNode.Copy())
@@ -885,10 +784,6 @@ class NodeManager(object):
         self.FilePaths.pop(index)
         self.FileNames.pop(index)
 
-    # FIXME: Unused. Delete this?
-    # def GetCurrentNodeIndex(self):
-    #     return self.NodeIndex
-
     def GetCurrentFilename(self):
         return self.GetFilename(self.NodeIndex)
 
@@ -921,9 +816,9 @@ class NodeManager(object):
         last = self.UndoBuffers[self.NodeIndex].IsLast()
         return not first, not last
 
-# ------------------------------------------------------------------------------
-#                         Profiles Management Functions
-# ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
+    #                         Profiles Management Functions
+    # --------------------------------------------------------------------------
 
     def GetCurrentCommunicationLists(self):
         list_ = []
@@ -986,20 +881,14 @@ class NodeManager(object):
             node.RemoveIndex(index)
 
 
-# ------------------------------------------------------------------------------
-#                         Node State and Values Functions
-# ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
+    #                         Node State and Values Functions
+    # --------------------------------------------------------------------------
 
     def GetCurrentNodeName(self):
         if self.CurrentNode:
             return self.CurrentNode.Name
         return ""
-
-    # FIXME: Unused. Delete this?
-    # def GetCurrentNodeCopy(self):
-    #     if self.CurrentNode:
-    #         return self.CurrentNode.Copy()
-    #     return None
 
     def GetCurrentNodeID(self, node=None):  # pylint: disable=unused-argument
         if self.CurrentNode:
@@ -1023,13 +912,13 @@ class NodeManager(object):
     def GetCurrentNodeDefaultStringSize(self):
         if self.CurrentNode:
             return self.CurrentNode.DefaultStringSize
-        return nod.Node.DefaultStringSize
+        return Node.DefaultStringSize
 
     def SetCurrentNodeDefaultStringSize(self, size):
         if self.CurrentNode:
             self.CurrentNode.DefaultStringSize = size
         else:
-            nod.Node.DefaultStringSize = size
+            Node.DefaultStringSize = size
 
     def GetCurrentProfileName(self):
         if self.CurrentNode:
@@ -1040,18 +929,6 @@ class NodeManager(object):
         if self.CurrentNode:
             return self.CurrentNode.IsEntry(index)
         return False
-
-    # FIXME: Unused. Delete this?
-    # def GetCurrentEntry(self, index, subindex=None, compute=True):
-    #     if self.CurrentNode:
-    #         return self.CurrentNode.GetEntry(index, subindex, compute)
-    #     return None
-
-    # FIXME: Unused. Delete this?
-    # def GetCurrentParamsEntry(self, index, subindex=None):
-    #     if self.CurrentNode:
-    #         return self.CurrentNode.GetParamsEntry(index, subindex)
-    #     return None
 
     def GetCurrentValidIndexes(self, min_, max_):
         return [
@@ -1168,7 +1045,7 @@ class NodeManager(object):
                                     fmt = "0x%0" + str(int(values[1]) // 4) + "X"
                                     dic["value"] = fmt % dic["value"]
                                 except ValueError as exc:
-                                    dbg("ValueError: '%s': %s" % (values[1], exc))
+                                    log.debug("ValueError: '%s': %s" % (values[1], exc))
                                     raise  # FIXME: Originial code swallows exception
                                 editor["value"] = "string"
                             if values[0] == "INTEGER":
@@ -1194,16 +1071,16 @@ class NodeManager(object):
         if self.CurrentNode.IsEntry(0x1F22, node_id):
             dcf_value = self.CurrentNode.GetEntry(0x1F22, node_id)
             if dcf_value:
-                nbparams = nod.BE_to_LE(dcf_value[:4])
+                nbparams = BE_to_LE(dcf_value[:4])
             else:
                 nbparams = 0
-            new_value = nod.LE_to_BE(nbparams + 1, 4) + dcf_value[4:]
-            new_value += nod.LE_to_BE(index, 2) + nod.LE_to_BE(subindex, 1) + nod.LE_to_BE(size, 4) + nod.LE_to_BE(value, size)
+            new_value = LE_to_BE(nbparams + 1, 4) + dcf_value[4:]
+            new_value += LE_to_BE(index, 2) + LE_to_BE(subindex, 1) + LE_to_BE(size, 4) + LE_to_BE(value, size)
             self.CurrentNode.SetEntry(0x1F22, node_id, new_value)
 
-# ------------------------------------------------------------------------------
-#                         Node Informations Functions
-# ------------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
+    #                         Node Informations Functions
+    # --------------------------------------------------------------------------
 
     def GetCustomisedTypeValues(self, index):
         if self.CurrentNode:
@@ -1215,17 +1092,17 @@ class NodeManager(object):
     def GetEntryName(self, index, compute=True):
         if self.CurrentNode:
             return self.CurrentNode.GetEntryName(index, compute)
-        return nod.FindEntryName(index, MAPPING_DICTIONARY, compute)
+        return Find.EntryName(index, MAPPING_DICTIONARY, compute)
 
     def GetEntryInfos(self, index, compute=True):
         if self.CurrentNode:
             return self.CurrentNode.GetEntryInfos(index, compute)
-        return nod.FindEntryInfos(index, MAPPING_DICTIONARY, compute)
+        return Find.EntryInfos(index, MAPPING_DICTIONARY, compute)
 
     def GetSubentryInfos(self, index, subindex, compute=True):
         if self.CurrentNode:
             return self.CurrentNode.GetSubentryInfos(index, subindex, compute)
-        result = nod.FindSubentryInfos(index, subindex, MAPPING_DICTIONARY, compute)
+        result = Find.SubentryInfos(index, subindex, MAPPING_DICTIONARY, compute)
         if result:
             result["user_defined"] = False
         return result
@@ -1233,17 +1110,17 @@ class NodeManager(object):
     def GetTypeIndex(self, typename):
         if self.CurrentNode:
             return self.CurrentNode.GetTypeIndex(typename)
-        return nod.FindTypeIndex(typename, MAPPING_DICTIONARY)
+        return Find.TypeIndex(typename, MAPPING_DICTIONARY)
 
     def GetTypeName(self, typeindex):
         if self.CurrentNode:
             return self.CurrentNode.GetTypeName(typeindex)
-        return nod.FindTypeName(typeindex, MAPPING_DICTIONARY)
+        return Find.TypeName(typeindex, MAPPING_DICTIONARY)
 
     def GetTypeDefaultValue(self, typeindex):
         if self.CurrentNode:
             return self.CurrentNode.GetTypeDefaultValue(typeindex)
-        return nod.FindTypeDefaultValue(typeindex, MAPPING_DICTIONARY)
+        return Find.TypeDefaultValue(typeindex, MAPPING_DICTIONARY)
 
     def GetMapVariableList(self, compute=True):
         if self.CurrentNode:
@@ -1253,7 +1130,7 @@ class NodeManager(object):
     def GetMandatoryIndexes(self):
         if self.CurrentNode:
             return self.CurrentNode.GetMandatoryIndexes()
-        return nod.FindMandatoryIndexes(MAPPING_DICTIONARY)
+        return Find.MandatoryIndexes(MAPPING_DICTIONARY)
 
     def GetCustomisableTypes(self):
         return {
@@ -1265,208 +1142,3 @@ class NodeManager(object):
         if self.CurrentNode:
             return self.CurrentNode.SpecificMenu
         return []
-
-# ------------------------------------------------------------------------------
-#                         Additional Node Functions
-# ------------------------------------------------------------------------------
-
-    def Validate(self, fix=False):
-        ''' Verify any inconsistencies when loading an OD. The function will
-            attempt to fix the data if the correct flag is enabled.
-        '''
-        node = self.CurrentNode
-        if not node:
-            raise ValueError("No node loaded")
-
-        def _warn(text):
-            name = node.GetEntryName(index)
-            warning("WARNING: 0x{:04x} ({}) '{}': {}".format(index, index, name, text))
-
-        # Iterate over all the values and user parameters
-        params = set(node.Dictionary.keys())
-        params.update(node.ParamsDictionary.keys())
-        for index in params:
-
-            #
-            # Test if ParamDictionary exists without Dictionary
-            #
-            if index not in node.Dictionary:
-                _warn("Parameter without any value")
-                if fix:
-                    del node.ParamsDictionary[index]
-                    _warn("FIX: Deleting ParamDictionary entry")
-                continue
-
-            base = node.GetEntryInfos(index)
-            assert base  # For mypy
-            is_var = base["struct"] in (OD.VAR, OD.NVAR)
-
-            #
-            # Test if ParamDictionary matches Dictionary
-            #
-            dictlen = 1 if is_var else len(node.Dictionary.get(index, []))
-            params = {
-                k: v
-                for k, v in node.ParamsDictionary.get(index, {}).items()
-                if isinstance(k, int)
-            }
-            excessive_params = {k for k in params if k > dictlen}
-            if excessive_params:
-                dbg("Excessive params: {}".format(excessive_params))
-                _warn("Excessive user parameters ({}) or too few dictionary values ({})".format(len(excessive_params), dictlen))
-
-                if index in node.Dictionary:
-                    for idx in excessive_params:
-                        del node.ParamsDictionary[index][idx]
-                        del params[idx]
-                    _warn("FIX: Deleting ParamDictionary entries {}".format(", ".join(str(k) for k in excessive_params)))
-
-                    # If params have been emptied because of this, remove it altogether
-                    if not params:
-                        del node.ParamsDictionary[index]
-                        _warn("FIX: Deleting ParamDictionary entry")
-
-        # Iterate over all user mappings
-        params = set(node.UserMapping.keys())
-        for index in params:
-            for idx, subvals in enumerate(node.UserMapping[index]['values']):
-
-                #
-                # Test if subindex have a name
-                #
-                if not subvals["name"]:
-                    _warn("Sub index {}: Missing name".format(idx))
-                    if fix:
-                        subvals["name"] = "Subindex {}".format(idx)
-                        _warn("FIX: Set name to '{}'".format(subvals["name"]))
-
-
-    def GetPrintLine(self, index, unused=False, compact=False):
-        node = self.CurrentNode
-        if not node:
-            return
-
-        obj = node.GetEntryInfos(index)
-        if not obj:
-            return '', {}
-
-        # Get the node flags
-        flags = node.GetEntryFlags(index)
-        if 'Unused' in flags and not unused:
-            return '', {}
-
-        # Replace flags for formatting
-        for i, flag in enumerate(flags):
-            if flag == 'Missing':
-                flags[i] = Fore.RED + ' *MISSING* ' + Style.RESET_ALL
-
-        # Print formattings
-        fmt = {
-            'key': "{}0x{:04x} ({}){}".format(Fore.GREEN, index, index, Style.RESET_ALL),
-            'name': node.GetEntryName(index),
-            'struct': maps.ODStructTypes.to_string(obj.get('struct'), '???').upper(),
-            'flags': "  {}{}{}".format(Fore.CYAN, ', '.join(flags), Style.RESET_ALL) if flags else '',
-            'pre': '    ' if not compact else '',
-        }
-
-        # ** PRINT PARAMETER **
-        return "{pre}{key}  {name}   [{struct}]{flags}", fmt
-
-
-    def GetPrintParams(self, keys=None, short=False, compact=False, unused=False, verbose=False, raw=False):
-        """
-        Generator for printing the dictionary values
-        """
-
-        node = self.CurrentNode
-        if not node:
-            return
-
-        # Get the indexes to print and determine the order
-        keys = keys or node.GetAllParameters(sort=True)
-
-        index_range = None
-        for k in keys:
-
-            line, fmt = self.GetPrintLine(k, unused=unused, compact=compact)
-            if not line:
-                continue
-
-            # Print the parameter range header
-            ir = nod.GetIndexRange(k)
-            if index_range != ir:
-                index_range = ir
-                if not compact:
-                    yield Fore.YELLOW + ir["description"] + Style.RESET_ALL
-
-            # Yield the parameter header
-            yield line.format(**fmt)
-
-            # Omit printing sub index data if:
-            if short or k not in node.Dictionary:
-                continue
-
-            infos = []
-            for info in node.GetAllSubentryInfos(k, compute=not raw):
-
-                # Prepare data for printing
-
-                i = info['subindex']
-                typename = node.GetTypeName(info['type'])
-                value = info['value']
-
-                # Special formatting on value
-                if isinstance(value, str):
-                    value = '"' + value + '"'
-                elif i and index_range and index_range["name"] in ('rpdom', 'tpdom'):
-                    index, subindex, _ = node.GetMapIndex(value)
-                    pdo = node.GetSubentryInfos(index, subindex)
-                    suffix = '???' if value else ''
-                    if pdo:
-                        suffix = str(pdo["name"])
-                    value = "0x{:x}  {}".format(value, suffix)
-                elif i and value and (k in (4120, ) or 'COB ID' in info["name"]):
-                    value = "0x{:x}".format(value)
-                else:
-                    value = str(value)
-
-                comment = info['comment'] or ''
-                if comment:
-                    comment = '{}/* {} */{}'.format(Fore.LIGHTBLACK_EX, info.get('comment'), Style.RESET_ALL)
-
-                # Omit printing this subindex if:
-                if not verbose and i == 0 and fmt['struct'] in ('RECORD', 'NRECORD', 'ARRAY', 'NARRAY') and not comment:
-                    continue
-
-                # Print formatting
-                infos.append({
-                    'i': "{:02d}".format(i),
-                    'access': info['access'],
-                    'pdo': 'P' if info['pdo'] else ' ',
-                    'name': info['name'],
-                    'type': typename,
-                    'value': value,
-                    'comment': comment,
-                    'pre': fmt['pre'],
-                })
-
-            if not infos:
-                continue
-
-            # Calculate the max width for each of the columns
-            w = {
-                col: max(len(str(row[col])) for row in infos) or ''
-                for col in infos[0]
-            }
-
-            # Generate a format string based on the calculcated column widths
-            fmt = "{pre}    {i:%ss}  {access:%ss}  {pdo:%ss}  {name:%ss}  {type:%ss}  {value:%ss}  {comment}" % (
-                         w["i"],  w["access"],  w["pdo"],  w["name"],  w["type"],  w["value"]  # noqa: E126, E241
-            )
-
-            # Print each line using the generated format string
-            for info in infos:
-                yield fmt.format(**info)
-
-            if not compact and infos:
-                yield ""

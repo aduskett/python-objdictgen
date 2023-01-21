@@ -2,7 +2,7 @@
 #
 #    This file is based on objdictgen from CanFestival
 #
-#    Copyright (C) 2022  Svein Seldal, Laerdal Medical AS
+#    Copyright (C) 2022-2023  Svein Seldal, Laerdal Medical AS
 #    Copyright (C): Edouard TISSERANT, Francis DUPIN and Laurent BESSARD
 #
 #    This library is free software; you can redistribute it and/or
@@ -29,7 +29,7 @@ import shutil
 import errno
 from future.utils import raise_from
 
-from . import eds_utils
+from objdictgen import eds_utils
 
 
 # ------------------------------------------------------------------------------
@@ -59,20 +59,8 @@ class NodeList(object):
             root_path = self.Root
         return os.path.join(root_path, "eds")
 
-    # FIXME: Unused. Delete this?
-    # def SetRoot(self, newrootpath):
-    #     if os.path.isdir(newrootpath):
-    #         self.Root = newrootpath
-    #         self.Manager.SetCurrentFilePath(os.path.join(self.Root, "master.od"))
-    #         return True
-    #     return False
-
     def GetMasterNodeID(self):
         return self.Manager.GetCurrentNodeID()
-
-    # FIXME: Unused. Delete this?
-    # def GetSlaveNumber(self):
-    #     return len(self.SlaveNodes)
 
     def GetSlaveName(self, idx):
         return self.SlaveNodes[idx]["Name"]
@@ -185,6 +173,7 @@ class NodeList(object):
                 raise_from(ValueError("Unable to load CPJ file '%s'" % (cpjpath, )), exc)
 
     def SaveNodeList(self, netname=None):
+        cpjpath = ''  # For linting
         try:
             cpjpath = os.path.join(self.Root, "nodelist.cpj")
             content = eds_utils.GenerateCPJContent(self)
@@ -275,11 +264,13 @@ def main(projectdir):
 
     nodelist.LoadProject(projectdir)
     print("MasterNode :")
-    for list in manager.GetPrintParams(raw=True):
-        print(list)
+    node = manager.CurrentNode
+    if node:
+        for line in node.GetPrintParams(raw=True):
+            print(line)
     print()
     for nodeid, node in nodelist.SlaveNodes.items():
         print("SlaveNode name=%s id=0x%2.2X :" % (node["Name"], nodeid))
-        for list in node["Node"].PrintGen():
-            print(list)
+        for line in node["Node"].GetPrintParams():
+            print(line)
         print()
