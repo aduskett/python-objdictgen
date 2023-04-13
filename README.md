@@ -7,13 +7,13 @@ communication protocol.
 
 This repo is located:
 
-> https://github.com/Laerdal/python-objdictgen
+> https://github.com/laerdal-svg/python-objdictgen
 
 objdictgen includes tools to generate c code that works in tandem with a
 canfestival library. This tool has been built to work together with the
 Laerdal Medical fork for the canfestival library:
 
-> https://github.com/Laerdal/canfestival-laerdal
+> https://github.com/laerdal-svg/canfestival-laerdal
 
 objdictgen is a tool to parse, view and manipulate files containing object
 dictionary (OD). An object dictionary is entries with data and configuration
@@ -37,7 +37,7 @@ python2, as python2 is required for running the UI tools.
 
 This tool is a fork from upstream canfestival-3-asc repo:
 
-> https://github.com/Laerdal/canfestival-3-asc
+> https://github.com/laerdal-svg/canfestival-3-asc
 
 
 ## Install
