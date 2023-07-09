@@ -63,9 +63,9 @@ for Python 2.7. Download and install both.
 
 To setup the virtual environment run (assuming git bash):
 
-    $ py.exe -2 -mvirtualenv --system-site-packages venv
-    $ venv/Scripts/python -mpip install --upgrade pip wheel setuptools
-    $ venv/Scripts/pip install .
+    $ py.exe -2 -mvirtualenv --system-site-packages venv-27
+    $ venv-27/Scripts/python -mpip install --upgrade pip wheel setuptools
+    $ venv-27/Scripts/pip install .
 
 NOTE: The `py.exe` tool is only shipped with recent Python 3.
 
