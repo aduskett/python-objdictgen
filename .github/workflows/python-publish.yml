@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["2.7", "3.x"]
+        python-version: ["3.x"]
 
     steps:
     - uses: actions/checkout@v3
@@ -34,9 +34,9 @@ jobs:
       run: |
         python -m pip install --upgrade pip setuptools wheel
         python -m pip install build
-    - name: Build 2.7 package
-      if: ${{ matrix.python-version == '2.7' }}
-      run: python -m build --wheel
+    # - name: Build 2.7 package
+    #   if: ${{ matrix.python-version == '2.7' }}
+    #   run: python -m build --wheel
     - name: Build package
       if: ${{ matrix.python-version != '2.7' }}
       run: python -m build
