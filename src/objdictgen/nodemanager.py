@@ -335,14 +335,14 @@ class NodeManager(object):
             default = subentry_infos["default"]
         else:
             default = self.GetTypeDefaultValue(subentry_infos["type"])
-        # First case entry is record
+        # First case entry is array
         if infos["struct"] & OD.IdenticalSubindexes:
             for i in range(1, min(number, subentry_infos["nbmax"] - length) + 1):
                 node.AddEntry(index, length + i, default)
             if not disable_buffer:
                 self.BufferCurrentNode()
             return
-        # Second case entry is array, only possible for manufacturer specific
+        # Second case entry is record (and array), only possible for manufacturer specific
         if infos["struct"] & OD.MultipleSubindexes and 0x2000 <= index <= 0x5FFF:
             values = {"name": "Undefined", "type": 5, "access": "rw", "pdo": True}
             for i in range(1, min(number, 0xFE - length) + 1):
@@ -363,8 +363,8 @@ class NodeManager(object):
             nbmin = infos["nbmin"]
         else:
             nbmin = 1
-        # Entry is a record, or is an array of manufacturer specific
-        if infos["struct"] & OD.IdenticalSubindexes or 0x2000 <= index <= 0x5FFF and infos["struct"] & OD.IdenticalSubindexes:
+        # Entry is an array, or is an array/record of manufacturer specific
+        if infos["struct"] & OD.IdenticalSubindexes or 0x2000 <= index <= 0x5FFF and infos["struct"] & OD.MultipleSubindexes:
             for i in range(min(number, length - nbmin)):
                 self.RemoveCurrentVariable(index, length - i)
             self.BufferCurrentNode()
@@ -1043,10 +1043,14 @@ class NodeManager(object):
                                 dic["buffer_size"] = ""
                                 try:
                                     fmt = "0x%0" + str(int(values[1]) // 4) + "X"
-                                    dic["value"] = fmt % dic["value"]
                                 except ValueError as exc:
                                     log.debug("ValueError: '%s': %s" % (values[1], exc))
                                     raise  # FIXME: Originial code swallows exception
+                                try:
+                                    dic["value"] = fmt % dic["value"]
+                                except TypeError as exc:
+                                    log.debug("ValueError: '%s': %s" % (dic["value"], exc))
+                                    pass # FIXME: dict["value"] can contain $NODEID for PDOs which is not an int i.e. $NODEID+0x200
                                 editor["value"] = "string"
                             if values[0] == "INTEGER":
                                 editor["value"] = "number"
