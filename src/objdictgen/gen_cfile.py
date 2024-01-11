@@ -78,6 +78,8 @@ def GetValidTypeInfos(context, typename, items=None):
         elif values[0] == "DOMAIN":
             size = 0
             for item in items:
+                if isinstance(item, str):
+                    item = item.replace('\\x00', chr(0))
                 size = max(size, len(item))
             typeinfos = ("UNS8", size, "domain", False)
         elif values[0] == "BOOLEAN":
@@ -97,7 +99,7 @@ def ComputeValue(type_, value):
     if type_ == "visible_string":
         return '"%s"' % value, ""
     if type_ == "domain":
-        return '"%s"' % ''.join(["\\x%2.2x" % ord(char) for char in value]), ""
+        return '"%s"' % ''.join(["\\x%2.2x" % ord(char) for char in value.replace('\\x00', chr(0))]), ""
     if type_.startswith("real"):
         return "%f" % value, ""
     # value is integer; make sure to handle negative numbers correctly
@@ -313,6 +315,9 @@ def GenerateFileContent(node, headerfilepath, pointers_dict=None):
         # Generating Dictionary C++ entry
         strindex += "                    subindex %(NodeName)s_Index%(index)04X[] = \n                     {\n" % texts
         generateSubIndexArrayComment = True
+        for i in range(0, len(values)):
+            if isinstance(values[i], str):
+                values[i] = values[i].replace('\\x00', chr(0))
         for subindex, _ in enumerate(values):
             subentry_infos = node.GetSubentryInfos(index, subindex)
             params_infos = node.GetParamsEntry(index, subindex)
