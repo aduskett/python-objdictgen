@@ -137,7 +137,9 @@ class NodeList(object):
         if os.path.isfile(masterpath):
             index = self.Manager.OpenFileInCurrent(masterpath)
         else:
-            index = self.Manager.CreateNewNode("MasterNode", 0x00, "master", "", "None", "", "Heartbeat", ["DS302"])
+            index = self.Manager.CreateNewNode(
+                "MasterNode", 0x00, "master", "", "None", "", "Heartbeat", ["DS302"]
+            )
         return index
 
     def SaveMasterNode(self, netname=None):
@@ -148,7 +150,9 @@ class NodeList(object):
         try:
             self.Manager.SaveCurrentInFile(masterpath)
         except Exception as exc:  # pylint: disable=broad-except
-            raise_from(ValueError("Fail to save master node in '%s'" % (masterpath, )), exc)
+            raise_from(
+                ValueError("Fail to save master node in '%s'" % (masterpath,)), exc
+            )
 
     def LoadSlaveNodes(self, netname=None):
         cpjpath = os.path.join(self.Root, "nodelist.cpj")
@@ -170,10 +174,10 @@ class NodeList(object):
                             self.AddSlaveNode(node["Name"], nodeid, node["DCFName"])
                 self.Changed = False
             except Exception as exc:  # pylint: disable=broad-except
-                raise_from(ValueError("Unable to load CPJ file '%s'" % (cpjpath, )), exc)
+                raise_from(ValueError("Unable to load CPJ file '%s'" % (cpjpath,)), exc)
 
     def SaveNodeList(self, netname=None):
-        cpjpath = ''  # For linting
+        cpjpath = ""  # For linting
         try:
             cpjpath = os.path.join(self.Root, "nodelist.cpj")
             content = eds_utils.GenerateCPJContent(self)

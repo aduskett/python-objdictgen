@@ -35,7 +35,6 @@ if sys.version_info[0] >= 3:
 
 
 class NodeEditorTemplate(object):
-
     EDITMENU_ID = None
 
     def __init__(self, manager, frame, mode_solo):
@@ -130,15 +129,19 @@ class NodeEditorTemplate(object):
                     self.Frame.AddMenu.AppendSeparator()
                     for text, _ in self.Manager.GetCurrentSpecificMenu():
                         new_id = wx.NewId()
-                        self.Frame.AddMenu.Append(helpString='', id=new_id, kind=wx.ITEM_NORMAL, item=text)
-                        self.Frame.Bind(wx.EVT_MENU, self.GetProfileCallBack(text), id=new_id)
+                        self.Frame.AddMenu.Append(
+                            helpString="", id=new_id, kind=wx.ITEM_NORMAL, item=text
+                        )
+                        self.Frame.Bind(
+                            wx.EVT_MENU, self.GetProfileCallBack(text), id=new_id
+                        )
                 else:
                     edititem.SetItemLabel("Other Profile")
                     edititem.Enable(False)
 
-# ------------------------------------------------------------------------------
-#                            Buffer Functions
-# ------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------
+    #                            Buffer Functions
+    # ------------------------------------------------------------------------------
 
     def RefreshBufferState(self):
         pass
@@ -153,9 +156,9 @@ class NodeEditorTemplate(object):
         self.RefreshCurrentIndexList()
         self.RefreshBufferState()
 
-# ------------------------------------------------------------------------------
-#                          Editing Profiles functions
-# ------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------
+    #                          Editing Profiles functions
+    # ------------------------------------------------------------------------------
 
     def OnCommunicationMenu(self, event):  # pylint: disable=unused-argument
         dictionary, current = self.Manager.GetCurrentCommunicationLists()
@@ -197,11 +200,12 @@ class NodeEditorTemplate(object):
             self.Manager.AddSpecificEntryToCurrent(text)
             self.RefreshBufferState()
             self.RefreshCurrentIndexList()
+
         return ProfileCallBack
 
-# ------------------------------------------------------------------------------
-#                         Edit Node informations function
-# ------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------
+    #                         Edit Node informations function
+    # ------------------------------------------------------------------------------
 
     def OnNodeInfosMenu(self, event):  # pylint: disable=unused-argument
         dialog = cdia.NodeInfosDialog(self.Frame)
@@ -216,9 +220,9 @@ class NodeEditorTemplate(object):
             self.RefreshCurrentIndexList()
             self.RefreshProfileMenu()
 
-# ------------------------------------------------------------------------------
-#                           Add User Types and Variables
-# ------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------
+    #                           Add User Types and Variables
+    # ------------------------------------------------------------------------------
 
     def AddMapVariable(self):
         index = self.Manager.GetCurrentNextMapIndex()

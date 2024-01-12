@@ -38,14 +38,14 @@ if sys.version_info[0] >= 3:
 else:
     ODict = OrderedDict
 
-log = logging.getLogger('objdictgen')
+log = logging.getLogger("objdictgen")
 
 
 SCHEMA = None
 
 
 class ValidationError(Exception):
-    ''' Validation failure '''
+    """Validation failure"""
 
 
 # JSON Version history/formats
@@ -59,26 +59,60 @@ JSON_VERSION = "1"
 
 # Output order in JSON file
 JSON_TOP_ORDER = (
-    "$id", "$version", "$description", "$tool", "$date", "$schema",
-    "name", "description", "type", "id", "profile",
-    "default_string_size", "dictionary",
+    "$id",
+    "$version",
+    "$description",
+    "$tool",
+    "$date",
+    "$schema",
+    "name",
+    "description",
+    "type",
+    "id",
+    "profile",
+    "default_string_size",
+    "dictionary",
 )
 JSON_DICTIONARY_ORDER = (
-    "index", "name", "__name",
-    "repeat", "struct", "group",
-    "need", "mandatory", "profile_callback", "callback", "unused",
-    "default", "size", "incr", "nbmax",
-    "each", "sub",
+    "index",
+    "name",
+    "__name",
+    "repeat",
+    "struct",
+    "group",
+    "need",
+    "mandatory",
+    "profile_callback",
+    "callback",
+    "unused",
+    "default",
+    "size",
+    "incr",
+    "nbmax",
+    "each",
+    "sub",
     # Not in use, but useful to keep in place for development/debugging
-    "values", "dictionary", "params",
-    "user", "profile", "ds302", "built-in",
+    "values",
+    "dictionary",
+    "params",
+    "user",
+    "profile",
+    "ds302",
+    "built-in",
 )
 JSON_SUB_ORDER = (
-    "name", "__name", "type", "__type",
-    "access", "pdo",
-    "nbmin", "nbmax",
-    "save", "comment",
-    "default", "value",
+    "name",
+    "__name",
+    "type",
+    "__type",
+    "access",
+    "pdo",
+    "nbmin",
+    "nbmax",
+    "save",
+    "comment",
+    "default",
+    "value",
 )
 
 
@@ -87,82 +121,90 @@ JSON_SUB_ORDER = (
 
 # Fields that must be present in the mapping (where the parameter is defined)
 # mapping[index] = { ..dict.. }
-FIELDS_MAPPING_MUST = {'name', 'struct', 'values'}
-FIELDS_MAPPING_OPT = {'need', 'incr', 'nbmax', 'size', 'default'}
+FIELDS_MAPPING_MUST = {"name", "struct", "values"}
+FIELDS_MAPPING_OPT = {"need", "incr", "nbmax", "size", "default"}
 
 # Fields that must be present in the subindex values from mapping,
 # mapping[index]['value'] = [ dicts ]
-FIELDS_MAPVALS_MUST = {'name', 'type', 'access', 'pdo'}
-FIELDS_MAPVALS_OPT = {'nbmin', 'nbmax', 'default'}
+FIELDS_MAPVALS_MUST = {"name", "type", "access", "pdo"}
+FIELDS_MAPVALS_OPT = {"nbmin", "nbmax", "default"}
 
 # Fields that must be present in parameter dictionary (user settings)
 # node.ParamDictionary[index] = { N: { ..dict..}, ..dict.. }
-FIELDS_PARAMS = {'comment', 'save', 'buffer_size'}
-FIELDS_PARAMS_PROMOTE = {'callback'}
+FIELDS_PARAMS = {"comment", "save", "buffer_size"}
+FIELDS_PARAMS_PROMOTE = {"callback"}
 
 # Fields representing the dictionary value
-FIELDS_VALUE = {'value'}
+FIELDS_VALUE = {"value"}
 
 # ---------
 # Forward validation (dict -> mem)
 
 # Fields contents of the top-most level, json = { ..dict.. }
 FIELDS_DATA_MUST = {
-    '$id', '$version', 'name', 'description', 'type', 'dictionary',
+    "$id",
+    "$version",
+    "name",
+    "description",
+    "type",
+    "dictionary",
 }
 FIELDS_DATA_OPT = {
-    '$description',         # info only
-    '$tool',                # info only
-    '$date',                # info only
-    'id',                   # default 0
-    'profile',              # default "None"
-    'default_string_size',  # set if present
+    "$description",  # info only
+    "$tool",  # info only
+    "$date",  # info only
+    "id",  # default 0
+    "profile",  # default "None"
+    "default_string_size",  # set if present
 }
 
 # Fields contents of the dictionary, data['dictionary'] = [ ..dicts.. ]
 FIELDS_DICT_MUST = {
-    'index',
-    'name',             # optional if repeat is True
-    'struct',
-    'sub',
+    "index",
+    "name",  # optional if repeat is True
+    "struct",
+    "sub",
 }
 FIELDS_DICT_OPT = {
-                        # R = omitted if repeat is True   # noqa: E126
-    'group',            # R, default 'user'   # noqa: E131
-    'each',             # R, only when struct != *var
-    'callback',         #    set if present   # noqa: E262
-    'profile_callback', # R, set if present   # noqa: E261
-    'unused',           #    default False
-    'mandatory',        # R, set if present
-    'repeat',           #    default False   # noqa: E262
-    'incr',             # R, only when struct is "N"-type
-    'nbmax',            # R, only when struct is "N"-type
-    'size',             # R, only when index < 0x1000
-    'default',          # R, only when index < 0x1000
+    # R = omitted if repeat is True   # noqa: E126
+    "group",  # R, default 'user'   # noqa: E131
+    "each",  # R, only when struct != *var
+    "callback",  #    set if present   # noqa: E262
+    "profile_callback",  # R, set if present   # noqa: E261
+    "unused",  #    default False
+    "mandatory",  # R, set if present
+    "repeat",  #    default False   # noqa: E262
+    "incr",  # R, only when struct is "N"-type
+    "nbmax",  # R, only when struct is "N"-type
+    "size",  # R, only when index < 0x1000
+    "default",  # R, only when index < 0x1000
 }
 
 # When 'repeat' is present, it indicates that the entry is a repeated
 # objecttype and it needs lesser fields present
 # Fields contents of the dictionary, data['dictionary'] = [ ..dicts.. ]
-FIELDS_DICT_REPEAT_MUST = FIELDS_DICT_MUST - {'name'}
+FIELDS_DICT_REPEAT_MUST = FIELDS_DICT_MUST - {"name"}
 FIELDS_DICT_REPEAT_OPT = {
-    'callback', 'repeat', 'unused',
+    "callback",
+    "repeat",
+    "unused",
 }
 
 # Valid values of data['dictionary'][index]['group']
-GROUPS = {'user', 'profile', 'ds302', 'built-in'}
+GROUPS = {"user", "profile", "ds302", "built-in"}
 
 # Standard values of subindex 0 that can be omitted
 SUBINDEX0 = {
-    'name': 'Number of Entries',
-    'type': 5,
-    'access': 'ro',
-    'pdo': False,
+    "name": "Number of Entries",
+    "type": 5,
+    "access": "ro",
+    "pdo": False,
 }
 
 
 def remove_jasonc(text):
-    ''' Remove jsonc annotations '''
+    """Remove jsonc annotations"""
+
     # Copied from https://github.com/NickolaiBeloguzov/jsonc-parser/blob/master/jsonc_parser/parser.py#L11-L39
     def __re_sub(match):
         if match.group(2) is not None:
@@ -173,12 +215,12 @@ def remove_jasonc(text):
         r"(\".*?\"|\'.*?\')|(/\*.*?\*/|//[^\r\n]*$)",
         __re_sub,
         text,
-        flags=re.MULTILINE | re.DOTALL
+        flags=re.MULTILINE | re.DOTALL,
     )
 
 
 def exc_amend(exc, text):
-    """ Helper to prefix text to an exception """
+    """Helper to prefix text to an exception"""
     args = list(exc.args)
     if len(args) > 0:
         args[0] = text + str(args[0])
@@ -189,69 +231,54 @@ def exc_amend(exc, text):
 
 
 def ordereddict_hook(pairs):
-    """ json convert helper for py2, where OrderedDict is used to preserve
-        dict order
+    """json convert helper for py2, where OrderedDict is used to preserve
+    dict order
     """
     new_pairs = []
     for key, value in pairs:
         if isinstance(value, unicode):
-            value = value.encode('utf-8')
+            value = value.encode("utf-8")
         if isinstance(key, unicode):
-            key = key.encode('utf-8')
+            key = key.encode("utf-8")
         new_pairs.append((key, value))
     return OrderedDict(new_pairs)
 
 
 def str_to_number(string):
-    """ Convert string to a number, otherwise pass it through """
+    """Convert string to a number, otherwise pass it through"""
     if string is None or isinstance(string, (int, float, long)):
         return string
     s = string.strip()
-    if s.startswith('0x') or s.startswith('-0x'):
-        return int(s.replace('0x', ''), 16)
+    if s.startswith("0x") or s.startswith("-0x"):
+        return int(s.replace("0x", ""), 16)
     if s.isdigit():
         return int(string)
     return string
 
 
 def copy_in_order(d, order):
-    """ Remake dict d with keys in order """
-    out = ODict(
-        (k, d[k])
-        for k in order
-        if k in d
-    )
-    out.update(ODict(
-        (k, v)
-        for k, v in d.items()
-        if k not in out
-    ))
+    """Remake dict d with keys in order"""
+    out = ODict((k, d[k]) for k in order if k in d)
+    out.update(ODict((k, v) for k, v in d.items() if k not in out))
     return out
 
 
 def remove_underscore(d):
-    """ Recursively remove any keys prefixed with '__' """
+    """Recursively remove any keys prefixed with '__'"""
     if isinstance(d, dict):
-        return {
-            k: remove_underscore(v)
-            for k, v in d.items()
-            if not k.startswith('__')
-        }
+        return {k: remove_underscore(v) for k, v in d.items() if not k.startswith("__")}
     if isinstance(d, list):
-        return [
-            remove_underscore(v)
-            for v in d
-        ]
+        return [remove_underscore(v) for v in d]
     return d
 
 
-def member_compare(a, must=None, optional=None, not_want=None, msg='', only_if=None):
-    ''' Compare the membes of a with set of wants
-        must: Raise if a is missing any from must
-        optional: Raise if a contains members that is not must or optional
-        not_want: Raise error if any is present in a
-        only_if: If False, raise error if must is present in a
-    '''
+def member_compare(a, must=None, optional=None, not_want=None, msg="", only_if=None):
+    """Compare the membes of a with set of wants
+    must: Raise if a is missing any from must
+    optional: Raise if a contains members that is not must or optional
+    not_want: Raise error if any is present in a
+    only_if: If False, raise error if must is present in a
+    """
     have = set(a)
 
     if only_if is False:  # is is important here
@@ -263,7 +290,9 @@ def member_compare(a, must=None, optional=None, not_want=None, msg='', only_if=N
         unexpected = must - have
         if unexpected:
             unexp = "', '".join(unexpected)
-            raise ValidationError("Missing required parameters '{}'{}".format(unexp, msg))
+            raise ValidationError(
+                "Missing required parameters '{}'{}".format(unexp, msg)
+            )
 
     # Check if there are any fields beyond the expected
     if optional:
@@ -280,7 +309,7 @@ def member_compare(a, must=None, optional=None, not_want=None, msg='', only_if=N
 
 
 def get_object_types(node=None, dictionary=None):
-    ''' Return two dicts with the object type mapping '''
+    """Return two dicts with the object type mapping"""
 
     groups = [maps.MAPPING_DICTIONARY]
     if node:
@@ -292,7 +321,7 @@ def get_object_types(node=None, dictionary=None):
         for k, v in group.items():
             if k >= 0x1000:
                 continue
-            n = v['name']
+            n = v["name"]
             i2s[k] = n
             s2i[n] = k
 
@@ -303,16 +332,24 @@ def get_object_types(node=None, dictionary=None):
     for obj in dictionary or []:
         if not isinstance(obj, dict):
             continue
-        index = str_to_number(obj.get('index'))
-        name = obj.get('name')
+        index = str_to_number(obj.get("index"))
+        name = obj.get("name")
         if not isinstance(index, int) or not isinstance(name, str):
             continue
         if index >= 0x1000 or not name:
             continue
         if index in i2s:
-            raise ValidationError("Index {} ('{}') is already defined as a type with name '{}'".format(index, name, i2s[index]))
+            raise ValidationError(
+                "Index {} ('{}') is already defined as a type with name '{}'".format(
+                    index, name, i2s[index]
+                )
+            )
         if name in s2i:
-            raise ValidationError("Name '{}' in index {} is already defined in index {}".format(name, index, s2i[name]))
+            raise ValidationError(
+                "Name '{}' in index {} is already defined in index {}".format(
+                    name, index, s2i[name]
+                )
+            )
         i2s[index] = name
         s2i[name] = index
 
@@ -339,20 +376,23 @@ def compare_profile(profilename, params, menu=None):
 
 
 def GenerateJson(node, compact=False, sort=False, internal=False, validate=True):
-    ''' Export a JSON string representation of the node '''
+    """Export a JSON string representation of the node"""
 
     # Get the dict representation
     jd, objtypes_s2i = node_todict(
-        node, sort=sort, internal=internal, validate=validate,
+        node,
+        sort=sort,
+        internal=internal,
+        validate=validate,
         rich=not compact,
     )
 
     if compact:
         # Return a compact representation
-        return json.dumps(jd, separators=(',', ':'))
+        return json.dumps(jd, separators=(",", ":"))
 
     # Generate the json string
-    text = json.dumps(jd, separators=(',', ': '), indent=2)
+    text = json.dumps(jd, separators=(",", ": "), indent=2)
 
     # Convert the special __ fields to jasonc comments
     out = re.sub(
@@ -366,13 +406,14 @@ def GenerateJson(node, compact=False, sort=False, internal=False, validate=True)
     def _index_repl(m):
         p = m.group(1)
         n = v = m.group(2)
-        if p == 'index':
+        if p == "index":
             n = str_to_number(v)
-        if p == 'type':
+        if p == "type":
             n = objtypes_s2i.get(v, v)
         if n != v:
-            return m.group(0) + '  // {}'.format(n)
+            return m.group(0) + "  // {}".format(n)
         return m.group(0)
+
     out = re.sub(  # As object entries
         r'"(index|type)": "([a-zA-Z0-9_]+)",?$',
         _index_repl,
@@ -390,11 +431,10 @@ def GenerateJson(node, compact=False, sort=False, internal=False, validate=True)
 
 
 def GenerateNode(contents):
-    ''' Import from JSON string or objects '''
+    """Import from JSON string or objects"""
 
     jd = contents
     if isinstance(contents, str):
-
         # Remove jsonc annotations
         jsontext = remove_jasonc(contents)
 
@@ -414,7 +454,7 @@ def GenerateNode(contents):
     #        validator is better.
     global SCHEMA  # pylint: disable=global-statement
     if not SCHEMA and sys.version_info[0] >= 3:
-        with open(os.path.join(objdictgen.JSON_SCHEMA), 'r') as f:
+        with open(os.path.join(objdictgen.JSON_SCHEMA), "r") as f:
             SCHEMA = json.loads(remove_jasonc(f.read()))
 
     if SCHEMA:
@@ -424,46 +464,48 @@ def GenerateNode(contents):
 
 
 def node_todict(node, sort=False, rich=True, internal=False, validate=True):
-    '''
-        Convert a node to dict representation for serialization.
+    """
+    Convert a node to dict representation for serialization.
 
-        sort: Set if the output dictionary should be sorted before output.
-        rich: Generate tich output intended for human reading. It will add
-            text to the output that will ease the readabiliy of the output.
-            1) It will add __fields to the output. These fields are redundant
-               and and will be skipped when reading the file
-            2) Replace struct and type fields with strings instead of numerical
-               value
-            3) Use hex index instead of numerical value in dictionary index
-        internal: Enable to dump the internal data model as-is. Used for
-            low-level format debugging
-        validate: Set if the output JSON should be validated to check if the
-            output is valid. Used to double check format.
-    '''
+    sort: Set if the output dictionary should be sorted before output.
+    rich: Generate tich output intended for human reading. It will add
+        text to the output that will ease the readabiliy of the output.
+        1) It will add __fields to the output. These fields are redundant
+           and and will be skipped when reading the file
+        2) Replace struct and type fields with strings instead of numerical
+           value
+        3) Use hex index instead of numerical value in dictionary index
+    internal: Enable to dump the internal data model as-is. Used for
+        low-level format debugging
+    validate: Set if the output JSON should be validated to check if the
+        output is valid. Used to double check format.
+    """
 
     # Get the dict representation of the node object
     jd = node.GetDict()
 
     # Rename the top-level fields
     for k, v in {
-        'Name': 'name',
-        'Description': 'description',
-        'Type': 'type',
-        'ID': 'id',
-        'ProfileName': 'profile',
-        'DefaultStringSize': 'default_string_size',
+        "Name": "name",
+        "Description": "description",
+        "Type": "type",
+        "ID": "id",
+        "ProfileName": "profile",
+        "DefaultStringSize": "default_string_size",
     }.items():
         if k in jd:
             jd[v] = jd.pop(k)
 
     # Insert meta-data
-    jd.update({
-        '$id': JSON_ID,
-        '$version': JSON_INTERNAL_VERSION if internal else JSON_VERSION,
-        '$description': JSON_DESCRIPTION,
-        '$tool': str(objdictgen.ODG_PROGRAM) + ' ' + str(objdictgen.ODG_VERSION),
-        '$date': datetime.isoformat(datetime.now()),
-    })
+    jd.update(
+        {
+            "$id": JSON_ID,
+            "$version": JSON_INTERNAL_VERSION if internal else JSON_VERSION,
+            "$description": JSON_DESCRIPTION,
+            "$tool": str(objdictgen.ODG_PROGRAM) + " " + str(objdictgen.ODG_VERSION),
+            "$date": datetime.isoformat(datetime.now()),
+        }
+    )
 
     # Get the order for the indexes
     order = node.GetAllParameters(sort=sort)
@@ -521,7 +563,6 @@ def node_todict(node, sort=False, rich=True, internal=False, validate=True):
 
             # Iterater over the sub-indexes (if present)
             for i, sub in enumerate(obj.get("sub", [])):
-
                 # Add __name when rich format
                 if rich and info and "name" not in sub:
                     sub["__name"] = info[i]["name"]
@@ -534,7 +575,7 @@ def node_todict(node, sort=False, rich=True, internal=False, validate=True):
                 if rich and info and "type" not in sub:
                     sub["__type"] = objtypes_i2s.get(info[i]["type"], info[i]["type"])
 
-            if 'each' in obj:
+            if "each" in obj:
                 sub = obj["each"]
 
                 # Replace numeric type with string value
@@ -544,11 +585,8 @@ def node_todict(node, sort=False, rich=True, internal=False, validate=True):
             # ---------------------
 
             # Rearrage order of 'sub' and 'each'
-            obj["sub"] = [
-                copy_in_order(k, JSON_SUB_ORDER)
-                for k in obj["sub"]
-            ]
-            if 'each' in obj:
+            obj["sub"] = [copy_in_order(k, JSON_SUB_ORDER) for k in obj["sub"]]
+            if "each" in obj:
                 obj["each"] = copy_in_order(obj["each"], JSON_SUB_ORDER)
 
         except Exception as exc:
@@ -559,17 +597,22 @@ def node_todict(node, sort=False, rich=True, internal=False, validate=True):
             dictionary.append(obj)
 
     # Rearrange order of Dictionary[*]
-    jd["dictionary"] = [
-        copy_in_order(k, JSON_DICTIONARY_ORDER) for k in dictionary
-    ]
+    jd["dictionary"] = [copy_in_order(k, JSON_DICTIONARY_ORDER) for k in dictionary]
 
     # Rearrange the order of the top-level dict
     jd = copy_in_order(jd, JSON_TOP_ORDER)
 
     # Cleanup of unwanted members
     # - NOTE: SpecificMenu is not used in dict representation
-    for k in ('Dictionary', 'ParamsDictionary', 'Profile', 'SpecificMenu',
-              'DS302', 'UserMapping', 'IndexOrder'):
+    for k in (
+        "Dictionary",
+        "ParamsDictionary",
+        "Profile",
+        "SpecificMenu",
+        "DS302",
+        "UserMapping",
+        "IndexOrder",
+    ):
         jd.pop(k, None)
 
     # Cross check verification to see if we later can import the generated dict
@@ -580,9 +623,9 @@ def node_todict(node, sort=False, rich=True, internal=False, validate=True):
 
 
 def node_todict_parameter(obj, node, index):
-    ''' Modify obj from internal dict representation to generic dict structure
-        which is suitable for serialization into JSON.
-    '''
+    """Modify obj from internal dict representation to generic dict structure
+    which is suitable for serialization into JSON.
+    """
 
     # Observations:
     # =============
@@ -608,16 +651,15 @@ def node_todict_parameter(obj, node, index):
     # Blend the mapping type (baseobj) with obj
 
     # Get group membership (what object type it is) and if the prarmeter is repeated
-    groups = obj.pop('groups')
-    is_repeat = obj.pop('base', index) != index
+    groups = obj.pop("groups")
+    is_repeat = obj.pop("base", index) != index
 
     # Is the definition for the parameter present?
     if not is_repeat:
-
         # Extract mapping baseobject that contains the object definitions. Checked in A
         group = groups[0]
-        if group != 'user':
-            obj['group'] = group
+        if group != "user":
+            obj["group"] = group
 
         baseobj = obj.pop(group)
         struct = baseobj["struct"]  # Checked in B
@@ -626,11 +668,11 @@ def node_todict_parameter(obj, node, index):
         obj["repeat"] = True
         info = node.GetEntryInfos(index)
         baseobj = {}
-        struct = info['struct']
+        struct = info["struct"]
 
     # Callback in mapping collides with the user set callback, so it is renamed
-    if 'callback' in baseobj:
-        obj['profile_callback'] = baseobj.pop('callback')
+    if "callback" in baseobj:
+        obj["profile_callback"] = baseobj.pop("callback")
 
     # Move members from baseobj to top-level object. Checked in B
     for k in FIELDS_MAPPING_MUST | FIELDS_MAPPING_OPT:
@@ -638,23 +680,25 @@ def node_todict_parameter(obj, node, index):
             obj[k] = baseobj.pop(k)
 
     # Ensure fields exists
-    obj['struct'] = struct
-    obj['sub'] = obj.pop('values', [])
+    obj["struct"] = struct
+    obj["sub"] = obj.pop("values", [])
 
     # Move subindex[1] to 'each' on objecs that contain 'nbmax'
-    if len(obj['sub']) > 1 and 'nbmax' in obj['sub'][1]:
-        obj['each'] = obj['sub'].pop(1)
+    if len(obj["sub"]) > 1 and "nbmax" in obj["sub"][1]:
+        obj["each"] = obj["sub"].pop(1)
 
     # Baseobj should have been emptied
     if baseobj != {}:
-        raise ValidationError("Mapping data not empty. Programming error?. Contains: {}".format(baseobj))
+        raise ValidationError(
+            "Mapping data not empty. Programming error?. Contains: {}".format(baseobj)
+        )
 
     # -- STEP 2) --
     # Migrate 'params' and 'dictionary' to common 'sub'
 
     # Extract the params
-    has_params = 'params' in obj
-    has_dictionary = 'dictionary' in obj
+    has_params = "params" in obj
+    has_dictionary = "dictionary" in obj
     params = obj.pop("params", {})
     dictvals = obj.pop("dictionary", [])
 
@@ -683,10 +727,10 @@ def node_todict_parameter(obj, node, index):
             start = 1  # Have "number of entries" first
 
         for i, v in enumerate(dictvals, start=start):
-            params.setdefault(i, {})['value'] = v
+            params.setdefault(i, {})["value"] = v
     else:
         # This is now unused profile parameters are stored
-        obj['unused'] = True
+        obj["unused"] = True
 
     # Commit the params to the 'sub' list
     if params:
@@ -702,32 +746,35 @@ def node_todict_parameter(obj, node, index):
 
     # Params should have been emptied
     if params != {}:
-        raise ValidationError("User parameters not empty. Programming error? Contains: {}".format(params))
+        raise ValidationError(
+            "User parameters not empty. Programming error? Contains: {}".format(params)
+        )
 
     return obj
 
 
 def validate_nodeindex(node, index, obj):
-    """ Validate index dict contents (see Node.GetIndexDict). The purpose is to
-        validate the assumptions in the data format.
+    """Validate index dict contents (see Node.GetIndexDict). The purpose is to
+    validate the assumptions in the data format.
 
-        NOTE: Do not implement two parallel validators. This function exists
-        to validate the data going into node_todict() in case the programmed
-        assumptions are wrong. For general data validation, see
-        validate_fromdict()
+    NOTE: Do not implement two parallel validators. This function exists
+    to validate the data going into node_todict() in case the programmed
+    assumptions are wrong. For general data validation, see
+    validate_fromdict()
     """
 
-    groups = obj['groups']
-    is_repeat = obj.get('base', index) != index
+    groups = obj["groups"]
+    is_repeat = obj.get("base", index) != index
 
     # Is the definition for the parameter present?
     if not is_repeat:
-
         # A) Ensure only one definition of the object group
         if len(groups) == 0:
             raise ValidationError("Missing mapping")
         if len(groups) != 1:
-            raise ValidationError("Contains uexpected number of definitions for the object")
+            raise ValidationError(
+                "Contains uexpected number of definitions for the object"
+            )
 
         # Extract the definition
         group = groups[0]
@@ -736,18 +783,23 @@ def validate_nodeindex(node, index, obj):
         # B) Check baseobj object members is present
         member_compare(
             baseobj.keys(),
-            FIELDS_MAPPING_MUST, FIELDS_MAPPING_OPT | FIELDS_PARAMS_PROMOTE,
-            msg=' in mapping object'
+            FIELDS_MAPPING_MUST,
+            FIELDS_MAPPING_OPT | FIELDS_PARAMS_PROMOTE,
+            msg=" in mapping object",
         )
 
-        struct = baseobj['struct']
+        struct = baseobj["struct"]
 
     else:
         # If this is a repeated paramter, this object should not contain any definitions
 
         # A) Ensure no definition of the object group
         if len(groups) != 0:
-            raise ValidationError("Unexpected to find any groups ({}) in repeated object".format(", ".join(groups)))
+            raise ValidationError(
+                "Unexpected to find any groups ({}) in repeated object".format(
+                    ", ".join(groups)
+                )
+            )
 
         info = node.GetEntryInfos(index)
         baseobj = {}
@@ -760,20 +812,21 @@ def validate_nodeindex(node, index, obj):
     member_compare(
         obj.keys(),
         not_want=FIELDS_MAPPING_MUST | FIELDS_MAPPING_OPT | FIELDS_PARAMS_PROMOTE,
-        msg=' in object'
+        msg=" in object",
     )
 
     # Check baseobj object members
-    for val in baseobj.get('values', []):
+    for val in baseobj.get("values", []):
         member_compare(
             val.keys(),
-            FIELDS_MAPVALS_MUST, FIELDS_MAPVALS_OPT,
-            msg=' in mapping values'
+            FIELDS_MAPVALS_MUST,
+            FIELDS_MAPVALS_OPT,
+            msg=" in mapping values",
         )
 
     # Collect some information
-    params = obj.get('params', {})
-    dictvalues = obj.get('dictionary', [])
+    params = obj.get("params", {})
+    dictvalues = obj.get("dictionary", [])
     dictlen = 0
 
     # These types places the params in the top-level dict
@@ -786,13 +839,15 @@ def validate_nodeindex(node, index, obj):
         params[0] = param0
 
     # Verify type of dictionary
-    if 'dictionary' in obj:
+    if "dictionary" in obj:
         if is_var:
             dictlen = 1
             # dictvalues = [dictvalues]
         else:
             if not isinstance(dictvalues, list):
-                raise ValidationError("Unexpected type in dictionary '{}'".format(dictvalues))
+                raise ValidationError(
+                    "Unexpected type in dictionary '{}'".format(dictvalues)
+                )
             dictlen = len(dictvalues) + 1
             # dictvalues = [None] + dictvalues  # Which is a copy
 
@@ -802,11 +857,14 @@ def validate_nodeindex(node, index, obj):
         # All int keys corresponds to a numbered index
         if isinstance(param, int):
             # Check that there are no unexpected fields in numbered param
-            member_compare(params[param].keys(),
+            member_compare(
+                params[param].keys(),
                 {},
                 FIELDS_PARAMS,
-                not_want=FIELDS_PARAMS_PROMOTE | FIELDS_MAPVALS_MUST | FIELDS_MAPVALS_OPT,
-                msg=' in params'
+                not_want=FIELDS_PARAMS_PROMOTE
+                | FIELDS_MAPVALS_MUST
+                | FIELDS_MAPVALS_OPT,
+                msg=" in params",
             )
 
             if param > dictlen:
@@ -814,15 +872,17 @@ def validate_nodeindex(node, index, obj):
 
     # Do we have too many params?
     if excessive:
-        raise ValidationError("Excessive params, or too few dictionary values: {}".format(excessive))
+        raise ValidationError(
+            "Excessive params, or too few dictionary values: {}".format(excessive)
+        )
 
     # Find all non-numbered params and check them against
     promote = {k for k in params if not isinstance(k, int)}
     if promote:
-        member_compare(promote, optional=FIELDS_PARAMS_PROMOTE, msg=' in params')
+        member_compare(promote, optional=FIELDS_PARAMS_PROMOTE, msg=" in params")
 
     # Check that we got the number of values and nbmax we expect for the type
-    nbmax = ['nbmax' in v for v in baseobj.get('values', [])]
+    nbmax = ["nbmax" in v for v in baseobj.get("values", [])]
     lenok, nbmaxok = False, False
 
     if not baseobj:
@@ -854,13 +914,19 @@ def validate_nodeindex(node, index, obj):
         raise ValidationError("Unknown struct '{}'".format(struct))
 
     if not nbmaxok:
-        raise ValidationError("Unexpected 'nbmax' use in mapping values, used {} times".format(sum(nbmax)))
+        raise ValidationError(
+            "Unexpected 'nbmax' use in mapping values, used {} times".format(sum(nbmax))
+        )
     if not lenok:
-        raise ValidationError("Unexpexted count of subindexes in mapping object, found {}".format(len(nbmax)))
+        raise ValidationError(
+            "Unexpexted count of subindexes in mapping object, found {}".format(
+                len(nbmax)
+            )
+        )
 
 
 def node_fromdict(jd, internal=False):
-    ''' Convert a dict jd into a Node '''
+    """Convert a dict jd into a Node"""
 
     # Remove all underscore keys from the file
     jd = remove_underscore(jd)
@@ -878,22 +944,24 @@ def node_fromdict(jd, internal=False):
 
     # Create the node and fill the most basic data
     node = objdictgen.Node(
-        name=jd["name"], type=jd["type"], id=jd["id"],
-        description=jd["description"], profilename=jd["profile"],
+        name=jd["name"],
+        type=jd["type"],
+        id=jd["id"],
+        description=jd["description"],
+        profilename=jd["profile"],
     )
 
     # Restore optional values
-    if 'default_string_size' in jd:
+    if "default_string_size" in jd:
         node.DefaultStringSize = jd["default_string_size"]
 
     # An import of a internal JSON file?
-    internal = internal or jd['$version'] == JSON_INTERNAL_VERSION
+    internal = internal or jd["$version"] == JSON_INTERNAL_VERSION
 
     # Iterate over the items to convert them to Node object
     for obj in jd["dictionary"]:
-
         # Convert the index number (which might be "0x" string)
-        index = str_to_number(obj['index'])
+        index = str_to_number(obj["index"])
         obj["index"] = index
         assert isinstance(index, int)  # For mypy
 
@@ -907,43 +975,52 @@ def node_fromdict(jd, internal=False):
             raise
 
         # Copy the object to node object entries
-        if 'dictionary' in obj:
-            node.Dictionary[index] = obj['dictionary']
-        if 'params' in obj:
-            node.ParamsDictionary[index] = {str_to_number(k): v for k, v in obj['params'].items()}
-        if 'profile' in obj:
-            node.Profile[index] = obj['profile']
-        if 'ds302' in obj:
-            node.DS302[index] = obj['ds302']
-        if 'user' in obj:
-            node.UserMapping[index] = obj['user']
+        if "dictionary" in obj:
+            node.Dictionary[index] = obj["dictionary"]
+        if "params" in obj:
+            node.ParamsDictionary[index] = {
+                str_to_number(k): v for k, v in obj["params"].items()
+            }
+        if "profile" in obj:
+            node.Profile[index] = obj["profile"]
+        if "ds302" in obj:
+            node.DS302[index] = obj["ds302"]
+        if "user" in obj:
+            node.UserMapping[index] = obj["user"]
 
         # Verify against built-in data (don't verify repeated params)
-        if 'built-in' in obj and not obj.get('repeat', False):
+        if "built-in" in obj and not obj.get("repeat", False):
             baseobj = maps.MAPPING_DICTIONARY.get(index)
 
-            diff = deepdiff.DeepDiff(baseobj, obj['built-in'], view='tree')
+            diff = deepdiff.DeepDiff(baseobj, obj["built-in"], view="tree")
             if diff:
                 if sys.version_info[0] >= 3:
-                    log.debug("Index 0x{0:04x} ({0}) Difference between built-in object and imported:".format(index))
+                    log.debug(
+                        "Index 0x{0:04x} ({0}) Difference between built-in object and imported:".format(
+                            index
+                        )
+                    )
                     for line in diff.pretty().splitlines():
-                        log.debug('  ' + line)
+                        log.debug("  " + line)
                 else:
                     # FIXME: No print
                     print("WARNING: Py2 cannot print difference of objects")
-                raise ValidationError("Built-in parameter index 0x{0:04x} ({0}) does not match against system parameters".format(index))
+                raise ValidationError(
+                    "Built-in parameter index 0x{0:04x} ({0}) does not match against system parameters".format(
+                        index
+                    )
+                )
 
     # There is a weakness to the Node implementation: There is no store
     # of the order of the incoming parameters, instead the data is spread over
     # many dicts, e.g. Profile, DS302, UserMapping, Dictionary, ParamsDictionary
     # Node.IndexOrder has been added to store this information.
-    node.IndexOrder = [obj["index"] for obj in jd['dictionary']]
+    node.IndexOrder = [obj["index"] for obj in jd["dictionary"]]
 
     return node
 
 
 def node_fromdict_parameter(obj, objtypes_s2i):
-
     # -- STEP 1a) --
     # Move 'definition' into individual mapping type category
 
@@ -956,15 +1033,15 @@ def node_fromdict_parameter(obj, objtypes_s2i):
         obj["struct"] = struct  # Write value back into object
 
     # Read "group" (optional, default 'user', omit if repeat is True
-    group = obj.pop("group", None) or 'user'
+    group = obj.pop("group", None) or "user"
 
     # Read "profile_callback" (optional)
-    if 'profile_callback' in obj:
-        baseobj['callback'] = obj.pop('profile_callback')
+    if "profile_callback" in obj:
+        baseobj["callback"] = obj.pop("profile_callback")
 
     # Read "mandatory" (optional) into "need"
-    if 'mandatory' in obj:
-        obj['need'] = obj.pop('mandatory')
+    if "mandatory" in obj:
+        obj["need"] = obj.pop("mandatory")
 
     # Restore the definition entries
     for k in FIELDS_MAPPING_MUST | FIELDS_MAPPING_OPT:
@@ -981,29 +1058,25 @@ def node_fromdict_parameter(obj, objtypes_s2i):
             params[k] = obj.pop(k)
 
     # Restore the values and dictionary
-    subitems = obj.pop('sub')
+    subitems = obj.pop("sub")
 
     # Recreate the dictionary list
-    dictionary = [
-        v.pop('value')
-        for v in subitems
-        if v and 'value' in v
-    ]
+    dictionary = [v.pop("value") for v in subitems if v and "value" in v]
 
     # Restore the dictionary values
     if dictionary:
         # [N]VAR needs them as immediate values
         if struct in (OD.VAR, OD.NVAR):
             dictionary = dictionary[0]
-        obj['dictionary'] = dictionary
+        obj["dictionary"] = dictionary
 
     # The "unused" field is used to indicate that the parameter has no
     # dictionary value. Otherwise there must be an empty dictionary list
     # ==> "unused" is only read iff dictionary is empty
-    elif not obj.get('unused', False):
+    elif not obj.get("unused", False):
         # NOTE: If struct in VAR and NVAR, it is not correct to set to [], but
         #       the should be captured by the validator.
-        obj['dictionary'] = []
+        obj["dictionary"] = []
 
     # Restore param dictionary
     for i, vals in enumerate(subitems):
@@ -1022,37 +1095,42 @@ def node_fromdict_parameter(obj, objtypes_s2i):
 
     # Commit params if there is any data
     if params:
-        obj['params'] = params
+        obj["params"] = params
 
     # -- STEP 1b) --
 
     # Move back the each object
-    if 'each' in obj:
-        subitems.append(obj.pop('each'))
+    if "each" in obj:
+        subitems.append(obj.pop("each"))
 
     # Restore optional items from subindex 0
-    if not obj.get('repeat', False) and struct in (OD.ARRAY, OD.NARRAY, OD.RECORD, OD.NRECORD):
+    if not obj.get("repeat", False) and struct in (
+        OD.ARRAY,
+        OD.NARRAY,
+        OD.RECORD,
+        OD.NRECORD,
+    ):
         index0 = subitems[0]
         for k, v in SUBINDEX0.items():
             index0.setdefault(k, v)
 
     # Restore 'type' text encoding into value
     for sub in subitems:
-        if 'type' in sub:
-            sub['type'] = objtypes_s2i.get(sub['type'], sub['type'])
+        if "type" in sub:
+            sub["type"] = objtypes_s2i.get(sub["type"], sub["type"])
 
     # Restore values
     if subitems:
-        baseobj['values'] = subitems
+        baseobj["values"] = subitems
         obj[group] = baseobj
 
     return obj
 
 
 def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
-    ''' Validate that jsonobj is a properly formatted dictionary that may
-        be imported to the internal OD-format
-    '''
+    """Validate that jsonobj is a properly formatted dictionary that may
+    be imported to the internal OD-format
+    """
 
     jd = jsonobj
 
@@ -1075,24 +1153,29 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
         raise ValidationError("Not data or not dict")
 
     # Validate "$id" (must)
-    if jd.get('$id') != JSON_ID:
-        raise ValidationError("Unknown file format, expected '$id' to be '{}', found '{}'".format(
-            JSON_ID, jd.get('$id')))
+    if jd.get("$id") != JSON_ID:
+        raise ValidationError(
+            "Unknown file format, expected '$id' to be '{}', found '{}'".format(
+                JSON_ID, jd.get("$id")
+            )
+        )
 
     # Validate "$version" (must)
-    if jd.get('$version') not in (JSON_INTERNAL_VERSION, JSON_VERSION):
-        raise ValidationError("Unknown file version, expected '$version' to be '{}', found '{}'".format(
-            JSON_VERSION, jd.get('$version')))
+    if jd.get("$version") not in (JSON_INTERNAL_VERSION, JSON_VERSION):
+        raise ValidationError(
+            "Unknown file version, expected '$version' to be '{}', found '{}'".format(
+                JSON_VERSION, jd.get("$version")
+            )
+        )
 
     # Don't validate the internal format any further
-    if jd['$version'] == JSON_INTERNAL_VERSION:
+    if jd["$version"] == JSON_INTERNAL_VERSION:
         return
 
     # Verify that we have the expected members
     member_compare(jsonobj.keys(), FIELDS_DATA_MUST, FIELDS_DATA_OPT)
 
     def _validate_sub(obj, idx=0, is_var=False, is_repeat=False, is_each=False):
-
         # Validated: (See FIELDS_MAPVAPS_*, FIELDS_PARAMS and FIELDS_VALUE)
         # ----------
         # Y "name" (must)
@@ -1118,67 +1201,74 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
             member_compare(obj.keys(), not_want=FIELDS_VALUE)
 
         # Validate "nbmax" if parsing the "each" sub
-        member_compare(obj.keys(), {'nbmax'}, only_if=idx == -1)
+        member_compare(obj.keys(), {"nbmax"}, only_if=idx == -1)
 
         # Default parameter precense
-        defs = 'must'   # Parameter definition (FIELDS_MAPVALS_*)
-        params = 'opt'  # User parameters (FIELDS_PARAMS)
-        value = 'no'    # User value (FIELDS_VALUE)
+        defs = "must"  # Parameter definition (FIELDS_MAPVALS_*)
+        params = "opt"  # User parameters (FIELDS_PARAMS)
+        value = "no"  # User value (FIELDS_VALUE)
 
         # Set what parameters should be present, optional or not present
         if idx == -1:  # Checking "each" section. No parameter or value
-            params = 'no'
+            params = "no"
 
         elif is_repeat:  # Object repeat = defined elsewhere. No definition needed.
-            defs = 'no'
+            defs = "no"
             if is_var or idx > 0:
-                value = 'must'
+                value = "must"
 
         elif is_var:  # VAR type, guaranteed idx==0 here
-            value = 'opt'
+            value = "opt"
 
         elif is_each:  # Param have "each". Should never have any defs in idx > 0
             if idx > 0:
-                defs = 'no'
-                value = 'must'
+                defs = "no"
+                value = "must"
 
         else:  # All other (not each, not repeat, not VAR)
             if idx > 0:
-                value = 'opt'
+                value = "opt"
 
         # Calculate the expected parameters
         must = set()
         opts = set()
-        if defs == 'must':
+        if defs == "must":
             must |= FIELDS_MAPVALS_MUST
             opts |= FIELDS_MAPVALS_OPT
         # if defs == 'opt':
         #     opts |= FIELDS_MAPVALS_MUST | FIELDS_MAPVALS_OPT
         # if params == 'must':
         #     must |= FIELDS_PARAMS
-        if params == 'opt':
+        if params == "opt":
             opts |= FIELDS_PARAMS
-        if value == 'must':
+        if value == "must":
             must |= FIELDS_VALUE
-        if value == 'opt':
+        if value == "opt":
             opts |= FIELDS_VALUE
 
         # Verify parameters
         member_compare(obj.keys(), must, opts)
 
         # Validate "name"
-        if 'name' in obj and not obj['name']:
+        if "name" in obj and not obj["name"]:
             raise ValidationError("Must have a non-zero length name")
 
         # Validate "type"
-        if 'type' in obj:
-            if isinstance(obj['type'], str) and objtypes_s2i and obj['type'] not in objtypes_s2i:
-                raise ValidationError("Unknown object type '{}'".format(obj['type']))
-            if isinstance(obj['type'], int) and objtypes_i2s and obj['type'] not in objtypes_i2s:
-                raise ValidationError("Unknown object type id {}".format(obj['type']))
+        if "type" in obj:
+            if (
+                isinstance(obj["type"], str)
+                and objtypes_s2i
+                and obj["type"] not in objtypes_s2i
+            ):
+                raise ValidationError("Unknown object type '{}'".format(obj["type"]))
+            if (
+                isinstance(obj["type"], int)
+                and objtypes_i2s
+                and obj["type"] not in objtypes_i2s
+            ):
+                raise ValidationError("Unknown object type id {}".format(obj["type"]))
 
     def _validate_dictionary(index, obj):
-
         # Validated: (See FIELDS_DICT_MUST, FIELDS_DICT_OPT)
         # ----------
         # Y "index" (must)
@@ -1198,20 +1288,25 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
         # Y "default" (optional)
 
         # Validate "repeat" (optional, default False)
-        is_repeat = obj.get('repeat', False)
+        is_repeat = obj.get("repeat", False)
 
         # Validate all present fields
         if is_repeat:
-            member_compare(obj.keys(), FIELDS_DICT_REPEAT_MUST, FIELDS_DICT_REPEAT_OPT,
-                           msg=' in dictionary')
+            member_compare(
+                obj.keys(),
+                FIELDS_DICT_REPEAT_MUST,
+                FIELDS_DICT_REPEAT_OPT,
+                msg=" in dictionary",
+            )
 
         else:
-            member_compare(obj.keys(), FIELDS_DICT_MUST, FIELDS_DICT_OPT,
-                           msg=' in dictionary')
+            member_compare(
+                obj.keys(), FIELDS_DICT_MUST, FIELDS_DICT_OPT, msg=" in dictionary"
+            )
 
         # Validate "index" (must)
         if not isinstance(index, int):
-            raise ValidationError("Invalid dictionary index '{}'".format(obj['index']))
+            raise ValidationError("Invalid dictionary index '{}'".format(obj["index"]))
         if index <= 0 or index > 0xFFFF:
             raise ValidationError("Invalid dictionary index value '{}'".format(index))
 
@@ -1220,43 +1315,45 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
         if not isinstance(struct, int):
             struct = OD.from_string(struct)
         if struct not in OD.STRINGS:
-            raise ValidationError("Unknown struct value '{}'".format(obj['struct']))
+            raise ValidationError("Unknown struct value '{}'".format(obj["struct"]))
 
         # Validate "group" (optional, default 'user', omit if repeat is True)
-        group = obj.get("group", None) or 'user'
+        group = obj.get("group", None) or "user"
         if group and group not in GROUPS:
             raise ValidationError("Unknown group value '{}'".format(group))
 
         # Validate "default" (optional)
-        if 'default' in obj and index >= 0x1000:
+        if "default" in obj and index >= 0x1000:
             raise ValidationError("'default' cannot be used in index 0x1000 and above")
 
         # Validate "size" (optional)
-        if 'size' in obj and index >= 0x1000:
+        if "size" in obj and index >= 0x1000:
             raise ValidationError("'size' cannot be used in index 0x1000 and above")
 
         # Validate that "nbmax" and "incr" is only present in right struct type
         need_nbmax = not is_repeat and struct in (OD.NVAR, OD.NARRAY, OD.NRECORD)
-        member_compare(obj.keys(), {'nbmax', 'incr'}, only_if=need_nbmax)
+        member_compare(obj.keys(), {"nbmax", "incr"}, only_if=need_nbmax)
 
-        subitems = obj['sub']
+        subitems = obj["sub"]
         if not isinstance(subitems, list):
             raise ValidationError("'sub' is not a list")
 
-        has_name = ['name' in v for v in subitems]
-        has_value = ['value' in v for v in subitems]
+        has_name = ["name" in v for v in subitems]
+        has_value = ["value" in v for v in subitems]
 
         # Validate "sub" (must)
         for idx, sub in enumerate(subitems):
             try:
                 is_var = struct in (OD.VAR, OD.NVAR)
-                _validate_sub(sub, idx, is_var=is_var, is_repeat=is_repeat, is_each='each' in obj)
+                _validate_sub(
+                    sub, idx, is_var=is_var, is_repeat=is_repeat, is_each="each" in obj
+                )
             except Exception as exc:
                 exc_amend(exc, "sub[{}]: ".format(idx))
                 raise
 
         # Validate "each" (optional, omit if repeat is True)
-        if 'each' in obj:
+        if "each" in obj:
             sub = obj["each"]
 
             if struct in (OD.VAR, OD.NVAR):
@@ -1264,7 +1361,9 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
 
             # Having 'each' requires use of only one sub item with 'name' in it
             if not (sum(has_name) == 1 and has_name[0]):
-                raise ValidationError("Unexpected subitems. Subitem 0 must contain name")
+                raise ValidationError(
+                    "Unexpected subitems. Subitem 0 must contain name"
+                )
 
             try:
                 _validate_sub(sub, idx=-1)
@@ -1283,9 +1382,13 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
                 raise ValidationError("Field 'each' missing from ARRAY/NARRAY object")
 
         # Validate "unused" (optional)
-        unused = obj.get('unused', False)
+        unused = obj.get("unused", False)
         if unused and sum(has_value):
-            raise ValidationError("There are {} values in subitems, but 'unused' is true".format(sum(has_value)))
+            raise ValidationError(
+                "There are {} values in subitems, but 'unused' is true".format(
+                    sum(has_value)
+                )
+            )
         if not unused and not sum(has_value) and struct in (OD.VAR, OD.NVAR):
             raise ValidationError("VAR/NVAR cannot have 'unused' false")
 
@@ -1305,19 +1408,25 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
                 raise ValidationError("All subitems except item 0 must contain value")
 
         if struct in (OD.RECORD, OD.NRECORD):
-            if not is_repeat and 'each' not in obj:
+            if not is_repeat and "each" not in obj:
                 if sum(has_name) != len(has_name):
-                    raise ValidationError("Not all subitems have name, {} of {}".format(sum(has_name), len(has_name)))
+                    raise ValidationError(
+                        "Not all subitems have name, {} of {}".format(
+                            sum(has_name), len(has_name)
+                        )
+                    )
 
     # Validate "dictionary" (must)
-    if not isinstance(jd['dictionary'], list):
+    if not isinstance(jd["dictionary"], list):
         raise ValidationError("No dictionary or dictionary not list")
 
-    for num, obj in enumerate(jd['dictionary']):
+    for num, obj in enumerate(jd["dictionary"]):
         if not isinstance(obj, dict):
-            raise ValidationError("Item number {} of 'dictionary' is not a dict".format(num))
+            raise ValidationError(
+                "Item number {} of 'dictionary' is not a dict".format(num)
+            )
 
-        sindex = obj.get('index', 'item {}'.format(num))
+        sindex = obj.get("index", "item {}".format(num))
         index = str_to_number(sindex)
 
         try:
@@ -1328,7 +1437,6 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
 
 
 def diff_nodes(node1, node2, as_dict=True, validate=True):
-
     diffs = {}
 
     if as_dict:
@@ -1336,19 +1444,21 @@ def diff_nodes(node1, node2, as_dict=True, validate=True):
         jd2, _ = node_todict(node2, sort=True, validate=validate)
 
         dt = datetime.isoformat(datetime.now())
-        jd1['$date'] = jd2['$date'] = dt
+        jd1["$date"] = jd2["$date"] = dt
 
-        diff = deepdiff.DeepDiff(jd1, jd2, exclude_paths=[
-            "root['dictionary']"
-        ], view='tree')
+        diff = deepdiff.DeepDiff(
+            jd1, jd2, exclude_paths=["root['dictionary']"], view="tree"
+        )
 
         for chtype, changes in diff.items():
             for change in changes:
                 path = change.path()
-                entries = diffs.setdefault('', [])
-                entries.append((chtype, change, path.replace('root', '')))
+                entries = diffs.setdefault("", [])
+                entries.append((chtype, change, path.replace("root", "")))
 
-        diff = deepdiff.DeepDiff(jd1['dictionary'], jd2['dictionary'], view='tree', group_by='index')
+        diff = deepdiff.DeepDiff(
+            jd1["dictionary"], jd2["dictionary"], view="tree", group_by="index"
+        )
 
         res = re.compile(r"root\[('0x[0-9a-fA-F]+'|\d+)\]")
 
@@ -1359,17 +1469,19 @@ def diff_nodes(node1, node2, as_dict=True, validate=True):
                 if m:
                     num = str_to_number(m.group(1).strip("'"))
                     entries = diffs.setdefault(num, [])
-                    entries.append((chtype, change, path.replace(m.group(0), '')))
+                    entries.append((chtype, change, path.replace(m.group(0), "")))
                 else:
-                    entries = diffs.setdefault('', [])
-                    entries.append((chtype, change, path.replace('root', '')))
+                    entries = diffs.setdefault("", [])
+                    entries.append((chtype, change, path.replace("root", "")))
 
     else:
-        diff = deepdiff.DeepDiff(node1, node2, exclude_paths=[
-            "root.IndexOrder"
-        ], view='tree')
+        diff = deepdiff.DeepDiff(
+            node1, node2, exclude_paths=["root.IndexOrder"], view="tree"
+        )
 
-        res = re.compile(r"root\.(Profile|Dictionary|ParamsDictionary|UserMapping|DS302)\[(\d+)\]")
+        res = re.compile(
+            r"root\.(Profile|Dictionary|ParamsDictionary|UserMapping|DS302)\[(\d+)\]"
+        )
 
         for chtype, changes in diff.items():
             for change in changes:
@@ -1377,9 +1489,11 @@ def diff_nodes(node1, node2, as_dict=True, validate=True):
                 m = res.search(path)
                 if m:
                     entries = diffs.setdefault(int(m.group(2)), [])
-                    entries.append((chtype, change, path.replace(m.group(0), m.group(1))))
+                    entries.append(
+                        (chtype, change, path.replace(m.group(0), m.group(1)))
+                    )
                 else:
-                    entries = diffs.setdefault('', [])
-                    entries.append((chtype, change, path.replace('root.', '')))
+                    entries = diffs.setdefault("", [])
+                    entries.append((chtype, change, path.replace("root.", "")))
 
     return diffs

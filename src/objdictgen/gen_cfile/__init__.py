@@ -15,35 +15,3 @@
 #    License along with this library; if not, write to the Free Software
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
 #    USA
-
-import os
-
-from objdictgen.node import Node, ImportProfile, Find
-from objdictgen.nodemanager import NodeManager
-from objdictgen.maps import OD
-
-# Shortcuts
-LoadFile = Node.LoadFile
-LoadJson = Node.LoadJson
-
-ODG_PROGRAM = "odg"
-ODG_VERSION = "3.4"
-
-SCRIPT_DIRECTORY = os.path.split(__file__)[0]
-
-PROFILE_DIRECTORIES = [os.path.join(SCRIPT_DIRECTORY, "config")]
-odgdir = os.environ.get("ODG_PROFILE_DIR")
-if odgdir:
-    PROFILE_DIRECTORIES.append(odgdir)
-
-JSON_SCHEMA = os.path.join(SCRIPT_DIRECTORY, "schema", "od.schema.json")
-
-__all__ = [
-    "Node",
-    "ImportProfile",
-    "Find",
-    "LoadFile",
-    "LoadJson",
-    "NodeManager",
-    "OD",
-]

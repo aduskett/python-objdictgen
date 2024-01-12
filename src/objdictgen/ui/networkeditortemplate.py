@@ -37,11 +37,19 @@ class NetworkEditorTemplate(net.NodeEditorTemplate):
     # pylint: disable=attribute-defined-outside-init
 
     def _init_ctrls(self, prnt):
-        self.NetworkNodes = wx.Notebook(id=ID_NETWORKEDITNETWORKNODES,
-              name='NetworkNodes', parent=prnt, pos=wx.Point(0, 0),
-              size=wx.Size(0, 0), style=wx.NB_LEFT)
-        self.NetworkNodes.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED,
-              self.OnNodeSelectedChanged, id=ID_NETWORKEDITNETWORKNODES)
+        self.NetworkNodes = wx.Notebook(
+            id=ID_NETWORKEDITNETWORKNODES,
+            name="NetworkNodes",
+            parent=prnt,
+            pos=wx.Point(0, 0),
+            size=wx.Size(0, 0),
+            style=wx.NB_LEFT,
+        )
+        self.NetworkNodes.Bind(
+            wx.EVT_NOTEBOOK_PAGE_CHANGED,
+            self.OnNodeSelectedChanged,
+            id=ID_NETWORKEDITNETWORKNODES,
+        )
 
     def __init__(self, manager, frame, mode_solo):
         self.NodeList = manager
@@ -69,7 +77,9 @@ class NetworkEditorTemplate(net.NodeEditorTemplate):
             new_editingpanel.SetIndex(self.Manager.GetCurrentNodeID())
             self.NetworkNodes.AddPage(new_editingpanel, "")
             for idx in self.NodeList.GetSlaveIDs():
-                new_editingpanel = sit.EditingPanel(self.NetworkNodes, self, self.NodeList, False)
+                new_editingpanel = sit.EditingPanel(
+                    self.NetworkNodes, self, self.NodeList, False
+                )
                 new_editingpanel.SetIndex(idx)
                 self.NetworkNodes.AddPage(new_editingpanel, "")
 
@@ -84,9 +94,9 @@ class NetworkEditorTemplate(net.NodeEditorTemplate):
             wx.CallAfter(self.RefreshStatusBar)
         event.Skip()
 
-# ------------------------------------------------------------------------------
-#                              Buffer Functions
-# ------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------
+    #                              Buffer Functions
+    # ------------------------------------------------------------------------------
 
     def RefreshBufferState(self):
         if self.NodeList is not None:
@@ -99,9 +109,9 @@ class NetworkEditorTemplate(net.NodeEditorTemplate):
             for idx, name in enumerate(self.NodeList.GetSlaveNames()):
                 self.NetworkNodes.SetPageText(idx + 1, name)
 
-# ------------------------------------------------------------------------------
-#                             Slave Nodes Management
-# ------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------
+    #                             Slave Nodes Management
+    # ------------------------------------------------------------------------------
 
     def OnAddSlaveMenu(self, event):  # pylint: disable=unused-argument
         dialog = cdia.AddSlaveDialog(self.Frame)
@@ -109,8 +119,12 @@ class NetworkEditorTemplate(net.NodeEditorTemplate):
         if dialog.ShowModal() == wx.ID_OK:
             values = dialog.GetValues()
             try:
-                self.NodeList.AddSlaveNode(values["slaveName"], values["slaveNodeID"], values["edsFile"])
-                new_editingpanel = sit.EditingPanel(self.NetworkNodes, self, self.NodeList, False)
+                self.NodeList.AddSlaveNode(
+                    values["slaveName"], values["slaveNodeID"], values["edsFile"]
+                )
+                new_editingpanel = sit.EditingPanel(
+                    self.NetworkNodes, self, self.NodeList, False
+                )
                 new_editingpanel.SetIndex(values["slaveNodeID"])
                 idx = self.NodeList.GetOrderNumber(values["slaveNodeID"])
                 self.NetworkNodes.InsertPage(idx, new_editingpanel, "")
@@ -124,7 +138,9 @@ class NetworkEditorTemplate(net.NodeEditorTemplate):
     def OnRemoveSlaveMenu(self, event):  # pylint: disable=unused-argument
         slavenames = self.NodeList.GetSlaveNames()
         slaveids = self.NodeList.GetSlaveIDs()
-        dialog = wx.SingleChoiceDialog(self.Frame, "Choose a slave to remove", "Remove slave", slavenames)
+        dialog = wx.SingleChoiceDialog(
+            self.Frame, "Choose a slave to remove", "Remove slave", slavenames
+        )
         if dialog.ShowModal() == wx.ID_OK:
             choice = dialog.GetSelection()
             try:

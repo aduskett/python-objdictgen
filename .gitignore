@@ -23,3 +23,5 @@ tests/od/extra-compare*
 objdictgen.*
 fw-can-shared
 bug_report*.txt
+*.idea
+__pycache__
