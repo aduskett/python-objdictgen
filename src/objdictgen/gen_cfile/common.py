@@ -40,14 +40,14 @@ def GetValidTypeInfos(context, typename, items=None):
     if result:
         values = result.groups()
         if values[0] == "UNSIGNED" and int(values[1]) in [i * 8 for i in range(1, 9)]:
-            typeinfos = ("UNS%s" % values[1], None, "uint%s" % values[1], True)
+            typeinfos = (f"UNS{values[1]}", None, f"uint{values[1]}", True)
         elif values[0] == "INTEGER" and int(values[1]) in [i * 8 for i in range(1, 9)]:
-            typeinfos = ("INTEGER%s" % values[1], None, "int%s" % values[1], False)
+            typeinfos = (f"INTEGER{values[1]}", None, f"int{values[1]}", False)
         elif values[0] == "REAL" and int(values[1]) in (32, 64):
             typeinfos = (
-                "%s%s" % (values[0], values[1]),
+                f"{values[0]}{values[1]}",
                 None,
-                "real%s" % values[1],
+                f"real{values[1]}",
                 False,
             )
         elif values[0] in ["VISIBLE_STRING", "OCTET_STRING"]:
@@ -66,26 +66,26 @@ def GetValidTypeInfos(context, typename, items=None):
             typeinfos = ("UNS8", None, "boolean", False)
         else:
             # FIXME: The !!! is for special UI handling
-            raise ValueError("!!! '%s' isn't a valid type for CanFestival." % typename)
+            raise ValueError(f"!!! '{typename}' isn't a valid type for CanFestival.")
         if typeinfos[2] not in ["visible_string", "domain"]:
             context.internal_types[typename] = typeinfos
     else:
         # FIXME: The !!! is for special UI handling
-        raise ValueError("!!! '%s' isn't a valid type for CanFestival." % typename)
+        raise ValueError(f"!!! '{typename}' isn't a valid type for CanFestival.")
     return typeinfos
 
 
 def ComputeValue(type_, value):
     if type_ == "visible_string":
-        return '"%s"' % value, ""
+        return f'"{value}"', ""
     if type_ == "domain":
-        return '"%s"' % "".join(["\\x%2.2x" % ord(char) for char in value]), ""
+        return f'"{"".join(["\\x%2.2x" % ord(char) for char in value])}"', ""
     if type_.startswith("real"):
-        return "%f" % value, ""
+        return f"{value:f}", ""
     # value is integer; make sure to handle negative numbers correctly
     if value < 0:
-        return "-0x%X" % (-value), "\t/* %s */" % str(value)
-    return "0x%X" % value, "\t/* %s */" % str(value)
+        return f"-0x{-value:X}", f"\t/* {str(value)} */"
+    return f"0x{value:X}", f"\t/* {str(value)} */"
 
 
 def GetTypeName(node, typenumber):
@@ -93,7 +93,6 @@ def GetTypeName(node, typenumber):
     if typename is None:
         # FIXME: The !!! is for special UI handling
         raise ValueError(
-            "!!! Datatype with value '0x%4.4X' isn't defined in CanFestival."
-            % typenumber
+            f"!!! Datatype with value '0x{typenumber:4.4X}' isn't defined in CanFestival."
         )
     return typename

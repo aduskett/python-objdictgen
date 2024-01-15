@@ -19,18 +19,12 @@
 #    License along with this library; if not, write to the Free Software
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
 #    USA
-
-from __future__ import print_function
-from __future__ import absolute_import
 from builtins import range
-
 import os
 import sys
 import getopt
 import logging
-
 import wx
-
 import objdictgen
 from objdictgen.nodelist import NodeList
 from objdictgen.nodemanager import NodeManager
@@ -42,7 +36,7 @@ log = logging.getLogger("objdictgen")
 
 def usage():
     print("\nUsage of networkedit.py :")
-    print("\n   %s [Projectpath]\n" % sys.argv[0])
+    print(f"\n   {sys.argv[0]} [Projectpath]\n")
 
 
 [
@@ -315,7 +309,7 @@ class NetworkEdit(wx.Frame, NetworkEditorTemplate):
                     self.RefreshNetworkNodes()
                     self.RefreshProfileMenu()
                 except Exception as exc:
-                    log.debug("Exception: %s" % exc)
+                    log.debug(f"Exception: {exc}")
                     raise  # FIXME: Temporary. Orginal code swallows exception
             else:
                 self.NodeList = None
@@ -453,7 +447,7 @@ class NetworkEdit(wx.Frame, NetworkEditorTemplate):
 
     def RefreshTitle(self):
         if self.NodeList is not None:
-            self.SetTitle("Networkedit - %s" % self.NodeList.NetworkName)
+            self.SetTitle(f"Networkedit - {self.NodeList.NetworkName}")
         else:
             self.SetTitle("Networkedit")
 

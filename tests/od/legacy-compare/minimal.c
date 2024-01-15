@@ -7,6 +7,7 @@
 /* Declaration of mapped variables                                        */
 /**************************************************************************/
 
+
 /**************************************************************************/
 /* Declaration of value range types                                       */
 /**************************************************************************/
@@ -21,6 +22,7 @@ UNS32 Null_valueRangeTest (UNS8 typeValue, void * value)
   }
   return 0;
 }
+
 
 /**************************************************************************/
 /* The node id                                                            */
@@ -52,11 +54,11 @@ $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
 /* index 0x1003 :   Pre-defined Error Field */
                     UNS8 Null_highestSubIndex_obj1003 = 0; /* number of subindex - 1*/
-                    UNS32 Null_obj1003[] = 
+                    UNS32 Null_obj1003[] =
                     {
                       0x0	/* 0 */
                     };
-                    subindex Null_Index1003[] = 
+                    subindex Null_Index1003[] =
                      {
                        { RW, valueRange_EMC, sizeof (UNS8), (void*)&Null_highestSubIndex_obj1003, NULL },
                        { RO, uint32, sizeof (UNS32), (void*)&Null_obj1003[0], NULL }
@@ -68,10 +70,10 @@ $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 /* index 0x1006 :   Communication / Cycle Period */
                     UNS32 Null_obj1006 = 0x0;   /* 0 */
 
-/* index 0x100C :   Guard Time */ 
+/* index 0x100C :   Guard Time */
                     UNS16 Null_obj100C = 0x0;   /* 0 */
 
-/* index 0x100D :   Life Time Factor */ 
+/* index 0x100D :   Life Time Factor */
                     UNS8 Null_obj100D = 0x0;   /* 0 */
 
 /* index 0x1014 :   Emergency COB ID */
@@ -81,7 +83,7 @@ $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
                     UNS8 Null_highestSubIndex_obj1016 = 0;
                     UNS32 Null_obj1016[]={0};
 
-/* index 0x1017 :   Producer Heartbeat Time */ 
+/* index 0x1017 :   Producer Heartbeat Time */
                     UNS16 Null_obj1017 = 0x0;   /* 0 */
 
 /* index 0x1018 :   Identity. */
@@ -103,7 +105,8 @@ $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 /* Declaration of pointed variables                                       */
 /**************************************************************************/
 
-const indextable Null_objdict[] = 
+
+const indextable Null_objdict[] =
 {
   { (subindex*)Null_Index1000,sizeof(Null_Index1000)/sizeof(Null_Index1000[0]), 0x1000},
   { (subindex*)Null_Index1018,sizeof(Null_Index1018)/sizeof(Null_Index1018[0]), 0x1018},
@@ -124,7 +127,7 @@ const indextable * Null_scanIndexOD (CO_Data *d, UNS16 wIndex, UNS32 * errorCode
     return &Null_objdict[i];
 }
 
-/* 
+/*
  * To count at which received SYNC a PDO must be sent.
  * Even if no pdoTransmit are defined, at least one entry is computed
  * for compilations issues.
@@ -149,7 +152,7 @@ const quick_index Null_lastIndex = {
   0 /* PDO_TRS_MAP */
 };
 
-const UNS16 Null_ObjdictSize = sizeof(Null_objdict)/sizeof(Null_objdict[0]); 
+const UNS16 Null_ObjdictSize = sizeof(Null_objdict)/sizeof(Null_objdict[0]);
 
 CO_Data Null_Data = CANOPEN_NODE_DATA_INITIALIZER(Null);
 

@@ -72,13 +72,13 @@ def test_load_compare(odfile, suffix):
     """Tests that the file can be loaded twice without different.
     L(od) == L(od)
     """
-
-    if not os.path.exists(odfile + suffix):
+    odfile_path = f"{odfile}{suffix}"
+    if not os.path.exists(odfile_path):
         pytest.skip("File not found")
 
     # Load the OD
-    m1 = Node.LoadFile(odfile + suffix)
-    m2 = Node.LoadFile(odfile + suffix)
+    m1 = Node.LoadFile(odfile_path)
+    m2 = Node.LoadFile(odfile_path)
 
     assert m1.__dict__ == m2.__dict__
 
@@ -89,12 +89,15 @@ def test_odexport(wd, odfile, fn):
     L(od) -> S(od2), od == L(od2)
     """
     od = odfile.name
-
-    m0 = Node.LoadFile(odfile + ".od")
-    m1 = Node.LoadFile(odfile + ".od")
+    od_generated = f"{od}.od"
+    od_orig = f"{od}.od.orig"
+    od_path = f"{odfile}.od"
+    od_temp = f"{od}.tmp"
+    m0 = Node.LoadFile(od_path)
+    m1 = Node.LoadFile(od_path)
 
     # Save the OD
-    m1.DumpFile(od + ".od", filetype="od")
+    m1.DumpFile(od_generated, filetype="od")
 
     # Assert that the object is unmodified by the export
     assert m0.__dict__ == m1.__dict__
@@ -103,26 +106,26 @@ def test_odexport(wd, odfile, fn):
     #  .od.orig  is the original .od file
     #  .od       is the generated .od file
     RE_ID = re.compile(r'(id|module)="\w+"')
-    with open(odfile + ".od", "r") as fi:
-        with open(od + ".od.orig", "w") as fo:
+    with open(od_path, "r") as fi:
+        with open(od_orig, "w") as fo:
             for line in fi:
                 fo.write(RE_ID.sub("", line))
-    shutil.move(od + ".od", od + ".tmp")
-    with open(od + ".tmp", "r") as fi:
-        with open(od + ".od", "w") as fo:
+    shutil.move(od_generated, od_temp)
+    with open(od_temp, "r") as fi:
+        with open(od_generated, "w") as fo:
             for line in fi:
                 fo.write(RE_ID.sub("", line))
-    os.remove(od + ".tmp")
+    os.remove(od_temp)
 
     # Load the saved OD
-    m2 = Node.LoadFile(od + ".od")
+    m2 = Node.LoadFile(od_generated)
 
     # Compare the OD master and the OD2 objects
     assert m1.__dict__ == m2.__dict__
 
     # Compare the files - The py3 ones are by guarantee different, as the str handling is different
     if sys.version_info[0] < 3:
-        assert fn.diff(od + ".od.orig", od + ".od", n=0)
+        assert fn.diff(od_orig, od + ".od", n=0)
 
 
 def test_jsonexport(wd, odfile):
@@ -131,20 +134,21 @@ def test_jsonexport(wd, odfile):
     L(od) -> fix -> S(json), L(od) == od
     """
     od = odfile.name
-
-    m0 = Node.LoadFile(odfile + ".od")
-    m1 = Node.LoadFile(odfile + ".od")
+    od_json = f"{od}.json"
+    od_path = f"{odfile}.od"
+    m0 = Node.LoadFile(od_path)
+    m1 = Node.LoadFile(od_path)
 
     # Need this to fix any incorrect ODs which cause import error
     m0.Validate(fix=True)
     m1.Validate(fix=True)
 
-    m1.DumpFile(od + ".json", filetype="json")
+    m1.DumpFile(od_json, filetype="json")
 
     # Assert that the object is unmodified by the export
     assert m0.__dict__ == m1.__dict__
 
-    m2 = Node.LoadFile(odfile + ".od")
+    m2 = Node.LoadFile(od_path)
 
     # To verify that the export doesn't clobber the object
     equal = m1.__dict__ == m2.__dict__
@@ -173,10 +177,10 @@ def test_cexport(wd, odfile, fn):
     assert m0.__dict__ == m1.__dict__
 
     # FIXME: If files doesn't exist, this leaves this test half-done. Better way?
-    if os.path.exists(odfile + ".c"):
-        assert fn.diff(odfile + ".c", od + ".c", n=0)
-        assert fn.diff(odfile + ".h", od + ".h", n=0)
-        assert fn.diff(odfile + "_objectdefines.h", od + "_objectdefines.h", n=0)
+    if os.path.exists(f"{odfile}.c"):
+        assert fn.diff(f"{odfile}.c", f"{od}.c", n=0)
+        assert fn.diff(f"{odfile}.h", f"{od}.h", n=0)
+        assert fn.diff(f"{odfile}_objectdefines.h", f"{od}_objectdefines.h", n=0)
 
 
 def test_edsexport(wd, odfile, fn):
@@ -189,10 +193,10 @@ def test_edsexport(wd, odfile, fn):
     if od == "null":
         pytest.skip("Won't work for null")
 
-    m0 = Node.LoadFile(odfile + ".od")
-    m1 = Node.LoadFile(odfile + ".od")
+    m0 = Node.LoadFile(f"{odfile}.od")
+    m1 = Node.LoadFile(f"{odfile}.od")
 
-    m1.DumpFile(od + ".eds", filetype="eds")
+    m1.DumpFile(f"{od}.eds", filetype="eds")
 
     # Assert that the object is unmodified by the export
     assert m0.__dict__ == m1.__dict__
@@ -209,8 +213,8 @@ def test_edsexport(wd, odfile, fn):
         return True
 
     # FIXME: If file doesn't exist, this leaves this test half-done. Better way?
-    if os.path.exists(odfile + ".eds"):
-        assert fn.diff(odfile + ".eds", od + ".eds", predicate=predicate)
+    if os.path.exists(f"{odfile}.eds"):
+        assert fn.diff(f"{odfile}.eds", f"{od}.eds", predicate=predicate)
 
 
 def test_edsimport(wd, odfile):
@@ -222,18 +226,12 @@ def test_edsimport(wd, odfile):
     if od == "null":
         pytest.skip("Won't work for null")
 
-    m1 = Node.LoadFile(odfile + ".od")
+    m1 = Node.LoadFile(f"{odfile}.od")
 
     # Need this to fix any incorrect ODs which cause EDS import error
     # m1.Validate(correct=True)
 
-    m1.DumpFile(od + ".eds", filetype="eds")
-
-    m2 = Node.LoadFile(od + ".eds")
-
-    # FIXME: EDS isn't complete enough to compare with an OD-loaded file
-    # a, b = shave_equal(m1, m2, ignore=('IndexOrder', 'Description'))
-    # assert a == b
+    m1.DumpFile(f"{od}.eds", filetype="eds")
 
 
 def test_jsonimport(wd, odfile):
@@ -243,20 +241,20 @@ def test_jsonimport(wd, odfile):
     """
     od = odfile.name
 
-    m1 = Node.LoadFile(odfile + ".od")
+    m1 = Node.LoadFile(f"{odfile}.od")
 
     # Need this to fix any incorrect ODs which cause import error
     m1.Validate(fix=True)
 
-    m1.DumpFile(od + ".json", filetype="json")
-    m1.DumpFile(od + ".json2", filetype="json", compact=True)
+    m1.DumpFile(f"{od}.json", filetype="json")
+    m1.DumpFile(f"{od}.json2", filetype="json", compact=True)
 
-    m2 = Node.LoadFile(od + ".json")
+    m2 = Node.LoadFile(f"{od}.json")
 
     a, b = shave_equal(m1, m2, ignore=("IndexOrder",))
     assert a == b
 
-    m3 = Node.LoadFile(od + ".json2")
+    m3 = Node.LoadFile(f"{od}.json2")
 
     a, b = shave_equal(m1, m3, ignore=("IndexOrder",))
     assert a == b
@@ -267,11 +265,11 @@ def test_od_json_compare(odfile):
     L(od) == L(json)
     """
 
-    if not os.path.exists(odfile + ".json"):
-        raise pytest.skip("No .json file for '%s'" % (odfile + ".od"))
+    if not os.path.exists(f"{odfile}.json"):
+        raise pytest.skip(f"No .json file for {odfile}.od")
 
-    m1 = Node.LoadFile(odfile + ".od")
-    m2 = Node.LoadFile(odfile + ".json")
+    m1 = Node.LoadFile(f"{odfile}.od")
+    m2 = Node.LoadFile(f"{odfile}.json")
 
     # To verify that the export doesn't clobber the object
     a, b = shave_equal(m1, m2, ignore=("IndexOrder",))
@@ -312,12 +310,12 @@ def test_save_wo_profile(oddir, oddut, suffix, wd):
     results as the original. This test has no access to the profile dir
     """
 
-    fa = os.path.join(oddir, oddut)
+    fa = str(os.path.join(oddir, oddut))
 
-    m1 = Node.LoadFile(fa + ".od")
-    m1.DumpFile(oddut + "." + suffix, filetype=suffix)
+    m1 = Node.LoadFile(f"{fa}.od")
+    m1.DumpFile(f"{oddut}.{suffix}", filetype=suffix)
 
-    m2 = Node.LoadFile(oddut + "." + suffix)
+    m2 = Node.LoadFile(f"{oddut}.{suffix}")
 
     a, b = shave_equal(m1, m2, ignore=("IndexOrder",))
     assert a == b
@@ -330,12 +328,12 @@ def test_save_with_profile(oddir, oddut, suffix, wd, profile):
     results as the original. This test have access to the profile dir
     """
 
-    fa = os.path.join(oddir, oddut)
+    fa = str(os.path.join(oddir, oddut))
 
-    m1 = Node.LoadFile(fa + ".od")
-    m1.DumpFile(oddut + "." + suffix, filetype=suffix)
+    m1 = Node.LoadFile(f"{fa}.od")
+    m1.DumpFile(f"{oddut}.{suffix}", filetype=suffix)
 
-    m2 = Node.LoadFile(oddut + "." + suffix)
+    m2 = Node.LoadFile(f"{oddut}.{suffix}")
 
     a, b = shave_equal(m1, m2, ignore=("IndexOrder",))
     assert a == b
@@ -353,22 +351,17 @@ def test_save_with_profile(oddir, oddut, suffix, wd, profile):
         ("alltypes.od", "legacy-alltypes.od"),
         ("alltypes.json", "legacy-alltypes.od"),
         ("test-profile.od", "legacy-test-profile.od"),
-        # ('test-profile.json',       'legacy-test-profile.od'),
         ("test-profile-use.od", "legacy-test-profile-use.od"),
-        # ('test-profile-use.json',   'legacy-test-profile-use.od'),
         ("master-ds302.od", "legacy-master-ds302.od"),
-        # ('master-ds302.json',       'legacy-master-ds302.od'),
         ("master-ds401.od", "legacy-master-ds401.od"),
-        # ('master-ds401.json',       'legacy-master-ds401.od'),
         ("master-ds302-ds401.od", "legacy-master-ds302-ds401.od"),
-        # ('master-ds302-ds401.json', 'legacy-master-ds302-ds401.od'),
     ],
 )
 def test_legacy_compare(oddir, equivs):
     """Test reading the od and compare it with the corresponding json file"""
     a, b = equivs
-    fa = os.path.join(oddir, a)
-    fb = os.path.join(oddir, b)
+    fa = str(os.path.join(oddir, a))
+    fb = str(os.path.join(oddir, b))
 
     m1 = Node.LoadFile(fa)
     m2 = Node.LoadFile(fb)

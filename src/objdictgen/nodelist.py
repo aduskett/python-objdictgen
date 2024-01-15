@@ -19,16 +19,9 @@
 #    License along with this library; if not, write to the Free Software
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
 #    USA
-
-from __future__ import print_function
-from __future__ import absolute_import
-from builtins import object
-
 import os
 import shutil
 import errno
-from future.utils import raise_from
-
 from objdictgen import eds_utils
 
 
@@ -37,7 +30,7 @@ from objdictgen import eds_utils
 # ------------------------------------------------------------------------------
 
 
-class NodeList(object):
+class NodeList:
     """
     Class recording a node list for a CANOpen network.
     """
@@ -67,7 +60,7 @@ class NodeList(object):
 
     def GetSlaveNames(self):
         return [
-            "0x%2.2X %s" % (idx, self.SlaveNodes[idx]["Name"])
+            f"0x{idx:2.2X} {self.SlaveNodes[idx]['Name']}"
             for idx in sorted(self.SlaveNodes)
         ]
 
@@ -85,7 +78,6 @@ class NodeList(object):
         eds_folder = self.GetEDSFolder()
         if not os.path.exists(eds_folder):
             os.mkdir(eds_folder)
-            # raise ValueError("'%s' folder doesn't contain a 'eds' folder" % self.Root)
 
         files = os.listdir(eds_folder)
         for file in files:
@@ -118,20 +110,20 @@ class NodeList(object):
 
     def AddSlaveNode(self, nodename, nodeid, eds):
         if eds not in self.EDSNodes:
-            raise ValueError("'%s' EDS file is not available" % eds)
+            raise ValueError(f"'{eds}' EDS file is not available")
         slave = {"Name": nodename, "EDS": eds, "Node": self.EDSNodes[eds]}
         self.SlaveNodes[nodeid] = slave
         self.Changed = True
 
     def RemoveSlaveNode(self, index):
         if index not in self.SlaveNodes:
-            raise ValueError("Node with '0x%2.2X' ID doesn't exist" % (index))
+            raise ValueError(f"Node with '0x{index:2.2X}' ID doesn't exist")
         self.SlaveNodes.pop(index)
         self.Changed = True
 
     def LoadMasterNode(self, netname=None):
         if netname:
-            masterpath = os.path.join(self.Root, "%s_master.od" % netname)
+            masterpath = os.path.join(self.Root, f"{netname}_master.od")
         else:
             masterpath = os.path.join(self.Root, "master.od")
         if os.path.isfile(masterpath):
@@ -144,15 +136,13 @@ class NodeList(object):
 
     def SaveMasterNode(self, netname=None):
         if netname:
-            masterpath = os.path.join(self.Root, "%s_master.od" % netname)
+            masterpath = os.path.join(self.Root, f"{netname}_master.od")
         else:
             masterpath = os.path.join(self.Root, "master.od")
         try:
             self.Manager.SaveCurrentInFile(masterpath)
-        except Exception as exc:  # pylint: disable=broad-except
-            raise_from(
-                ValueError("Fail to save master node in '%s'" % (masterpath,)), exc
-            )
+        except Exception as err:  # pylint: disable=broad-except
+            raise ValueError(f"Fail to save master node in '{masterpath}'") from err
 
     def LoadSlaveNodes(self, netname=None):
         cpjpath = os.path.join(self.Root, "nodelist.cpj")
@@ -173,8 +163,8 @@ class NodeList(object):
                         if node["Present"] == 1:
                             self.AddSlaveNode(node["Name"], nodeid, node["DCFName"])
                 self.Changed = False
-            except Exception as exc:  # pylint: disable=broad-except
-                raise_from(ValueError("Unable to load CPJ file '%s'" % (cpjpath,)), exc)
+            except Exception as err:  # pylint: disable=broad-except
+                raise ValueError(f"Unable to load CPJ file '{cpjpath}'") from err
 
     def SaveNodeList(self, netname=None):
         cpjpath = ""  # For linting
@@ -188,8 +178,8 @@ class NodeList(object):
             with open(cpjpath, mode=mode) as f:
                 f.write(content)
             self.Changed = False
-        except Exception as exc:  # pylint: disable=broad-except
-            raise_from(ValueError("Fail to save node list in '%s'" % (cpjpath)), exc)
+        except Exception as err:  # pylint: disable=broad-except
+            raise ValueError(f"Fail to save node list in '{cpjpath}'") from err
 
     def GetOrderNumber(self, nodeid):
         nodeindexes = list(sorted(self.SlaveNodes))
@@ -274,7 +264,7 @@ def main(projectdir):
             print(line)
     print()
     for nodeid, node in nodelist.SlaveNodes.items():
-        print("SlaveNode name=%s id=0x%2.2X :" % (node["Name"], nodeid))
+        print(f"SlaveNode name={node['Name']} id=0x{nodeid:2.2X} :")
         for line in node["Node"].GetPrintParams():
             print(line)
         print()

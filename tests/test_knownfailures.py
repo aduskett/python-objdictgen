@@ -16,7 +16,7 @@ def test_edsfail_null(wd, oddir, suffix):
     m0 = Node.LoadFile(fa + suffix)
 
     with pytest.raises(KeyError) as exc:
-        m0.DumpFile(fa + ".eds", filetype="eds")
+        m0.DumpFile(f"{fa}.eds", filetype="eds")
     assert "Index 0x1018 does not exist" in str(exc.value)
 
 

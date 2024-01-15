@@ -44,7 +44,10 @@ def pytest_generate_tests(metafunc):
     """Special fixture generators"""
     if "odfile" in metafunc.fixturenames:
         metafunc.parametrize(
-            "odfile", ODFILES, ids=[o.relpath for o in ODFILES], indirect=True
+            "odfile",
+            ODFILES,
+            ids=[od_file.relpath for od_file in ODFILES],
+            indirect=True,
         )
 
 
@@ -90,7 +93,10 @@ def odfile(request, profile):
 
 def diff(a, b, predicate=None, **kw):
     if predicate is None:
-        predicate = lambda x: True
+
+        def predicate(_):
+            return True
+
     print(a, b)
     with open(a, "r") as f:
         da = [n.rstrip() for n in f if predicate(n)]

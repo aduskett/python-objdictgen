@@ -7,6 +7,7 @@
 /* Declaration of mapped variables                                        */
 /**************************************************************************/
 
+
 /**************************************************************************/
 /* Declaration of value range types                                       */
 /**************************************************************************/
@@ -21,6 +22,7 @@ UNS32 Slave_valueRangeTest (UNS8 typeValue, void * value)
   }
   return 0;
 }
+
 
 /**************************************************************************/
 /* The node id                                                            */
@@ -59,11 +61,11 @@ $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
 /* index 0x1003 :   Pre-defined Error Field */
                     UNS8 Slave_highestSubIndex_obj1003 = 0; /* number of subindex - 1*/
-                    UNS32 Slave_obj1003[] = 
+                    UNS32 Slave_obj1003[] =
                     {
                       0x0	/* 0 */
                     };
-                    subindex Slave_Index1003[] = 
+                    subindex Slave_Index1003[] =
                      {
                        { RW, valueRange_EMC, sizeof (UNS8), (void*)&Slave_highestSubIndex_obj1003, NULL },
                        { RO, uint32, sizeof (UNS32), (void*)&Slave_obj1003[0], NULL }
@@ -75,10 +77,10 @@ $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 /* index 0x1006 :   Communication / Cycle Period */
                     UNS32 Slave_obj1006 = 0x0;   /* 0 */
 
-/* index 0x100C :   Guard Time */ 
+/* index 0x100C :   Guard Time */
                     UNS16 Slave_obj100C = 0x0;   /* 0 */
 
-/* index 0x100D :   Life Time Factor */ 
+/* index 0x100D :   Life Time Factor */
                     UNS8 Slave_obj100D = 0x0;   /* 0 */
 
 /* index 0x1014 :   Emergency COB ID */
@@ -88,7 +90,7 @@ $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
                     UNS8 Slave_highestSubIndex_obj1016 = 0;
                     UNS32 Slave_obj1016[]={0};
 
-/* index 0x1017 :   Producer Heartbeat Time */ 
+/* index 0x1017 :   Producer Heartbeat Time */
                     UNS16 Slave_obj1017 = 0x0;   /* 0 */
 
 /* index 0x1018 :   Identity. */
@@ -481,7 +483,8 @@ $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 /* Declaration of pointed variables                                       */
 /**************************************************************************/
 
-const indextable Slave_objdict[] = 
+
+const indextable Slave_objdict[] =
 {
   { (subindex*)Slave_Index1000,sizeof(Slave_Index1000)/sizeof(Slave_Index1000[0]), 0x1000},
   { (subindex*)Slave_Index1001,sizeof(Slave_Index1001)/sizeof(Slave_Index1001[0]), 0x1001},
@@ -538,7 +541,7 @@ const indextable * Slave_scanIndexOD (CO_Data *d, UNS16 wIndex, UNS32 * errorCod
     return &Slave_objdict[i];
 }
 
-/* 
+/*
  * To count at which received SYNC a PDO must be sent.
  * Even if no pdoTransmit are defined, at least one entry is computed
  * for compilations issues.
@@ -563,7 +566,7 @@ const quick_index Slave_lastIndex = {
   19 /* PDO_TRS_MAP */
 };
 
-const UNS16 Slave_ObjdictSize = sizeof(Slave_objdict)/sizeof(Slave_objdict[0]); 
+const UNS16 Slave_ObjdictSize = sizeof(Slave_objdict)/sizeof(Slave_objdict[0]);
 
 CO_Data Slave_Data = CANOPEN_NODE_DATA_INITIALIZER(Slave);
 

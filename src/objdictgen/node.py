@@ -54,7 +54,7 @@ log = logging.getLogger("objdictgen")
 Fore = colorama.Fore
 Style = colorama.Style
 
-RE_NAME = re.compile(r"(.*)\[(.*)\]")
+RE_NAME = re.compile(r"(.*)\[(.*)]")
 
 
 # ------------------------------------------------------------------------------
@@ -80,10 +80,10 @@ def StringFormat(text, idx, sub):  # pylint: disable=unused-argument
     if result:
         fmt = result.groups()
         try:
-            log.debug("EVAL StringFormat(): '%s'" % (fmt[1],))
+            log.debug(f"EVAL StringFormat(): '{fmt[1]}'")
             return fmt[0] % eval(fmt[1])  # FIXME: Using eval is not safe
         except Exception as exc:
-            log.debug("EVAL FAILED: %s" % (exc,))
+            log.debug(f"EVAL FAILED: {exc}")
             raise
     else:
         return text
@@ -93,20 +93,19 @@ def GetIndexRange(index):
     for irange in maps.INDEX_RANGES:
         if irange["min"] <= index <= irange["max"]:
             return irange
-    raise ValueError("Cannot find index range for value '0x%x'" % index)
+    raise ValueError(f"Cannot find index range for value '0x{index:x}'")
 
 
 def BE_to_LE(value):
     """
     Convert Big Endian to Little Endian
     @param value: value expressed in Big Endian
-    @param size: number of bytes generated
     @return: a string containing the value converted
     """
 
     # FIXME: The function title is confusing as the input data type (str) is
     # different than the output (int)
-    return int("".join(["%2.2X" % ord(char) for char in reversed(value)]), 16)
+    return int("".join([f"{ord(char):2.2X}" for char in reversed(value)]), 16)
 
 
 def LE_to_BE(value, size):
@@ -119,7 +118,7 @@ def LE_to_BE(value, size):
 
     # FIXME: The function title is confusing as the input data type (int) is
     # different than the output (str)
-    data = ("%" + str(size * 2) + "." + str(size * 2) + "X") % value
+    data = f"{f'%{str(size * 2)}.{str(size * 2)}X'}{value}"
     list_car = [data[i : i + 2] for i in range(0, len(data), 2)]
     list_car.reverse()
     return "".join([chr(int(car, 16)) for car in list_car])
@@ -136,7 +135,7 @@ def ImportProfile(profilename):
     # The UI use full filenames, while all other uses use profile names
     profilepath = profilename
     if not os.path.exists(profilepath):
-        fname = "%s.prf" % profilename
+        fname = f"{profilename}.prf"
         try:
             profilepath = next(
                 os.path.join(base, fname)
@@ -146,8 +145,7 @@ def ImportProfile(profilename):
         except StopIteration:
             raise_from(
                 ValueError(
-                    "Unable to load profile '%s': '%s': No such file or directory"
-                    % (profilename, fname)
+                    f"Unable to load profile '{profilename}': '{fname}': No such file or directory"
                 ),
                 None,
             )
@@ -156,16 +154,14 @@ def ImportProfile(profilename):
     # The profiles requires some vars to be set
     # pylint: disable=unused-variable
     try:
-        log.debug("EXECFILE %s" % (profilepath,))
+        log.debug(f"EXECFILE {profilepath}")
         execfile(profilepath)  # FIXME: Using execfile is unsafe
         # pylint: disable=undefined-variable
         return Mapping, AddMenuEntries  # pyright: ignore  # noqa: F821
     except Exception as exc:  # pylint: disable=broad-except
-        log.debug("EXECFILE FAILED: %s" % exc)
+        log.debug(f"EXECFILE FAILED: {exc}")
         log.debug(traceback.format_exc())
-        raise_from(
-            ValueError("Loading profile '%s' failed: %s" % (profilepath, exc)), exc
-        )
+        raise_from(ValueError(f"Loading profile '{profilepath}' failed: {exc}"), exc)
         return None  # To satisfy linter only
 
 
@@ -235,7 +231,7 @@ class Find:
     @staticmethod
     def EntryInfos(index, mappingdictionary, compute=True):
         """
-        Return the informations of one entry by searching in mappingdictionary
+        Return the information of one entry by searching in mappingdictionary
         """
         base_index = Find.Index(index, mappingdictionary)
         if base_index:
@@ -251,7 +247,7 @@ class Find:
     @staticmethod
     def SubentryInfos(index, subindex, mappingdictionary, compute=True):
         """
-        Return the informations of one subentry of an entry by searching in mappingdictionary
+        Return the information of one subentry of an entry by searching in mappingdictionary
         """
         base_index = Find.Index(index, mappingdictionary)
         if base_index:
@@ -337,7 +333,7 @@ class Find:
     @staticmethod
     def Index(index, mappingdictionary):
         """
-        Return the index of the informations in the Object Dictionary in case of identical
+        Return the index of the information in the Object Dictionary in case of identical
         indexes
         """
         if index in mappingdictionary:
@@ -400,15 +396,15 @@ class Node(object):
         # type: (str) -> Node
         """Open a file and create a new node"""
         if isXml(filepath):
-            log.debug("Loading XML OD '%s'" % filepath)
+            log.debug(f"Loading XML OD '{filepath}'")
             with open(filepath, "r") as f:
                 return nosis.xmlload(f)  # type: ignore
 
         if isEds(filepath):
-            log.debug("Loading EDS '%s'" % filepath)
+            log.debug(f"Loading EDS '{filepath}'")
             return eds_utils.GenerateNode(filepath)
 
-        log.debug("Loading JSON OD '%s'" % filepath)
+        log.debug(f"Loading JSON OD '{filepath}'")
         with open(filepath, "r") as f:
             return Node.LoadJson(f.read())
 
@@ -420,19 +416,19 @@ class Node(object):
     def DumpFile(self, filepath, filetype="json", **kwargs):
         """Save node into file"""
         if filetype == "od":
-            log.debug("Writing XML OD '%s'" % filepath)
+            log.debug(f"Writing XML OD '{filepath}'")
             with open(filepath, "w") as f:
                 # Never generate an od with IndexOrder in it
                 nosis.xmldump(f, self, omit=("IndexOrder",))
             return
 
         if filetype == "eds":
-            log.debug("Writing EDS '%s'" % filepath)
+            log.debug(f"Writing EDS '{filepath}'")
             eds_utils.GenerateEDSFile(filepath, self)
             return
 
         if filetype == "json":
-            log.debug("Writing JSON OD '%s'" % filepath)
+            log.debug(f"Writing JSON OD '{filepath}'")
             jdata = self.DumpJson(**kwargs)
             with open(filepath, "w") as f:
                 f.write(jdata)
@@ -597,7 +593,7 @@ class Node(object):
         returns the number of subindex in the entry except the first.
         """
         if index not in self.Dictionary:
-            raise KeyError("Index 0x%04x does not exist" % index)
+            raise KeyError(f"Index 0x{index:04x} does not exist")
         if subindex is None:
             if isinstance(self.Dictionary[index], list):
                 return [len(self.Dictionary[index])] + [
@@ -619,7 +615,7 @@ class Node(object):
             return self.CompileValue(
                 self.Dictionary[index][subindex - 1], index, compute
             )
-        raise ValueError("Invalid subindex %s for index 0x%04x" % (subindex, index))
+        raise ValueError(f"Invalid subindex {subindex} for index 0x{index:04x}")
 
     def GetParamsEntry(self, index, subindex=None, aslist=False):
         """
@@ -627,7 +623,7 @@ class Node(object):
         returns the number of subindex in the entry except the first.
         """
         if index not in self.Dictionary:
-            raise KeyError("Index 0x%04x does not exist" % index)
+            raise KeyError(f"Index 0x{index:04x} does not exist")
         if subindex is None:
             if isinstance(self.Dictionary[index], list):
                 if index in self.ParamsDictionary:
@@ -664,7 +660,7 @@ class Node(object):
             ):
                 result.update(self.ParamsDictionary[index][subindex])
             return result
-        raise ValueError("Invalid subindex %s for index 0x%04x" % (subindex, index))
+        raise ValueError(f"Invalid subindex {subindex} for index 0x{index:04x}")
 
     def HasEntryCallbacks(self, index):
         entry_infos = self.GetEntryInfos(index)
@@ -901,11 +897,11 @@ class Node(object):
                 index
             )  # noqa: F841  pylint: disable=unused-variable
             try:
-                log.debug("EVAL CompileValue() #1: '%s'" % (value,))
+                log.debug(f"EVAL CompileValue() #1: '{value}'")
                 raw = eval(value)  # FIXME: Using eval is not safe
                 if compute and isinstance(raw, (str, unicode)):
                     raw = raw.upper().replace("$NODEID", "self.ID")
-                    log.debug("EVAL CompileValue() #2: '%s'" % (raw,))
+                    log.debug(f"EVAL CompileValue() #2: '{raw}'")
                     return eval(raw)  # FIXME: Using eval is not safe
                 # NOTE: This has a side effect: It will strip away # '"$NODEID"' into '$NODEID'
                 #       even if compute is False.
@@ -913,14 +909,14 @@ class Node(object):
                 #     warning(f"CompileValue() changed '{value}' into '{raw}'")
                 return raw
             except Exception as exc:  # pylint: disable=broad-except
-                log.debug("EVAL FAILED: %s" % exc)
-                raise_from(ValueError("CompileValue failed for '%s'" % (value,)), exc)
+                log.debug(f"EVAL FAILED: {exc}")
+                raise_from(ValueError(f"CompileValue failed for '{value}'"), exc)
                 return 0  # FIXME: Why ignore this exception?
         else:
             return value
 
     # --------------------------------------------------------------------------
-    #                         Node Informations Functions
+    #                         Node information Functions
     # --------------------------------------------------------------------------
 
     def GetBaseIndex(self, index):
@@ -1112,7 +1108,7 @@ class Node(object):
         return list_
 
     def GenerateMapName(self, name, index, subindex):  # pylint: disable=unused-argument
-        return "%s (0x%4.4X)" % (name, index)
+        return f"{name} (0x{index:4.4X})"
 
     def GetMapValue(self, mapname):
         if mapname == "None":
@@ -1190,7 +1186,7 @@ class Node(object):
         if value:
             index = value >> 16
             subindex = (value >> 8) % (1 << 8)
-            size = (value) % (1 << 8)
+            size = value % (1 << 8)
             return index, subindex, size
         return 0, 0, 0
 
@@ -1295,11 +1291,9 @@ class Node(object):
             }
             excessive_params = {k for k in params if k > dictlen}
             if excessive_params:
-                log.debug("Excessive params: {}".format(excessive_params))
+                log.debug(f"Excessive params: {excessive_params}")
                 _warn(
-                    "Excessive user parameters ({}) or too few dictionary values ({})".format(
-                        len(excessive_params), dictlen
-                    )
+                    f"Excessive user parameters ({len(excessive_params)}) or too few dictionary values ({dictlen})"
                 )
 
                 if index in self.Dictionary:
@@ -1307,9 +1301,7 @@ class Node(object):
                         del self.ParamsDictionary[index][idx]
                         del params[idx]
                     _warn(
-                        "FIX: Deleting ParamDictionary entries {}".format(
-                            ", ".join(str(k) for k in excessive_params)
-                        )
+                        f"FIX: Deleting ParamDictionary entries {', '.join(str(k) for k in excessive_params)}"
                     )
 
                     # If params have been emptied because of this, remove it altogether
@@ -1325,10 +1317,10 @@ class Node(object):
                 # Test if subindex have a name
                 #
                 if not subvals["name"]:
-                    _warn("Sub index {}: Missing name".format(idx))
+                    _warn(f"Sub index {idx}: Missing name")
                     if fix:
-                        subvals["name"] = "Subindex {}".format(idx)
-                        _warn("FIX: Set name to '{}'".format(subvals["name"]))
+                        subvals["name"] = f"Subindex {idx}"
+                        _warn(f"FIX: Set name to '{subvals['name']}'")
 
     # --------------------------------------------------------------------------
     #                            Printing and output
@@ -1347,14 +1339,14 @@ class Node(object):
         # Replace flags for formatting
         for i, flag in enumerate(flags):
             if flag == "Missing":
-                flags[i] = Fore.RED + " *MISSING* " + Style.RESET_ALL
+                flags[i] = f"{Fore.RED} *MISSING* {Style.RESET_ALL}"
 
         # Print formattings
         fmt = {
-            "key": "{0}0x{1:04x} ({1}){2}".format(Fore.GREEN, index, Style.RESET_ALL),
+            "key": f"{Fore.GREEN}0x{index:04x} ({index}){Style.RESET_ALL}",
             "name": self.GetEntryName(index),
             "struct": maps.ODStructTypes.to_string(obj.get("struct"), "???").upper(),  # type: ignore
-            "flags": "  {}{}{}".format(Fore.CYAN, ", ".join(flags), Style.RESET_ALL)
+            "flags": f"  {Fore.CYAN}{', '.join(flags)}{Style.RESET_ALL}"
             if flags
             else "",
             "pre": "    " if not compact else "",
@@ -1409,24 +1401,22 @@ class Node(object):
 
                 # Special formatting on value
                 if isinstance(value, str):
-                    value = '"' + value + '"'
+                    value = f'"{value}"'
                 elif i and index_range and index_range["name"] in ("rpdom", "tpdom"):
                     index, subindex, _ = self.GetMapIndex(value)
                     pdo = self.GetSubentryInfos(index, subindex)
                     suffix = "???" if value else ""
                     if pdo:
                         suffix = str(pdo["name"])
-                    value = "0x{:x}  {}".format(value, suffix)
+                    value = f"0x{value:x}  {suffix}"
                 elif i and value and (k in (4120,) or "COB ID" in info["name"]):
-                    value = "0x{:x}".format(value)
+                    value = f"0x{value:x}"
                 else:
                     value = str(value)
 
                 comment = info["comment"] or ""
                 if comment:
-                    comment = "{}/* {} */{}".format(
-                        Fore.LIGHTBLACK_EX, info.get("comment"), Style.RESET_ALL
-                    )
+                    comment = f"{Fore.LIGHTBLACK_EX}/* {info.get('comment')} */{Style.RESET_ALL}"
 
                 # Omit printing this subindex if:
                 if (
@@ -1460,17 +1450,7 @@ class Node(object):
             }
 
             # Generate a format string based on the calculcated column widths
-            fmt = (
-                "{pre}    {i:%ss}  {access:%ss}  {pdo:%ss}  {name:%ss}  {type:%ss}  {value:%ss}  {comment}"
-                % (
-                    w["i"],
-                    w["access"],
-                    w["pdo"],
-                    w["name"],
-                    w["type"],
-                    w["value"],  # noqa: E126, E241
-                )
-            )
+            fmt = f"{{pre}}    {{i:{w['i']}s}}  {{access:{w['access']}s}}  {{pdo:{w['pdo']}s}}  {{name:{w['name']}s}}  {{type:{w['type']}s}}  {{value:{w['value']}s}}  {{comment}}"
 
             # Print each line using the generated format string
             for info in infos:

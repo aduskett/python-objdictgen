@@ -31,13 +31,9 @@ import objdictgen
 from objdictgen import maps
 from objdictgen.maps import OD
 
-if sys.version_info[0] >= 3:
-    unicode = str  # pylint: disable=invalid-name
-    long = int  # pylint: disable=invalid-name
-    ODict = dict
-else:
-    ODict = OrderedDict
-
+unicode = str  # pylint: disable=invalid-name
+long = int  # pylint: disable=invalid-name
+ODict = dict
 log = logging.getLogger("objdictgen")
 
 
@@ -171,7 +167,7 @@ FIELDS_DICT_OPT = {
     "each",  # R, only when struct != *var
     "callback",  #    set if present   # noqa: E262
     "profile_callback",  # R, set if present   # noqa: E261
-    "unused",  #    default False
+    "unused",  # default False
     "mandatory",  # R, set if present
     "repeat",  #    default False   # noqa: E262
     "incr",  # R, only when struct is "N"-type
@@ -245,12 +241,12 @@ def ordereddict_hook(pairs):
 
 
 def str_to_number(string):
-    """Convert string to a number, otherwise pass it through"""
+    """ Convert string to a number, otherwise pass it through """
     if string is None or isinstance(string, (int, float, long)):
         return string
     s = string.strip()
-    if s.startswith("0x") or s.startswith("-0x"):
-        return int(s.replace("0x", ""), 16)
+    if s.startswith('0x') or s.startswith('-0x'):
+        return int(s.replace('0x', ''), 16)
     if s.isdigit():
         return int(string)
     return string
@@ -368,10 +364,10 @@ def compare_profile(profilename, params, menu=None):
         return True, identical
 
     except ValueError as exc:
-        log.debug("Loading profile failed: {}".format(exc))
+        log.debug(f"Loading profile failed: {exc}")
         # FIXME: Is this an error?
         # Test case test-profile.od -> test-profile.json without access to profile
-        log.warning("WARNING: %s", exc)
+        log.warning(f"WARNING: {str(exc)}")
         return False, False
 
 
@@ -411,7 +407,7 @@ def GenerateJson(node, compact=False, sort=False, internal=False, validate=True)
         if p == "type":
             n = objtypes_s2i.get(v, v)
         if n != v:
-            return m.group(0) + "  // {}".format(n)
+            return m.group(0) + f"  // {n}"
         return m.group(0)
 
     out = re.sub(  # As object entries
@@ -502,7 +498,7 @@ def node_todict(node, sort=False, rich=True, internal=False, validate=True):
             "$id": JSON_ID,
             "$version": JSON_INTERNAL_VERSION if internal else JSON_VERSION,
             "$description": JSON_DESCRIPTION,
-            "$tool": str(objdictgen.ODG_PROGRAM) + " " + str(objdictgen.ODG_VERSION),
+            "$tool": f"{str(objdictgen.ODG_PROGRAM)} {str(objdictgen.ODG_VERSION)}",
             "$date": datetime.isoformat(datetime.now()),
         }
     )
@@ -738,7 +734,7 @@ def node_todict_parameter(obj, node, index):
         dictlen = start + len(dictvals)
         sub = obj["sub"]
         if dictlen > len(sub):
-            sub += [{} for i in range(len(sub), dictlen)]
+            sub += [{} for _ in range(len(sub), dictlen)]
 
         # Commit the params to 'sub'
         for i, val in enumerate(sub):
@@ -842,14 +838,12 @@ def validate_nodeindex(node, index, obj):
     if "dictionary" in obj:
         if is_var:
             dictlen = 1
-            # dictvalues = [dictvalues]
         else:
             if not isinstance(dictvalues, list):
                 raise ValidationError(
                     "Unexpected type in dictionary '{}'".format(dictvalues)
                 )
             dictlen = len(dictvalues) + 1
-            # dictvalues = [None] + dictvalues  # Which is a copy
 
     # Check numbered params
     excessive = {}
@@ -1001,7 +995,7 @@ def node_fromdict(jd, internal=False):
                         )
                     )
                     for line in diff.pretty().splitlines():
-                        log.debug("  " + line)
+                        log.debug(f"  {line}")
                 else:
                     # FIXME: No print
                     print("WARNING: Py2 cannot print difference of objects")
@@ -1071,11 +1065,11 @@ def node_fromdict_parameter(obj, objtypes_s2i):
         obj["dictionary"] = dictionary
 
     # The "unused" field is used to indicate that the parameter has no
-    # dictionary value. Otherwise there must be an empty dictionary list
+    # dictionary value. Otherwise, there must be an empty dictionary list
     # ==> "unused" is only read iff dictionary is empty
     elif not obj.get("unused", False):
         # NOTE: If struct in VAR and NVAR, it is not correct to set to [], but
-        #       the should be captured by the validator.
+        #       they should be captured by the validator.
         obj["dictionary"] = []
 
     # Restore param dictionary
@@ -1175,7 +1169,7 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
     # Verify that we have the expected members
     member_compare(jsonobj.keys(), FIELDS_DATA_MUST, FIELDS_DATA_OPT)
 
-    def _validate_sub(obj, idx=0, is_var=False, is_repeat=False, is_each=False):
+    def _validate_sub(obj_, idx=0, is_var=False, is_repeat=False, is_each=False):
         # Validated: (See FIELDS_MAPVAPS_*, FIELDS_PARAMS and FIELDS_VALUE)
         # ----------
         # Y "name" (must)
@@ -1190,7 +1184,7 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
         #   "buffer_size" (optional)
         #   "value" (optional)
 
-        if not isinstance(obj, dict):
+        if not isinstance(obj_, dict):
             raise ValidationError("Is not a dict")
 
         if idx > 0 and is_var:
@@ -1198,10 +1192,10 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
 
         # Subindex 0 of a *ARRAY, *RECORD cannot hold any value
         if idx == 0 and not is_var:
-            member_compare(obj.keys(), not_want=FIELDS_VALUE)
+            member_compare(obj_.keys(), not_want=FIELDS_VALUE)
 
         # Validate "nbmax" if parsing the "each" sub
-        member_compare(obj.keys(), {"nbmax"}, only_if=idx == -1)
+        member_compare(obj_.keys(), {"nbmax"}, only_if=idx == -1)
 
         # Default parameter precense
         defs = "must"  # Parameter definition (FIELDS_MAPVALS_*)
@@ -1247,28 +1241,28 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
             opts |= FIELDS_VALUE
 
         # Verify parameters
-        member_compare(obj.keys(), must, opts)
+        member_compare(obj_.keys(), must, opts)
 
         # Validate "name"
-        if "name" in obj and not obj["name"]:
+        if "name" in obj_ and not obj_["name"]:
             raise ValidationError("Must have a non-zero length name")
 
         # Validate "type"
-        if "type" in obj:
+        if "type" in obj_:
             if (
-                isinstance(obj["type"], str)
+                isinstance(obj_["type"], str)
                 and objtypes_s2i
-                and obj["type"] not in objtypes_s2i
+                and obj_["type"] not in objtypes_s2i
             ):
-                raise ValidationError("Unknown object type '{}'".format(obj["type"]))
+                raise ValidationError("Unknown object type '{}'".format(obj_["type"]))
             if (
-                isinstance(obj["type"], int)
+                isinstance(obj_["type"], int)
                 and objtypes_i2s
-                and obj["type"] not in objtypes_i2s
+                and obj_["type"] not in objtypes_i2s
             ):
-                raise ValidationError("Unknown object type id {}".format(obj["type"]))
+                raise ValidationError("Unknown object type id {}".format(obj_["type"]))
 
-    def _validate_dictionary(index, obj):
+    def _validate_dictionary(index_, obj_):
         # Validated: (See FIELDS_DICT_MUST, FIELDS_DICT_OPT)
         # ----------
         # Y "index" (must)
@@ -1288,12 +1282,12 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
         # Y "default" (optional)
 
         # Validate "repeat" (optional, default False)
-        is_repeat = obj.get("repeat", False)
+        is_repeat = obj_.get("repeat", False)
 
         # Validate all present fields
         if is_repeat:
             member_compare(
-                obj.keys(),
+                obj_.keys(),
                 FIELDS_DICT_REPEAT_MUST,
                 FIELDS_DICT_REPEAT_OPT,
                 msg=" in dictionary",
@@ -1301,40 +1295,40 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
 
         else:
             member_compare(
-                obj.keys(), FIELDS_DICT_MUST, FIELDS_DICT_OPT, msg=" in dictionary"
+                obj_.keys(), FIELDS_DICT_MUST, FIELDS_DICT_OPT, msg=" in dictionary"
             )
 
         # Validate "index" (must)
-        if not isinstance(index, int):
-            raise ValidationError("Invalid dictionary index '{}'".format(obj["index"]))
-        if index <= 0 or index > 0xFFFF:
-            raise ValidationError("Invalid dictionary index value '{}'".format(index))
+        if not isinstance(index_, int):
+            raise ValidationError("Invalid dictionary index '{}'".format(obj_["index"]))
+        if index_ <= 0 or index_ > 0xFFFF:
+            raise ValidationError("Invalid dictionary index value '{}'".format(index_))
 
         # Validate "struct" (must)
-        struct = obj["struct"]
+        struct = obj_["struct"]
         if not isinstance(struct, int):
             struct = OD.from_string(struct)
         if struct not in OD.STRINGS:
-            raise ValidationError("Unknown struct value '{}'".format(obj["struct"]))
+            raise ValidationError("Unknown struct value '{}'".format(obj_["struct"]))
 
         # Validate "group" (optional, default 'user', omit if repeat is True)
-        group = obj.get("group", None) or "user"
+        group = obj_.get("group", None) or "user"
         if group and group not in GROUPS:
             raise ValidationError("Unknown group value '{}'".format(group))
 
         # Validate "default" (optional)
-        if "default" in obj and index >= 0x1000:
+        if "default" in obj_ and index_ >= 0x1000:
             raise ValidationError("'default' cannot be used in index 0x1000 and above")
 
         # Validate "size" (optional)
-        if "size" in obj and index >= 0x1000:
+        if "size" in obj_ and index_ >= 0x1000:
             raise ValidationError("'size' cannot be used in index 0x1000 and above")
 
         # Validate that "nbmax" and "incr" is only present in right struct type
         need_nbmax = not is_repeat and struct in (OD.NVAR, OD.NARRAY, OD.NRECORD)
-        member_compare(obj.keys(), {"nbmax", "incr"}, only_if=need_nbmax)
+        member_compare(obj_.keys(), {"nbmax", "incr"}, only_if=need_nbmax)
 
-        subitems = obj["sub"]
+        subitems = obj_["sub"]
         if not isinstance(subitems, list):
             raise ValidationError("'sub' is not a list")
 
@@ -1346,15 +1340,15 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
             try:
                 is_var = struct in (OD.VAR, OD.NVAR)
                 _validate_sub(
-                    sub, idx, is_var=is_var, is_repeat=is_repeat, is_each="each" in obj
+                    sub, idx, is_var=is_var, is_repeat=is_repeat, is_each="each" in obj_
                 )
-            except Exception as exc:
-                exc_amend(exc, "sub[{}]: ".format(idx))
+            except Exception as err:
+                exc_amend(err, "sub[{}]: ".format(idx))
                 raise
 
         # Validate "each" (optional, omit if repeat is True)
-        if "each" in obj:
-            sub = obj["each"]
+        if "each" in obj_:
+            sub = obj_["each"]
 
             if struct in (OD.VAR, OD.NVAR):
                 raise ValidationError("Unexpected 'each' use in VAR/NVAR object")
@@ -1367,22 +1361,16 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
 
             try:
                 _validate_sub(sub, idx=-1)
-            except Exception as exc:
-                exc_amend(exc, "'each': ")
+            except Exception as err:
+                exc_amend(err, "'each': ")
                 raise
-
-            # Ensure the format is correct
-            # NOTE: Not all seems to be the same. E.g. default is 'access'='ro',
-            # however in 0x1600, 'access'='rw'.
-            # if not all(subitems[0].get(k, v) == v for k, v in SUBINDEX0.items()):
-            #     raise ValidationError("Incorrect definition in subindex 0. Found {}, expects {}".format(subitems[0], SUBINDEX0))
 
         elif not is_repeat:
             if struct in (OD.ARRAY, OD.NARRAY):
                 raise ValidationError("Field 'each' missing from ARRAY/NARRAY object")
 
         # Validate "unused" (optional)
-        unused = obj.get("unused", False)
+        unused = obj_.get("unused", False)
         if unused and sum(has_value):
             raise ValidationError(
                 "There are {} values in subitems, but 'unused' is true".format(
@@ -1408,7 +1396,7 @@ def validate_fromdict(jsonobj, objtypes_i2s=None, objtypes_s2i=None):
                 raise ValidationError("All subitems except item 0 must contain value")
 
         if struct in (OD.RECORD, OD.NRECORD):
-            if not is_repeat and "each" not in obj:
+            if not is_repeat and "each" not in obj_:
                 if sum(has_name) != len(has_name):
                     raise ValidationError(
                         "Not all subitems have name, {} of {}".format(
@@ -1460,7 +1448,7 @@ def diff_nodes(node1, node2, as_dict=True, validate=True):
             jd1["dictionary"], jd2["dictionary"], view="tree", group_by="index"
         )
 
-        res = re.compile(r"root\[('0x[0-9a-fA-F]+'|\d+)\]")
+        res = re.compile(r"root\[('0x[0-9a-fA-F]+'|\d+)]")
 
         for chtype, changes in diff.items():
             for change in changes:
@@ -1480,7 +1468,7 @@ def diff_nodes(node1, node2, as_dict=True, validate=True):
         )
 
         res = re.compile(
-            r"root\.(Profile|Dictionary|ParamsDictionary|UserMapping|DS302)\[(\d+)\]"
+            r"root\.(Profile|Dictionary|ParamsDictionary|UserMapping|DS302)\[(\d+)]"
         )
 
         for chtype, changes in diff.items():

@@ -20,29 +20,22 @@
 #    USA
 
 import traceback
-
 import os
 import sys
 import platform
 import time
-
 import wx
-
-
-# ------------------------------------------------------------------------------
-#                               Exception Handler
-# ------------------------------------------------------------------------------
 
 
 def Display_Exception_Dialog(e_type, e_value, e_tb):
     trcbck_lst = []
     for i, line in enumerate(traceback.extract_tb(e_tb)):
-        trcbck = " " + str(i + 1) + ". "
+        trcbck = f" {str(i + 1)}. "
         if os.getcwd() not in line[0]:
-            trcbck += "file : " + str(line[0]) + ",   "
+            trcbck += f"file : {str(line[0])},   "
         else:
-            trcbck += "file : " + str(line[0][len(os.getcwd()) :]) + ",   "
-        trcbck += "line : " + str(line[1]) + ",   " + "function : " + str(line[2])
+            trcbck += f"file : {str(line[0][len(os.getcwd()):])},   "
+        trcbck += f"line : {str(line[1])},   function : {str(line[2])}"
         trcbck_lst.append(trcbck)
 
     # Allow clicking....
@@ -53,15 +46,12 @@ def Display_Exception_Dialog(e_type, e_value, e_tb):
     dlg = wx.SingleChoiceDialog(
         None,
         (
-            """
-            An error has occured.
+            f"""
+            An error has occurred.
             Click on OK for saving an error report.
             If appropriate please add an issue to the project on GitHub.
-            Error:
+            Error: {str(e_type)} : {str(e_value)}
         """
-            + str(e_type)
-            + " : "
-            + str(e_value)
         ),
         "Error",
         trcbck_lst,
@@ -87,9 +77,7 @@ def get_last_traceback(tb):
 
 
 def format_namespace(dic, indent="    "):
-    return "\n".join(
-        ["%s%s: %s" % (indent, k, repr(v)[:10000]) for k, v in dic.items()]
-    )
+    return "\n".join([f"{indent}{k}: {repr(v)[:10000]}" for k, v in dic.items()])
 
 
 IGNORED_EXCEPTIONS = (
@@ -123,9 +111,10 @@ def AddExceptHook(path, app_version="[No version]"):  # , ignored_exceptions=[])
                     "cwd": os.getcwd(),
                 }
                 if e_traceback:
-                    info["traceback"] = "".join(
-                        traceback.format_tb(e_traceback)
-                    ) + "%s: %s" % (e_type, e_value)
+                    info["traceback"] = (
+                        "".join(traceback.format_tb(e_traceback))
+                        + f"{e_type}: {e_value}"
+                    )
                     last_tb = get_last_traceback(e_traceback)
                     exception_locals = (
                         last_tb.tb_frame.f_locals
@@ -135,17 +124,11 @@ def AddExceptHook(path, app_version="[No version]"):  # , ignored_exceptions=[])
                         info["self"] = format_namespace(
                             exception_locals["self"].__dict__
                         )
-
+                bug_report_date = info["date"].replace(":", "-").replace(" ", "_")
                 with open(
-                    path
-                    + os.sep
-                    + "bug_report_"
-                    + info["date"].replace(":", "-").replace(" ", "_")
-                    + ".txt",
-                    "w",
+                    f"{path}{os.sep}bug_report_{bug_report_date}.txt", "w"
                 ) as output:
                     for a in sorted(info):
-                        output.write(a + ":\n" + str(info[a]) + "\n\n")
+                        output.write(f"{a}:\n{str(info[a])}\n\n")
 
-    # sys.excepthook = lambda *args: wx.CallAfter(handle_exception, *args)
     sys.excepthook = handle_exception

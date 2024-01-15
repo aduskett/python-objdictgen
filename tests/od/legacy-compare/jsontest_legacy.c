@@ -52,6 +52,7 @@ UNS32 NRECORD_AL_1_Action_AL_1_Action_5 = 0x5;		/* Mapped at index 0x6580, subin
 UNS32 NRECORD_AL_1_Action_AL_1_Action_6 = 0x6;		/* Mapped at index 0x6580, subindex 0x06 */
 UNS16 Producer_Heartbeat_Time = 0x1;		/* Mapped at index 0x6600, subindex 0x00 */
 
+
 /**************************************************************************/
 /* Declaration of value range types                                       */
 /**************************************************************************/
@@ -71,6 +72,7 @@ UNS32 jsontest_valueRangeTest (UNS8 typeValue, void * value)
   }
   return 0;
 }
+
 
 /**************************************************************************/
 /* The node id                                                            */
@@ -560,6 +562,7 @@ $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 /**************************************************************************/
 /* Declaration of pointed variables                                       */
 /**************************************************************************/
+
 
 const indextable jsontest_objdict[] =
 {

@@ -19,17 +19,11 @@
 #    License along with this library; if not, write to the Free Software
 #    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301
 #    USA
-
-from __future__ import absolute_import
-from builtins import object
-from builtins import range
-
 import os
 import re
 import codecs
 import logging
 import colorama
-
 from objdictgen.node import Node, Find, ImportProfile, BE_to_LE, LE_to_BE
 from objdictgen import maps
 from objdictgen.maps import OD, MAPPING_DICTIONARY
@@ -41,8 +35,8 @@ Style = colorama.Style
 
 UNDO_BUFFER_LENGTH = 20
 
-type_model = re.compile(r"([\_A-Z]*)([0-9]*)")
-range_model = re.compile(r"([\_A-Z]*)([0-9]*)\[([\-0-9]*)-([\-0-9]*)\]")
+type_model = re.compile(r"([_A-Z]*)([0-9]*)")
+range_model = re.compile(r"([_A-Z]*)([0-9]*)\[([\-0-9]*)-([\-0-9]*)]")
 
 # ID for the file viewed
 CURRENTID = 0
@@ -55,7 +49,7 @@ def GetNewId():
     return CURRENTID
 
 
-class UndoBuffer(object):
+class UndoBuffer:
     """
     Class implementing a buffer of changes made on the current editing Object Dictionary
     """
@@ -578,7 +572,7 @@ class NodeManager(object):
                 node = self.CurrentNode
             assert node  # For mypy
             if node.IsEntry(index):
-                raise ValueError("Index 0x%04X already defined!" % index)
+                raise ValueError(f"Index 0x{index:04X} already defined!")
             node.AddMappingEntry(index, name=name, struct=struct)
             if struct == OD.VAR:
                 values = {"name": name, "type": 0x05, "access": "rw", "pdo": True}
@@ -616,7 +610,7 @@ class NodeManager(object):
             if not disable_buffer:
                 self.BufferCurrentNode()
             return
-        raise ValueError("Index 0x%04X isn't a valid index for Map Variable!" % index)
+        raise ValueError(f"Index 0x{index:04X} isn't a valid index for Map Variable!")
 
     def AddUserTypeToCurrent(self, type_, min_, max_, length):
         assert self.CurrentNode  # For mypy
@@ -632,7 +626,7 @@ class NodeManager(object):
         if valuetype == 0:
             self.CurrentNode.AddMappingEntry(
                 index,
-                name="%s[%d-%d]" % (name, min_, max_),
+                name=f"{name}[{min_:d}-{max_:d}]",
                 struct=OD.RECORD,
                 size=size,
                 default=default,
@@ -678,7 +672,7 @@ class NodeManager(object):
         elif valuetype == 1:
             self.CurrentNode.AddMappingEntry(
                 index,
-                name="%s%d" % (name, length),
+                name=f"{name}{length:d}",
                 struct=OD.RECORD,
                 size=length * size,
                 default=default,
@@ -756,7 +750,7 @@ class NodeManager(object):
                     if dic[type_] == 0:
                         # Might fail if number is malformed
                         if value.startswith("$NODEID"):
-                            value = '"%s"' % value
+                            value = f'"{value}"'
                         elif value.startswith("0x"):
                             value = int(value, 16)
                         else:
@@ -814,7 +808,7 @@ class NodeManager(object):
         if new_valuetype == 0:
             self.CurrentNode.SetMappingEntry(
                 index,
-                name="%s[%d-%d]" % (name, min_, max_),
+                name=f"{name}[{min_:d}-{max_:d}]",
                 struct=OD.RECORD,
                 size=size,
                 default=default,
@@ -849,7 +843,7 @@ class NodeManager(object):
         elif new_valuetype == 1:
             self.CurrentNode.SetMappingEntry(
                 index,
-                name="%s%d" % (name, length),
+                name=f"{name}{length:d}",
                 struct=OD.RECORD,
                 size=size,
                 default=default,
@@ -923,7 +917,7 @@ class NodeManager(object):
     def GetFilename(self, index):
         if self.UndoBuffers[index].IsCurrentSaved():
             return self.FileNames[index]
-        return "~%s~" % self.FileNames[index]
+        return f"~{self.FileNames[index]}~"
 
     def SetCurrentFilePath(self, filepath):
         self.FilePaths[self.NodeIndex] = filepath
@@ -933,7 +927,7 @@ class NodeManager(object):
             )[0]
         else:
             self.LastNewIndex += 1
-            self.FileNames[self.NodeIndex] = "Unnamed%d" % self.LastNewIndex
+            self.FileNames[self.NodeIndex] = f"Unnamed{self.LastNewIndex:d}"
 
     def GetCurrentFilePath(self):
         if len(self.FilePaths) > 0:
@@ -1121,7 +1115,7 @@ class NodeManager(object):
                 infos = node.GetSubentryInfos(index, i)
                 if infos["name"] == "Number of Entries":
                     dic["buffer_size"] = ""
-                dic["subindex"] = "0x%02X" % i
+                dic["subindex"] = f"0x{i:02X}"
                 dic["name"] = infos["name"]
                 dic["type"] = node.GetTypeName(infos["type"])
                 if dic["type"] is None:
@@ -1185,16 +1179,14 @@ class NodeManager(object):
                             if values[0] == "UNSIGNED":
                                 dic["buffer_size"] = ""
                                 try:
-                                    fmt = "0x%0" + str(int(values[1]) // 4) + "X"
+                                    fmt = f"0x%0{str(int(values[1]) // 4)}X"
                                 except ValueError as exc:
-                                    log.debug("ValueError: '%s': %s" % (values[1], exc))
+                                    log.debug(f"ValueError: '{values[1]}': {exc}")
                                     raise  # FIXME: Originial code swallows exception
                                 try:
                                     dic["value"] = fmt % dic["value"]
                                 except TypeError as exc:
-                                    log.debug(
-                                        "ValueError: '%s': %s" % (dic["value"], exc)
-                                    )
+                                    log.debug(f"ValueError: '{dic['value']}': {exc}")
                                     pass  # FIXME: dict["value"] can contain $NODEID for PDOs which is not an int i.e. $NODEID+0x200
                                 editor["value"] = "string"
                             if values[0] == "INTEGER":

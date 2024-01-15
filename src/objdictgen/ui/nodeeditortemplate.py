@@ -90,8 +90,8 @@ class NodeEditorTemplate(object):
         if selection:
             index, subindex = selection
             if manager.IsCurrentEntry(index):
-                self.Frame.HelpBar.SetStatusText("Index: 0x%04X" % index, 0)
-                self.Frame.HelpBar.SetStatusText("Subindex: 0x%02X" % subindex, 1)
+                self.Frame.HelpBar.SetStatusText(f"Index: 0x{index:04X}", 0)
+                self.Frame.HelpBar.SetStatusText(f"Subindex: 0x{subindex:02X}", 1)
                 entryinfos = manager.GetEntryInfos(index)
                 name = entryinfos["name"]
                 category = "Optional"
@@ -100,12 +100,12 @@ class NodeEditorTemplate(object):
                 struct = "VAR"
                 number = ""
                 if entryinfos["struct"] & OD.IdenticalIndexes:
-                    number = " possibly defined %d times" % entryinfos["nbmax"]
+                    number = f" possibly defined {entryinfos['nbmax']:d} times"
                 if entryinfos["struct"] & OD.IdenticalSubindexes:
                     struct = "ARRAY"
                 elif entryinfos["struct"] & OD.MultipleSubindexes:
                     struct = "RECORD"
-                text = "%s: %s entry of struct %s%s." % (name, category, struct, number)
+                text = f"{name}: {category} entry of struct {struct}{number}."
                 self.Frame.HelpBar.SetStatusText(text, 2)
             else:
                 for i in range(3):
@@ -124,7 +124,7 @@ class NodeEditorTemplate(object):
                     additem = self.Frame.AddMenu.FindItemByPosition(6)
                     self.Frame.AddMenu.Delete(additem.GetId())
                 if profile not in ("None", "DS-301"):
-                    edititem.SetItemLabel("%s Profile" % profile)
+                    edititem.SetItemLabel(f"{profile} Profile")
                     edititem.Enable(True)
                     self.Frame.AddMenu.AppendSeparator()
                     for text, _ in self.Manager.GetCurrentSpecificMenu():
@@ -169,7 +169,7 @@ class NodeEditorTemplate(object):
         self.EditProfile("Edit DS-302 Profile", dictionary, current)
 
     def OnEditProfileMenu(self, event):  # pylint: disable=unused-argument
-        title = "Edit %s Profile" % self.Manager.GetCurrentProfileName()
+        title = f"Edit {self.Manager.GetCurrentProfileName()} Profile"
         dictionary, current = self.Manager.GetCurrentProfileLists()
         self.EditProfile(title, dictionary, current)
 

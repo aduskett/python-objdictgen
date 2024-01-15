@@ -9,8 +9,8 @@
     General:
         * All characters in object names that does not match [a-zA-Z0-9_] will be replaced by '_'.
         * Case of object dictionary names will be kept as is.
-    Index : Node object dictionary name +_+ index name +_+ Idx 
-    SubIndex : Node object dictionary name +_+ index name +_+ subIndex name +_+ sIdx 
+    Index : Node object dictionary name +_+ index name +_+ Idx
+    SubIndex : Node object dictionary name +_+ index name +_+ subIndex name +_+ sIdx
 */
 
 #define Master_Device_Type_Idx 0x1000

@@ -245,12 +245,12 @@ class CommunicationDialog(wx.Dialog):
         self.AllList.sort()
         for index in self.AllList:
             self.PossibleIndexes.Append(
-                "0x%04X   %s" % (index, self.IndexDictionary[index][0])
+                f"0x{index:04X}   {self.IndexDictionary[index][0]}"
             )
         for index in self.CurrentList:
             if index in self.IndexDictionary:
                 self.CurrentIndexes.Append(
-                    "0x%04X   %s" % (index, self.IndexDictionary[index][0])
+                    f"0x{index:04X}   {self.IndexDictionary[index][0]}"
                 )
 
     def OnPossibleIndexesDClick(self, event):
@@ -514,14 +514,14 @@ class MapVariableDialog(wx.Dialog):
         self.Number.Enable(False)
 
     def SetIndex(self, index):
-        self.Index.SetValue("0x%04X" % index)
+        self.Index.SetValue(f"0x{index:04X}")
 
     def OnOK(self, event):  # pylint: disable=unused-argument
         error = []
         try:
             int(self.Index.GetValue(), 16)
         except ValueError as exc:
-            log.debug("ValueError: '%s': %s" % (self.Index.GetValue(), exc))
+            log.debug(f"ValueError: '{self.Index.GetValue()}': {exc}")
             error.append("Index")
         if self.radioButton2.GetValue() or self.radioButton3.GetValue():
             try:
@@ -529,7 +529,7 @@ class MapVariableDialog(wx.Dialog):
                 if int(self.Number.GetValue()) < 1:
                     raise ValueError("Number out of range, must be >0")
             except ValueError as exc:
-                log.debug("ValueError: '%s': %s" % (self.Index.GetValue(), exc))
+                log.debug(f"ValueError: '{self.Index.GetValue()}': {exc}")
                 error.append("Number")
         if len(error) > 0:
             text = ""
@@ -537,11 +537,11 @@ class MapVariableDialog(wx.Dialog):
                 if i == 0:
                     text += item
                 elif i == len(error) - 1:
-                    text += (" and %s") % item + " must be integers!"
+                    text += f" and {item} must be integers!"
                 else:
-                    text += ", %s" % item + " must be integer!"
+                    text += f", {item} must be integer!"
             message = wx.MessageDialog(
-                self, "Form isn't valid. %s" % text, "Error", wx.OK | wx.ICON_ERROR
+                self, f"Form isn't valid. {text}", "Error", wx.OK | wx.ICON_ERROR
             )
             message.ShowModal()
             message.Destroy()
@@ -795,18 +795,18 @@ class UserTypeDialog(wx.Dialog):
                 try:
                     int(self.Min.GetValue(), 16)
                 except ValueError as exc:
-                    log.debug("ValueError: '%s': %s" % (self.Index.GetValue(), exc))
+                    log.debug(f"ValueError: '{self.Index.GetValue()}': {exc}")
                     error.append("Minimum")
                 try:
                     int(self.Max.GetValue(), 16)
                 except ValueError as exc:
-                    log.debug("ValueError: '%s': %s" % (self.Index.GetValue(), exc))
+                    log.debug(f"ValueError: '{self.Index.GetValue()}': {exc}")
                     error.append("Maximum")
             elif valuetype == 1:
                 try:
                     int(self.Length.GetValue(), 16)
                 except ValueError as exc:
-                    log.debug("ValueError: '%s': %s" % (self.Index.GetValue(), exc))
+                    log.debug(f"ValueError: '{self.Index.GetValue()}': {exc}")
                     error.append("Length")
             if len(error) > 0:
                 message = ""
@@ -814,15 +814,15 @@ class UserTypeDialog(wx.Dialog):
                     if i == 0:
                         message += item
                     elif i == len(error) - 1:
-                        message += " and %s" % item + " must be integers!"
+                        message += f" and {item} must be integers!"
                     else:
-                        message += ", %s" % item + " must be integer!"
+                        message += f", {item} must be integer!"
         else:
             message = "A type must be selected!"
         if message is not None:
             message = wx.MessageDialog(
                 self,
-                "Form isn't valid. %s" % (message,),
+                f"Form isn't valid. {message}",
                 "Error",
                 wx.OK | wx.ICON_ERROR,
             )
@@ -1099,7 +1099,7 @@ class NodeInfosDialog(wx.Dialog):
             try:
                 _ = int(self.NodeID.GetValue(), 16)
             except ValueError as exc:
-                log.debug("ValueError: '%s': %s" % (self.NodeID.GetValue(), exc))
+                log.debug(f"ValueError: '{self.NodeID.GetValue()}': {exc}")
                 message = "Node ID must be integer!"
         if message:
             message = wx.MessageDialog(self, message, "ERROR", wx.OK | wx.ICON_ERROR)
@@ -1111,7 +1111,7 @@ class NodeInfosDialog(wx.Dialog):
 
     def SetValues(self, name, id_, type_, description, defaultstringsize):
         self.NodeName.SetValue(name)
-        self.NodeID.SetValue("0x%02X" % id_)
+        self.NodeID.SetValue(f"0x{id_:02X}")
         self.Type.SetStringSelection(type_)
         self.Description.SetValue(description)
         self.DefaultStringSize.SetValue(defaultstringsize)
@@ -1530,7 +1530,7 @@ class CreateNodeDialog(wx.Dialog):
             try:
                 _ = int(self.NodeID.GetValue(), 16)
             except ValueError as exc:
-                log.debug("ValueError: '%s': %s" % (self.NodeID.GetValue(), exc))
+                log.debug(f"ValueError: '{self.NodeID.GetValue()}': {exc}")
                 message = "Node ID must be integer!"
         if message:
             message = wx.MessageDialog(self, message, "ERROR", wx.OK | wx.ICON_ERROR)
@@ -1770,12 +1770,12 @@ class AddSlaveDialog(wx.Dialog):
                 if i == 0:
                     text += item
                 elif i == len(error) - 1:
-                    text += " and %s" % item
+                    text += f" and {item}"
                 else:
-                    text += ", %s" % item
+                    text += f", {item}"
             message = wx.MessageDialog(
                 self,
-                "Form isn't complete. %s must be filled!" % text,
+                f"Form isn't complete. {text} must be filled!",
                 "Error",
                 wx.OK | wx.ICON_ERROR,
             )
@@ -1789,7 +1789,7 @@ class AddSlaveDialog(wx.Dialog):
                 else:
                     nodeid = int(nodeid)
             except ValueError as exc:
-                log.debug("ValueError: '%s': %s" % (self.SlaveNodeID.GetValue(), exc))
+                log.debug(f"ValueError: '{self.SlaveNodeID.GetValue()}': {exc}")
                 message = wx.MessageDialog(
                     self,
                     "Slave Node ID must be a value in decimal or hexadecimal!",
@@ -2196,7 +2196,7 @@ class DCFEntryValuesDialog(wx.Dialog):
         except ValueError:
             message = wx.MessageDialog(
                 self,
-                "'%s' is not a valid value!" % value,
+                f"'{value}' is not a valid value!",
                 "Error",
                 wx.OK | wx.ICON_ERROR,
             )
@@ -2281,10 +2281,10 @@ class DCFEntryValuesDialog(wx.Dialog):
         data = []
         for value in self.Values:
             row = {}
-            row["Index"] = "%04X" % value["Index"]
-            row["Subindex"] = "%02X" % value["Subindex"]
-            row["Size"] = "%08X" % value["Size"]
-            row["Value"] = ("%0" + "%d" % (value["Size"] * 2) + "X") % value["Value"]
+            row["Index"] = f"{value['Index']:04X}"
+            row["Subindex"] = f"{value['Subindex']:02X}"
+            row["Size"] = f"{value['Size']:08X}"
+            row["Value"] = f"{value["Value"]}{value['Size'] * 2:d}X"
             data.append(row)
         self.Table.SetData(data)
         self.Table.ResetView(self.ValuesGrid)

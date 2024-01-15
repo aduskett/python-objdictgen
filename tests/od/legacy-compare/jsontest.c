@@ -52,6 +52,7 @@ UNS32 NRECORD_AL_1_Action_AL_1_Action_5 = 0x5;		/* Mapped at index 0x6580, subin
 UNS32 NRECORD_AL_1_Action_AL_1_Action_6 = 0x6;		/* Mapped at index 0x6580, subindex 0x06 */
 UNS16 Producer_Heartbeat_Time = 0x1;		/* Mapped at index 0x6600, subindex 0x00 */
 
+
 /**************************************************************************/
 /* Declaration of value range types                                       */
 /**************************************************************************/
@@ -71,6 +72,7 @@ UNS32 jsontest_valueRangeTest (UNS8 typeValue, void * value)
   }
   return 0;
 }
+
 
 /**************************************************************************/
 /* The node id                                                            */
@@ -109,11 +111,11 @@ $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 
 /* index 0x1003 :   Pre-defined Error Field */
                     UNS8 jsontest_highestSubIndex_obj1003 = 0; /* number of subindex - 1*/
-                    UNS32 jsontest_obj1003[] = 
+                    UNS32 jsontest_obj1003[] =
                     {
                       0x0	/* 0 */
                     };
-                    subindex jsontest_Index1003[] = 
+                    subindex jsontest_Index1003[] =
                      {
                        { RW, valueRange_EMC, sizeof (UNS8), (void*)&jsontest_highestSubIndex_obj1003, NULL },
                        { RO, uint32, sizeof (UNS32), (void*)&jsontest_obj1003[0], NULL }
@@ -125,10 +127,10 @@ $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 /* index 0x1006 :   Communication / Cycle Period */
                     UNS32 jsontest_obj1006 = 0x0;   /* 0 */
 
-/* index 0x100C :   Guard Time */ 
+/* index 0x100C :   Guard Time */
                     UNS16 jsontest_obj100C = 0x0;   /* 0 */
 
-/* index 0x100D :   Life Time Factor */ 
+/* index 0x100D :   Life Time Factor */
                     UNS8 jsontest_obj100D = 0x0;   /* 0 */
 
 /* index 0x1014 :   Emergency COB ID */
@@ -138,7 +140,7 @@ $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
                     UNS8 jsontest_highestSubIndex_obj1016 = 0;
                     UNS32 jsontest_obj1016[]={0};
 
-/* index 0x1017 :   Producer Heartbeat Time */ 
+/* index 0x1017 :   Producer Heartbeat Time */
                     UNS16 jsontest_obj1017 = 0x0;   /* 0 */
 
 /* index 0x1018 :   Identity. */
@@ -428,7 +430,8 @@ $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 /* Declaration of pointed variables                                       */
 /**************************************************************************/
 
-const indextable jsontest_objdict[] = 
+
+const indextable jsontest_objdict[] =
 {
   { (subindex*)jsontest_Index1000,sizeof(jsontest_Index1000)/sizeof(jsontest_Index1000[0]), 0x1000},
   { (subindex*)jsontest_Index1001,sizeof(jsontest_Index1001)/sizeof(jsontest_Index1001[0]), 0x1001},
@@ -501,7 +504,7 @@ const indextable * jsontest_scanIndexOD (CO_Data *d, UNS16 wIndex, UNS32 * error
     return &jsontest_objdict[i];
 }
 
-/* 
+/*
  * To count at which received SYNC a PDO must be sent.
  * Even if no pdoTransmit are defined, at least one entry is computed
  * for compilations issues.
@@ -526,7 +529,7 @@ const quick_index jsontest_lastIndex = {
   0 /* PDO_TRS_MAP */
 };
 
-const UNS16 jsontest_ObjdictSize = sizeof(jsontest_objdict)/sizeof(jsontest_objdict[0]); 
+const UNS16 jsontest_ObjdictSize = sizeof(jsontest_objdict)/sizeof(jsontest_objdict[0]);
 
 CO_Data jsontest_Data = CANOPEN_NODE_DATA_INITIALIZER(jsontest);
 

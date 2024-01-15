@@ -533,4 +533,4 @@ def main_objdictedit():
 # To support -m objdictgen
 if __name__ == "__main__":
     # pylint: disable=no-value-for-parameter
-    main()  # type: ignore
+    main_objdictgen()  # type: ignore
